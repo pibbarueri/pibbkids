@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Auth & Users ─────────────────────────────────────────────────────────────
+
+model User {
+  id                String              @id @default(cuid())
+  name              String
+  email             String              @unique
+  password          String
+  role              Role
+  cpf               String?
+  birthdate         DateTime?
+  motherName        String?
+  phone             String?
+  documentUrl       String?
+  volunteerStatus   VolunteerStatus     @default(APROVADO)
+  active            Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  preferredClasses  UserPreferredClass[]
+  functions         VolunteerFunction[]
+  scheduleSlots     ScheduleSlot[]
+  purchaseRequests  PurchaseRequest[]
+  attendance        Attendance[]
+}
+
+enum Role {
+  LIDERANCA
+  COORDENACAO
+  PROFESSOR
+  AUXILIAR
+  RECEPCAO
+}
+
+enum VolunteerStatus {
+  PENDENTE
+  APROVADO
+  REJEITADO
+}
+
+model VolunteerFunction {
+  userId   String
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  function FunctionType
+
+  @@id([userId, function])
+}
+
+enum FunctionType {
+  PROFESSOR
+  AUXILIAR
+  APOIO_GERAL
+  LOUVOR
+  RECEPCAO
+  TEATRO
+}
+
+model UserPreferredClass {
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classGroupId String
+  classGroup   ClassGroup @relation(fields: [classGroupId], references: [id])
+
+  @@id([userId, classGroupId])
+}
+
+// ─── Crianças ─────────────────────────────────────────────────────────────────
+
+model Child {
+  id                    String       @id @default(cuid())
+  name                  String
+  birthdate             DateTime
+  classGroupId          String?
+  classGroup            ClassGroup?  @relation(fields: [classGroupId], references: [id])
+  frequencia            Frequencia
+  fatherName            String?
+  motherName            String?
+  phone                 String?
+  whatsapp              String?
+  allergies             String?
+  restrictions          String?
+  revistaCertificateUrl String?
+  parentExpectations    String?
+  parentConsent         Boolean      @default(false)
+  registrationStatus    ChildStatus  @default(PENDENTE)
+  active                Boolean      @default(true)
+  createdAt             DateTime     @default(now())
+  attendance            Attendance[]
+}
+
+enum ChildStatus {
+  PENDENTE
+  APROVADO
+}
+
+enum Frequencia {
+  EBD
+  CULTO
+  AMBOS
+}
+
+// ─── Turmas ───────────────────────────────────────────────────────────────────
+
+model ClassGroup {
+  id             String               @id @default(cuid())
+  name           String               @unique
+  ageRange       String?
+  active         Boolean              @default(true)
+  children       Child[]
+  curricula      Curriculum[]
+  scheduleSlots  ScheduleSlot[]
+  sundayPlans    SundayPlan[]
+  preferredBy    UserPreferredClass[]
+}
+
+// ─── Currículos e Revistas ────────────────────────────────────────────────────
+
+model Curriculum {
+  id               String     @id @default(cuid())
+  classGroupId     String
+  classGroup       ClassGroup @relation(fields: [classGroupId], references: [id])
+  semester         Int
+  year             Int
+  seriesType       SeriesType
+  seriesNumber     Int
+  title            String
+  totalWeeks       Int
+  uso              Frequencia
+  copiasProfessor  Int        @default(0)
+  copiasAluno      Int        @default(0)
+  comprarProfessor Int        @default(0)
+  recursosVisuais  Boolean    @default(false)
+  sundayPlans      SundayPlan[]
+}
+
+enum SeriesType {
+  CULTO_INFANTIL
+  MATERNAL
+  PLUGUINHO
+  JUNIORES
+  DETETIVE
+}
+
+// Plano por domingo: EBD e Culto são entradas separadas para a mesma turma
+model SundayPlan {
+  id            String      @id @default(cuid())
+  date          DateTime
+  classGroupId  String
+  classGroup    ClassGroup  @relation(fields: [classGroupId], references: [id])
+  tipo          SundayTipo
+  curriculumId  String?
+  curriculum    Curriculum? @relation(fields: [curriculumId], references: [id])
+  licaoNumber   Int?
+  lessonType    LessonType  @default(APOSTILA)
+  specialTitle  String?
+  done          Boolean     @default(false)
+
+  @@unique([date, classGroupId, tipo])
+}
+
+enum SundayTipo {
+  EBD
+  CULTO
+}
+
+enum LessonType {
+  APOSTILA
+  AULA_EXTRA
+  CULTO_INFANTIL
+  SEM_AULA
+  TEMA_LIVRE
+}
+
+// ─── Escala ───────────────────────────────────────────────────────────────────
+
+model ScheduleSlot {
+  id           String      @id @default(cuid())
+  date         DateTime
+  slotType     SlotType
+  classGroupId String?
+  classGroup   ClassGroup? @relation(fields: [classGroupId], references: [id])
+  role         SlotRole
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+
+  @@unique([date, slotType, classGroupId, role, userId])
+}
+
+enum SlotType {
+  SALA_PLUS
+  APOIO_EBD
+  APOIO_CULTO
+  LANCHE
+  EBD
+  CULTO
+}
+
+enum SlotRole {
+  PROFESSOR
+  AUXILIAR
+}
+
+// ─── Presença ─────────────────────────────────────────────────────────────────
+
+model Attendance {
+  id      String     @id @default(cuid())
+  childId String
+  child   Child      @relation(fields: [childId], references: [id])
+  userId  String
+  user    User       @relation(fields: [userId], references: [id])
+  date    DateTime
+  tipo    SundayTipo
+  present Boolean
+
+  @@unique([childId, date, tipo])
+}
+
+// ─── Materiais e Compras ──────────────────────────────────────────────────────
+
+model Material {
+  id          String          @id @default(cuid())
+  name        String
+  unit        String
+  quantity    Int             @default(0)
+  minQuantity Int             @default(0)
+  movements   StockMovement[]
+  requests    PurchaseRequest[]
+}
+
+model StockMovement {
+  id         String   @id @default(cuid())
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id])
+  delta      Int
+  reason     String
+  date       DateTime @default(now())
+}
+
+model PurchaseRequest {
+  id            String        @id @default(cuid())
+  requesterId   String
+  requester     User          @relation(fields: [requesterId], references: [id])
+  materialId    String?
+  material      Material?     @relation(fields: [materialId], references: [id])
+  freeTextItem  String?
+  quantity      Int
+  justification String?
+  status        RequestStatus @default(PENDENTE)
+  createdAt     DateTime      @default(now())
+}
+
+enum RequestStatus {
+  PENDENTE
+  APROVADO
+  REJEITADO
+  COMPRADO
+}
+
+// ─── Eventos ──────────────────────────────────────────────────────────────────
+
+model Event {
+  id          String       @id @default(cuid())
+  title       String
+  date        DateTime
+  description String?
+  classes     EventClass[]
+}
+
+model EventClass {
+  eventId      String
+  event        Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  classGroupId String
+
+  @@id([eventId, classGroupId])
+}
