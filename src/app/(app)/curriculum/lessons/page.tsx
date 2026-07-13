@@ -1,0 +1,72 @@
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { canManage } from "@/lib/permissions";
+import { LessonsClient } from "./lessons-client";
+
+function sundaysInMonth(year: number, month: number): Date[] {
+  const sundays: Date[] = [];
+  const date = new Date(year, month, 1);
+  while (date.getDay() !== 0) date.setDate(date.getDate() + 1);
+  while (date.getMonth() === month) {
+    sundays.push(new Date(date));
+    date.setDate(date.getDate() + 7);
+  }
+  return sundays;
+}
+
+export default async function LessonsPage() {
+  const session = await auth();
+  const role = session!.user.role;
+  const isManager = canManage(role);
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const sundays = sundaysInMonth(year, month);
+  const from = sundays[0];
+  const to = sundays[sundays.length - 1];
+
+  const [plans, classes, curricula, myClasses] = await Promise.all([
+    prisma.sundayPlan.findMany({
+      where: { date: { gte: from, lte: to } },
+      include: {
+        classGroup: { select: { id: true, name: true } },
+        curriculum: { select: { id: true, title: true, seriesType: true, seriesNumber: true } },
+      },
+      orderBy: [{ date: "asc" }, { tipo: "asc" }],
+    }),
+    prisma.classGroup.findMany({
+      where: { active: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    isManager
+      ? prisma.curriculum.findMany({
+          where: { year },
+          select: { id: true, title: true, seriesType: true, seriesNumber: true, classGroupId: true, uso: true },
+        })
+      : Promise.resolve([]),
+    isManager
+      ? Promise.resolve([])
+      : prisma.userPreferredClass.findMany({
+          where: { userId: session!.user.id },
+          select: { classGroupId: true },
+        }),
+  ]);
+
+  const myClassIds = myClasses.map((c) => c.classGroupId);
+
+  return (
+    <div className="p-4 space-y-4">
+      <h1 className="text-xl font-bold">Aulas</h1>
+      <LessonsClient
+        initialPlans={plans as any}
+        classes={classes}
+        curricula={curricula}
+        sundays={sundays.map((d) => d.toISOString())}
+        isManager={isManager}
+        myClassIds={myClassIds}
+      />
+    </div>
+  );
+}

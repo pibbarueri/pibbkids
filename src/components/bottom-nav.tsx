@@ -48,7 +48,10 @@ const NAV_ITEMS: NavItem[] = [
 
 export function BottomNav({ role }: { role: Role }) {
   const pathname = usePathname();
-  const visible = NAV_ITEMS.filter((item) => item.roles.includes(role));
+  const isManager = role === Role.LIDERANCA || role === Role.COORDENACAO;
+  const visible = NAV_ITEMS.filter((item) => item.roles.includes(role)).map((item) =>
+    item.href === "/curriculum" && !isManager ? { ...item, href: "/curriculum/lessons" } : item
+  );
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 border-t bg-background z-50">
