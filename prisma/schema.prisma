@@ -117,6 +117,7 @@ model ClassGroup {
   scheduleSlots  ScheduleSlot[]
   sundayPlans    SundayPlan[]
   preferredBy    UserPreferredClass[]
+  events         EventClass[]
 }
 
 // ─── Currículos e Revistas ────────────────────────────────────────────────────
@@ -274,8 +275,9 @@ model Event {
 
 model EventClass {
   eventId      String
-  event        Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
   classGroupId String
+  classGroup   ClassGroup @relation(fields: [classGroupId], references: [id])
 
   @@id([eventId, classGroupId])
 }
