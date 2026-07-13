@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -67,10 +67,11 @@ export function ClassesClient({ initialClasses }: { initialClasses: ClassGroup[]
   return (
     <div className="space-y-3">
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger className="w-full">
-          <Button onClick={openCreate} className="w-full h-12">
-            <Plus className="h-4 w-4 mr-2" /> Nova turma
-          </Button>
+        <DialogTrigger
+          onClick={openCreate}
+          className={buttonVariants({ className: "w-full h-12" })}
+        >
+          <Plus className="h-4 w-4 mr-2" /> Nova turma
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>

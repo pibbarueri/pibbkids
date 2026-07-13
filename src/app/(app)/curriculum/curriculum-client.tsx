@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -154,10 +154,11 @@ export function CurriculumClient({
   return (
     <div className="space-y-3">
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger className="w-full">
-          <Button onClick={openCreate} className="w-full h-12">
-            <Plus className="h-4 w-4 mr-2" /> Nova revista
-          </Button>
+        <DialogTrigger
+          onClick={openCreate}
+          className={buttonVariants({ className: "w-full h-12" })}
+        >
+          <Plus className="h-4 w-4 mr-2" /> Nova revista
         </DialogTrigger>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
