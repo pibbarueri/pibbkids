@@ -153,7 +153,11 @@ export function ChildrenClient({
               {isManager && (
                 <div className="space-y-2 pt-2">
                   <p className="font-medium">Turma</p>
-                  <Select value={classId} onValueChange={(v) => setClassId(v ?? "")}>
+                  <Select
+                    value={classId}
+                    onValueChange={(v) => setClassId(v ?? "")}
+                    items={Object.fromEntries(classes.map((c) => [c.id, c.name]))}
+                  >
                     <SelectTrigger className="h-12">
                       <SelectValue placeholder="Selecione a turma..." />
                     </SelectTrigger>

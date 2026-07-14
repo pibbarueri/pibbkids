@@ -210,7 +210,7 @@ export function ScheduleClient({
           <div className="space-y-3">
             <div className="space-y-1">
               <p className="text-sm font-medium">Tipo de slot</p>
-              <Select value={form.slotType} onValueChange={(v) => setForm((f) => ({ ...f, slotType: v ?? "" }))}>
+              <Select value={form.slotType} onValueChange={(v) => setForm((f) => ({ ...f, slotType: v ?? "" }))} items={SLOT_LABELS}>
                 <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(SLOT_LABELS).map(([value, label]) => (
@@ -223,7 +223,11 @@ export function ScheduleClient({
             {needsClass && (
               <div className="space-y-1">
                 <p className="text-sm font-medium">Turma</p>
-                <Select value={form.classGroupId} onValueChange={(v) => setForm((f) => ({ ...f, classGroupId: v ?? "" }))}>
+                <Select
+                  value={form.classGroupId}
+                  onValueChange={(v) => setForm((f) => ({ ...f, classGroupId: v ?? "" }))}
+                  items={Object.fromEntries(classes.map((c) => [c.id, c.name]))}
+                >
                   <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent>
                     {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -234,7 +238,7 @@ export function ScheduleClient({
 
             <div className="space-y-1">
               <p className="text-sm font-medium">Papel</p>
-              <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v ?? "PROFESSOR" }))}>
+              <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v ?? "PROFESSOR" }))} items={ROLE_LABELS}>
                 <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="PROFESSOR">Professor</SelectItem>
@@ -245,7 +249,11 @@ export function ScheduleClient({
 
             <div className="space-y-1">
               <p className="text-sm font-medium">Voluntário</p>
-              <Select value={form.userId} onValueChange={(v) => setForm((f) => ({ ...f, userId: v ?? "" }))}>
+              <Select
+                value={form.userId}
+                onValueChange={(v) => setForm((f) => ({ ...f, userId: v ?? "" }))}
+                items={Object.fromEntries(volunteers.map((v) => [v.id, v.name]))}
+              >
                 <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
                   {volunteers.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}

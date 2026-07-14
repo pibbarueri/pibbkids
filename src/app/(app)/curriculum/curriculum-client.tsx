@@ -167,7 +167,11 @@ export function CurriculumClient({
           <div className="space-y-3 pt-2">
             <div className="space-y-1">
               <p className="text-sm font-medium">Turma</p>
-              <Select value={form.classGroupId} onValueChange={(v) => setForm((f) => ({ ...f, classGroupId: v ?? "" }))}>
+              <Select
+                value={form.classGroupId}
+                onValueChange={(v) => setForm((f) => ({ ...f, classGroupId: v ?? "" }))}
+                items={Object.fromEntries(classes.map((c) => [c.id, c.name]))}
+              >
                 <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
                   {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -177,7 +181,11 @@ export function CurriculumClient({
 
             <div className="space-y-1">
               <p className="text-sm font-medium">Semestre</p>
-              <Select value={form.semester} onValueChange={(v) => setForm((f) => ({ ...f, semester: v ?? "1" }))}>
+              <Select
+                value={form.semester}
+                onValueChange={(v) => setForm((f) => ({ ...f, semester: v ?? "1" }))}
+                items={{ "1": "1º semestre", "2": "2º semestre" }}
+              >
                 <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1">1º semestre</SelectItem>
@@ -188,7 +196,7 @@ export function CurriculumClient({
 
             <div className="space-y-1">
               <p className="text-sm font-medium">Série</p>
-              <Select value={form.seriesType} onValueChange={(v) => setForm((f) => ({ ...f, seriesType: v ?? "" }))}>
+              <Select value={form.seriesType} onValueChange={(v) => setForm((f) => ({ ...f, seriesType: v ?? "" }))} items={SERIES_LABELS}>
                 <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(SERIES_LABELS).map(([value, label]) => (
@@ -230,7 +238,7 @@ export function CurriculumClient({
 
             <div className="space-y-1">
               <p className="text-sm font-medium">Uso</p>
-              <Select value={form.uso} onValueChange={(v) => setForm((f) => ({ ...f, uso: v ?? "" }))}>
+              <Select value={form.uso} onValueChange={(v) => setForm((f) => ({ ...f, uso: v ?? "" }))} items={USO_LABELS}>
                 <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(USO_LABELS).map(([value, label]) => (

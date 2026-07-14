@@ -165,7 +165,7 @@ export function VolunteersClient({
 
               <div className="space-y-2 pt-2">
                 <p className="font-medium">Perfil de acesso</p>
-                <Select value={newRole} onValueChange={(v) => setNewRole(v ?? "")}>
+                <Select value={newRole} onValueChange={(v) => setNewRole(v ?? "")} items={ROLE_LABELS}>
                   <SelectTrigger className="h-12">
                     <SelectValue />
                   </SelectTrigger>

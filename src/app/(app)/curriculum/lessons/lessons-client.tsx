@@ -214,7 +214,11 @@ export function LessonsClient({
           <div className="space-y-3">
             <div className="space-y-1">
               <p className="text-sm font-medium">Tipo</p>
-              <Select value={form.lessonType} onValueChange={(v) => setForm((f) => ({ ...f, lessonType: v ?? "APOSTILA" }))}>
+              <Select
+                value={form.lessonType}
+                onValueChange={(v) => setForm((f) => ({ ...f, lessonType: v ?? "APOSTILA" }))}
+                items={LESSON_TYPE_LABELS}
+              >
                 <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(LESSON_TYPE_LABELS).map(([value, label]) => (
@@ -228,7 +232,11 @@ export function LessonsClient({
               <>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Revista</p>
-                  <Select value={form.curriculumId} onValueChange={(v) => setForm((f) => ({ ...f, curriculumId: v ?? "" }))}>
+                  <Select
+                    value={form.curriculumId}
+                    onValueChange={(v) => setForm((f) => ({ ...f, curriculumId: v ?? "" }))}
+                    items={Object.fromEntries(availableCurricula.map((c) => [c.id, `${c.title} (${c.seriesNumber})`]))}
+                  >
                     <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                     <SelectContent>
                       {availableCurricula.map((c) => (

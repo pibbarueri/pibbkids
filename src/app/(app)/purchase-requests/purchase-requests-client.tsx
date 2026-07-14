@@ -110,6 +110,7 @@ export function PurchaseRequestsClient({
                 <Select
                   value={form.materialId}
                   onValueChange={(v) => setForm((f) => ({ ...f, materialId: v ?? "" }))}
+                  items={Object.fromEntries(materials.map((m) => [m.id, m.name]))}
                 >
                   <SelectTrigger className="h-12"><SelectValue placeholder="Ou digite abaixo..." /></SelectTrigger>
                   <SelectContent>
