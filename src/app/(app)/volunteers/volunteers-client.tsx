@@ -138,7 +138,7 @@ export function VolunteersClient({
                   <Row label="CPF" value={selected.cpf} />
                   <Row label="Nome da mãe" value={selected.motherName} />
                   {selected.birthdate && (
-                    <Row label="Data de nascimento" value={new Date(selected.birthdate).toLocaleDateString("pt-BR")} />
+                    <Row label="Data de nascimento" value={new Date(selected.birthdate).toLocaleDateString("pt-BR", { timeZone: "UTC" })} />
                   )}
                 </>
               )}

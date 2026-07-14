@@ -61,7 +61,7 @@ export function AttendanceClient({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {new Date(sunday).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+        {new Date(sunday).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" })}
       </p>
 
       {groups.map((group) => {
