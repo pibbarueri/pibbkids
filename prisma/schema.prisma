@@ -17,17 +17,19 @@ model User {
   role              Role
   cpf               String?
   birthdate         DateTime?
-  motherName        String?
+  motherName        String?             @map("mother_name")
   phone             String?
-  documentUrl       String?
-  volunteerStatus   VolunteerStatus     @default(APROVADO)
+  documentUrl       String?             @map("document_url")
+  volunteerStatus   VolunteerStatus     @default(APROVADO) @map("volunteer_status")
   active            Boolean             @default(true)
-  createdAt         DateTime            @default(now())
+  createdAt         DateTime            @default(now()) @map("created_at")
   preferredClasses  UserPreferredClass[]
   functions         VolunteerFunction[]
   scheduleSlots     ScheduleSlot[]
   purchaseRequests  PurchaseRequest[]
   attendance        Attendance[]
+
+  @@map("users")
 }
 
 enum Role {
@@ -36,20 +38,25 @@ enum Role {
   PROFESSOR
   AUXILIAR
   RECEPCAO
+
+  @@map("role")
 }
 
 enum VolunteerStatus {
   PENDENTE
   APROVADO
   REJEITADO
+
+  @@map("volunteer_status")
 }
 
 model VolunteerFunction {
-  userId   String
+  userId   String       @map("user_id")
   user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   function FunctionType
 
   @@id([userId, function])
+  @@map("volunteer_functions")
 }
 
 enum FunctionType {
@@ -59,15 +66,18 @@ enum FunctionType {
   LOUVOR
   RECEPCAO
   TEATRO
+
+  @@map("function_type")
 }
 
 model UserPreferredClass {
-  userId       String
+  userId       String     @map("user_id")
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  classGroupId String
+  classGroupId String     @map("class_group_id")
   classGroup   ClassGroup @relation(fields: [classGroupId], references: [id])
 
   @@id([userId, classGroupId])
+  @@map("user_preferred_classes")
 }
 
 // ─── Crianças ─────────────────────────────────────────────────────────────────
@@ -76,33 +86,39 @@ model Child {
   id                    String       @id @default(cuid())
   name                  String
   birthdate             DateTime
-  classGroupId          String?
+  classGroupId          String?      @map("class_group_id")
   classGroup            ClassGroup?  @relation(fields: [classGroupId], references: [id])
   frequencia            Frequencia
-  fatherName            String?
-  motherName            String?
+  fatherName            String?      @map("father_name")
+  motherName            String?      @map("mother_name")
   phone                 String?
   whatsapp              String?
   allergies             String?
   restrictions          String?
-  revistaCertificateUrl String?
-  parentExpectations    String?
-  parentConsent         Boolean      @default(false)
-  registrationStatus    ChildStatus  @default(PENDENTE)
+  revistaCertificateUrl String?      @map("revista_certificate_url")
+  parentExpectations    String?      @map("parent_expectations")
+  parentConsent         Boolean      @default(false) @map("parent_consent")
+  registrationStatus    ChildStatus  @default(PENDENTE) @map("registration_status")
   active                Boolean      @default(true)
-  createdAt             DateTime     @default(now())
+  createdAt             DateTime     @default(now()) @map("created_at")
   attendance            Attendance[]
+
+  @@map("children")
 }
 
 enum ChildStatus {
   PENDENTE
   APROVADO
+
+  @@map("child_status")
 }
 
 enum Frequencia {
   EBD
   CULTO
   AMBOS
+
+  @@map("frequencia")
 }
 
 // ─── Turmas ───────────────────────────────────────────────────────────────────
@@ -110,7 +126,7 @@ enum Frequencia {
 model ClassGroup {
   id             String               @id @default(cuid())
   name           String               @unique
-  ageRange       String?
+  ageRange       String?              @map("age_range")
   active         Boolean              @default(true)
   children       Child[]
   curricula      Curriculum[]
@@ -118,26 +134,30 @@ model ClassGroup {
   sundayPlans    SundayPlan[]
   preferredBy    UserPreferredClass[]
   events         EventClass[]
+
+  @@map("class_groups")
 }
 
 // ─── Currículos e Revistas ────────────────────────────────────────────────────
 
 model Curriculum {
   id               String     @id @default(cuid())
-  classGroupId     String
+  classGroupId     String     @map("class_group_id")
   classGroup       ClassGroup @relation(fields: [classGroupId], references: [id])
   semester         Int
   year             Int
-  seriesType       SeriesType
-  seriesNumber     Int
+  seriesType       SeriesType @map("series_type")
+  seriesNumber     Int        @map("series_number")
   title            String
-  totalWeeks       Int
+  totalWeeks       Int        @map("total_weeks")
   uso              Frequencia
-  copiasProfessor  Int        @default(0)
-  copiasAluno      Int        @default(0)
-  comprarProfessor Int        @default(0)
-  recursosVisuais  Boolean    @default(false)
+  copiasProfessor  Int        @default(0) @map("copias_professor")
+  copiasAluno      Int        @default(0) @map("copias_aluno")
+  comprarProfessor Int        @default(0) @map("comprar_professor")
+  recursosVisuais  Boolean    @default(false) @map("recursos_visuais")
   sundayPlans      SundayPlan[]
+
+  @@map("curriculums")
 }
 
 enum SeriesType {
@@ -146,28 +166,33 @@ enum SeriesType {
   PLUGUINHO
   JUNIORES
   DETETIVE
+
+  @@map("series_type")
 }
 
 // Plano por domingo: EBD e Culto são entradas separadas para a mesma turma
 model SundayPlan {
   id            String      @id @default(cuid())
   date          DateTime
-  classGroupId  String
+  classGroupId  String      @map("class_group_id")
   classGroup    ClassGroup  @relation(fields: [classGroupId], references: [id])
   tipo          SundayTipo
-  curriculumId  String?
+  curriculumId  String?     @map("curriculum_id")
   curriculum    Curriculum? @relation(fields: [curriculumId], references: [id])
-  licaoNumber   Int?
-  lessonType    LessonType  @default(APOSTILA)
-  specialTitle  String?
+  licaoNumber   Int?        @map("licao_number")
+  lessonType    LessonType  @default(APOSTILA) @map("lesson_type")
+  specialTitle  String?     @map("special_title")
   done          Boolean     @default(false)
 
   @@unique([date, classGroupId, tipo])
+  @@map("sunday_plans")
 }
 
 enum SundayTipo {
   EBD
   CULTO
+
+  @@map("sunday_tipo")
 }
 
 enum LessonType {
@@ -176,6 +201,8 @@ enum LessonType {
   CULTO_INFANTIL
   SEM_AULA
   TEMA_LIVRE
+
+  @@map("lesson_type")
 }
 
 // ─── Escala ───────────────────────────────────────────────────────────────────
@@ -183,14 +210,15 @@ enum LessonType {
 model ScheduleSlot {
   id           String      @id @default(cuid())
   date         DateTime
-  slotType     SlotType
-  classGroupId String?
+  slotType     SlotType    @map("slot_type")
+  classGroupId String?     @map("class_group_id")
   classGroup   ClassGroup? @relation(fields: [classGroupId], references: [id])
   role         SlotRole
-  userId       String
+  userId       String      @map("user_id")
   user         User        @relation(fields: [userId], references: [id])
 
   @@unique([date, slotType, classGroupId, role, userId])
+  @@map("schedule_slots")
 }
 
 enum SlotType {
@@ -200,60 +228,71 @@ enum SlotType {
   LANCHE
   EBD
   CULTO
+
+  @@map("slot_type")
 }
 
 enum SlotRole {
   PROFESSOR
   AUXILIAR
+
+  @@map("slot_role")
 }
 
 // ─── Presença ─────────────────────────────────────────────────────────────────
 
 model Attendance {
   id      String     @id @default(cuid())
-  childId String
+  childId String     @map("child_id")
   child   Child      @relation(fields: [childId], references: [id])
-  userId  String
+  userId  String     @map("user_id")
   user    User       @relation(fields: [userId], references: [id])
   date    DateTime
   tipo    SundayTipo
   present Boolean
 
   @@unique([childId, date, tipo])
+  @@map("attendance")
 }
 
 // ─── Materiais e Compras ──────────────────────────────────────────────────────
 
 model Material {
-  id          String          @id @default(cuid())
+  id          String            @id @default(cuid())
   name        String
   unit        String
-  quantity    Int             @default(0)
-  minQuantity Int             @default(0)
+  quantity    Int               @default(0)
+  minQuantity Int               @default(0) @map("min_quantity")
   movements   StockMovement[]
   requests    PurchaseRequest[]
+
+  @@map("materials")
 }
 
 model StockMovement {
   id         String   @id @default(cuid())
-  materialId String
+  materialId String   @map("material_id")
   material   Material @relation(fields: [materialId], references: [id])
   delta      Int
   reason     String
   date       DateTime @default(now())
+
+  @@map("stock_movements")
 }
 
 model PurchaseRequest {
   id            String        @id @default(cuid())
-  requesterId   String
+  requesterId   String        @map("requester_id")
   requester     User          @relation(fields: [requesterId], references: [id])
-  materialId    String?
+  materialId    String?       @map("material_id")
   material      Material?     @relation(fields: [materialId], references: [id])
-  freeTextItem  String?
+  freeTextItem  String?       @map("free_text_item")
   quantity      Int
   justification String?
   status        RequestStatus @default(PENDENTE)
-  createdAt     DateTime      @default(now())
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@map("purchase_requests")
 }
 
 enum RequestStatus {
@@ -261,6 +300,8 @@ enum RequestStatus {
   APROVADO
   REJEITADO
   COMPRADO
+
+  @@map("request_status")
 }
 
 // ─── Eventos ──────────────────────────────────────────────────────────────────
@@ -271,13 +312,16 @@ model Event {
   date        DateTime
   description String?
   classes     EventClass[]
+
+  @@map("events")
 }
 
 model EventClass {
-  eventId      String
+  eventId      String     @map("event_id")
   event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  classGroupId String
+  classGroupId String     @map("class_group_id")
   classGroup   ClassGroup @relation(fields: [classGroupId], references: [id])
 
   @@id([eventId, classGroupId])
+  @@map("event_classes")
 }
