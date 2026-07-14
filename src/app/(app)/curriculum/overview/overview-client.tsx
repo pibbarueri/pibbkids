@@ -36,7 +36,7 @@ function planLabel(p: Plan | undefined) {
 }
 
 export function OverviewClient({
-  plans,
+  plans: rawPlans,
   classes,
   sundays,
 }: {
@@ -44,6 +44,8 @@ export function OverviewClient({
   classes: ClassGroup[];
   sundays: string[];
 }) {
+  const plans = rawPlans.map((p) => ({ ...p, date: new Date(p.date).toISOString() }));
+
   function copyWhatsApp() {
     const lines = ["📚 *Calendário de Aulas*\n"];
     for (const sunday of sundays) {

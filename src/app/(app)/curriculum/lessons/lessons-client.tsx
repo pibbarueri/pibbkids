@@ -71,7 +71,9 @@ export function LessonsClient({
   isManager: boolean;
   myClassIds: string[];
 }) {
-  const [plans, setPlans] = useState(initialPlans);
+  const [plans, setPlans] = useState(() =>
+    initialPlans.map((p) => ({ ...p, date: new Date(p.date).toISOString() }))
+  );
   const [sundayIdx, setSundayIdx] = useState(0);
   const [editing, setEditing] = useState<{ classGroupId: string; className: string; tipo: string } | null>(null);
   const [form, setForm] = useState({ lessonType: "APOSTILA", curriculumId: "", licaoNumber: "", specialTitle: "" });

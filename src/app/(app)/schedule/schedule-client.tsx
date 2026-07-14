@@ -93,7 +93,9 @@ export function ScheduleClient({
   currentUserId: string;
   isManager: boolean;
 }) {
-  const [slots, setSlots] = useState(initialSlots);
+  const [slots, setSlots] = useState(() =>
+    initialSlots.map((s) => ({ ...s, date: new Date(s.date).toISOString() }))
+  );
   const [sundayIdx, setSundayIdx] = useState(0);
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState({ slotType: "", classGroupId: "", role: "PROFESSOR", userId: "" });

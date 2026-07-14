@@ -37,7 +37,9 @@ export function EventsClient({
   classes: ClassGroup[];
   isManager: boolean;
 }) {
-  const [events, setEvents] = useState(initialEvents);
+  const [events, setEvents] = useState(() =>
+    initialEvents.map((e) => ({ ...e, date: new Date(e.date).toISOString() }))
+  );
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ title: "", date: "", description: "", classGroupIds: [] as string[] });
   const [saving, setSaving] = useState(false);
