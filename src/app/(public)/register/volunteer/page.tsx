@@ -102,8 +102,10 @@ export default function RegisterVolunteerPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Cadastro de Voluntário</CardTitle>
-        <p className="text-sm text-muted-foreground">PIBB Kids</p>
+        <p className="text-2xl font-heading font-extrabold text-primary tracking-tight">
+          PIBB<span className="text-secondary italic ml-1">Kids</span>
+        </p>
+        <CardTitle className="font-heading">Cadastro de Voluntário</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

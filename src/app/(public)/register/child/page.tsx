@@ -77,8 +77,10 @@ export default function RegisterChildPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Cadastro de Criança</CardTitle>
-        <p className="text-sm text-muted-foreground">PIBB Kids</p>
+        <p className="text-2xl font-heading font-extrabold text-primary tracking-tight">
+          PIBB<span className="text-secondary italic ml-1">Kids</span>
+        </p>
+        <CardTitle className="font-heading">Cadastro de Criança</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

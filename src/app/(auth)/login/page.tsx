@@ -37,7 +37,9 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center p-4 bg-muted/40">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">PIBB Kids</CardTitle>
+          <CardTitle className="text-4xl font-heading font-extrabold text-primary tracking-tight">
+            PIBB<span className="text-secondary italic ml-1">Kids</span>
+          </CardTitle>
           <p className="text-sm text-muted-foreground">
             Entre com seu email e senha
           </p>
