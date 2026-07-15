@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { canManage } from "@/lib/permissions";
+import { isLeadership } from "@/lib/permissions";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session || !canManage(session.user.role)) {
+  if (!session || !isLeadership(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

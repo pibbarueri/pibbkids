@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManage } from "@/lib/permissions";
+import { canManage, isLeadership } from "@/lib/permissions";
 import { ScheduleClient } from "./schedule-client";
 
 function sundaysInMonth(year: number, month: number): Date[] {
@@ -17,7 +17,8 @@ function sundaysInMonth(year: number, month: number): Date[] {
 export default async function SchedulePage() {
   const session = await auth();
   const role = session!.user.role;
-  const isManager = canManage(role);
+  const canViewAll = canManage(role);
+  const canEdit = isLeadership(role);
 
   const now = new Date();
   const year = now.getFullYear();
@@ -41,17 +42,22 @@ export default async function SchedulePage() {
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
-    isManager
+    canEdit
       ? prisma.user.findMany({
           where: { active: true, volunteerStatus: "APROVADO" },
           orderBy: { name: "asc" },
-          select: { id: true, name: true, role: true },
+          select: {
+            id: true,
+            name: true,
+            role: true,
+            preferredClasses: { select: { classGroupId: true } },
+          },
         })
       : Promise.resolve([]),
   ]);
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 pb-24 space-y-4">
       <h1 className="text-xl font-bold">Escala</h1>
       <ScheduleClient
         initialSlots={slots as any}
@@ -59,7 +65,8 @@ export default async function SchedulePage() {
         volunteers={volunteers}
         sundays={sundays.map((d) => d.toISOString())}
         currentUserId={session!.user.id}
-        isManager={isManager}
+        canViewAll={canViewAll}
+        canEdit={canEdit}
       />
     </div>
   );
