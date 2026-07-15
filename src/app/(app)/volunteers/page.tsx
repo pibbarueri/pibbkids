@@ -12,6 +12,12 @@ export default async function VolunteersPage() {
 
   const showSensitive = isLeadership(role);
 
+  const classes = await prisma.classGroup.findMany({
+    where: { active: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+
   const volunteers = await prisma.user.findMany({
     orderBy: [{ volunteerStatus: "asc" }, { name: "asc" }],
     select: {
@@ -33,10 +39,11 @@ export default async function VolunteersPage() {
   });
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 pb-24 space-y-4">
       <h1 className="text-xl font-bold">Voluntários</h1>
       <VolunteersClient
         initialVolunteers={volunteers as any}
+        classes={classes}
         isLeadership={showSensitive}
       />
     </div>

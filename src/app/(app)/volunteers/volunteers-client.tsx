@@ -1,14 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -17,6 +21,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Pencil, Plus, Search } from "lucide-react";
+
+const emptyVolunteerForm = {
+  name: "",
+  email: "",
+  password: "",
+  phone: "",
+  cpf: "",
+  birthdate: "",
+  motherName: "",
+  role: "AUXILIAR",
+};
+
+const emptyEditForm = {
+  name: "",
+  email: "",
+  phone: "",
+  cpf: "",
+  birthdate: "",
+  motherName: "",
+  role: "AUXILIAR",
+  functions: [] as string[],
+  preferredClassIds: [] as string[],
+};
 
 const ROLE_LABELS: Record<string, string> = {
   LIDERANCA: "Liderança",
@@ -35,6 +63,7 @@ const FUNCTION_LABELS: Record<string, string> = {
   TEATRO: "Teatro",
 };
 
+type ClassGroup = { id: string; name: string };
 type Volunteer = {
   id: string;
   name: string;
@@ -52,30 +81,100 @@ type Volunteer = {
 
 export function VolunteersClient({
   initialVolunteers,
+  classes,
   isLeadership,
 }: {
   initialVolunteers: Volunteer[];
+  classes: ClassGroup[];
   isLeadership: boolean;
 }) {
   const [volunteers, setVolunteers] = useState(initialVolunteers);
   const [selected, setSelected] = useState<Volunteer | null>(null);
-  const [newRole, setNewRole] = useState("");
   const [saving, setSaving] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addForm, setAddForm] = useState(emptyVolunteerForm);
+  const [addSaving, setAddSaving] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<Volunteer | null>(null);
+  const [editForm, setEditForm] = useState(emptyEditForm);
+  const [editSaving, setEditSaving] = useState(false);
 
-  const pending = volunteers.filter((v) => v.volunteerStatus === "PENDENTE");
-  const approved = volunteers.filter((v) => v.volunteerStatus === "APROVADO");
+  const filtered = volunteers.filter((v) => v.name.toLowerCase().includes(search.trim().toLowerCase()));
+  const pending = filtered.filter((v) => v.volunteerStatus === "PENDENTE");
+  const approved = filtered.filter((v) => v.volunteerStatus === "APROVADO");
 
-  async function approve(v: Volunteer) {
-    setSaving(true);
-    const res = await fetch(`/api/volunteers/${v.id}`, {
+  const addValid = addForm.name && addForm.email && addForm.password.length >= 6 && addForm.role;
+
+  async function createVolunteer() {
+    if (!addValid) return;
+    setAddSaving(true);
+    setAddError(null);
+    const res = await fetch("/api/volunteers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(addForm),
+    });
+    if (res.ok) {
+      const created = await res.json();
+      setVolunteers((prev) => [...prev, created]);
+      setAddOpen(false);
+      setAddForm(emptyVolunteerForm);
+    } else {
+      const body = await res.json();
+      setAddError(body.error ?? "Erro ao cadastrar voluntário.");
+    }
+    setAddSaving(false);
+  }
+
+  function openEdit(v: Volunteer) {
+    setEditForm({
+      name: v.name,
+      email: v.email,
+      phone: v.phone ?? "",
+      cpf: v.cpf ?? "",
+      birthdate: v.birthdate ? new Date(v.birthdate).toISOString().slice(0, 10) : "",
+      motherName: v.motherName ?? "",
+      role: v.role,
+      functions: v.functions.map((f) => f.function),
+      preferredClassIds: v.preferredClasses.map((c) => c.classGroupId),
+    });
+    setEditing(v);
+  }
+
+  function toggleFunction(fn: string) {
+    setEditForm((f) => ({
+      ...f,
+      functions: f.functions.includes(fn) ? f.functions.filter((x) => x !== fn) : [...f.functions, fn],
+    }));
+  }
+
+  function toggleClass(id: string) {
+    setEditForm((f) => ({
+      ...f,
+      preferredClassIds: f.preferredClassIds.includes(id)
+        ? f.preferredClassIds.filter((x) => x !== id)
+        : [...f.preferredClassIds, id],
+    }));
+  }
+
+  const editValid = editForm.name && editForm.email && editForm.role;
+
+  async function saveEdit() {
+    if (!editing || !editValid) return;
+    setEditSaving(true);
+    const res = await fetch(`/api/volunteers/${editing.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ volunteerStatus: "APROVADO", role: newRole || v.role }),
+      body: JSON.stringify({
+        ...editForm,
+        ...(editing.volunteerStatus === "PENDENTE" ? { volunteerStatus: "APROVADO" } : {}),
+      }),
     });
     const updated = await res.json();
-    setVolunteers((prev) => prev.map((x) => (x.id === v.id ? updated : x)));
-    setSaving(false);
-    setSelected(null);
+    setVolunteers((prev) => prev.map((x) => (x.id === editing.id ? updated : x)));
+    setEditSaving(false);
+    setEditing(null);
   }
 
   async function toggleActive(v: Volunteer) {
@@ -90,6 +189,79 @@ export function VolunteersClient({
 
   return (
     <>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setAddForm(emptyVolunteerForm); setAddError(null); } }}>
+        <DialogTrigger
+          className={cn(buttonVariants({ size: "icon" }), "fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40")}
+          aria-label="Novo voluntário"
+        >
+          <Plus className="h-6 w-6" />
+        </DialogTrigger>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Novo voluntário</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Nome *</p>
+              <Input className="h-12" value={addForm.name} onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Email *</p>
+              <Input type="email" className="h-12" value={addForm.email} onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Senha *</p>
+              <Input type="password" className="h-12" value={addForm.password} onChange={(e) => setAddForm((f) => ({ ...f, password: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Telefone</p>
+              <Input type="tel" className="h-12" value={addForm.phone} onChange={(e) => setAddForm((f) => ({ ...f, phone: e.target.value }))} />
+            </div>
+            {isLeadership && (
+              <>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">CPF</p>
+                  <Input className="h-12" value={addForm.cpf} onChange={(e) => setAddForm((f) => ({ ...f, cpf: e.target.value }))} />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Data de nascimento</p>
+                  <Input type="date" className="h-12" value={addForm.birthdate} onChange={(e) => setAddForm((f) => ({ ...f, birthdate: e.target.value }))} />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Nome da mãe</p>
+                  <Input className="h-12" value={addForm.motherName} onChange={(e) => setAddForm((f) => ({ ...f, motherName: e.target.value }))} />
+                </div>
+              </>
+            )}
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Perfil de acesso *</p>
+              <Select value={addForm.role} onValueChange={(v) => setAddForm((f) => ({ ...f, role: v ?? "AUXILIAR" }))} items={ROLE_LABELS}>
+                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {addError && <p className="text-sm text-destructive">{addError}</p>}
+            <Button className="w-full h-12" disabled={!addValid || addSaving} onClick={createVolunteer}>
+              Cadastrar voluntário
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar voluntário..."
+          className="h-11 pl-9"
+        />
+      </div>
+
       <Tabs defaultValue={pending.length > 0 ? "pending" : "approved"}>
         <TabsList className="w-full">
           <TabsTrigger value="pending" className="flex-1">
@@ -103,22 +275,22 @@ export function VolunteersClient({
         <TabsContent value="pending" className="space-y-2 mt-3">
           {pending.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
-              Nenhum voluntário pendente.
+              {search ? "Nenhum voluntário encontrado." : "Nenhum voluntário pendente."}
             </p>
           )}
           {pending.map((v) => (
-            <VolunteerCard key={v.id} volunteer={v} onSelect={() => { setSelected(v); setNewRole(v.role); }} />
+            <VolunteerCard key={v.id} volunteer={v} onSelect={() => setSelected(v)} onEdit={() => openEdit(v)} />
           ))}
         </TabsContent>
 
         <TabsContent value="approved" className="space-y-2 mt-3">
           {approved.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
-              Nenhum voluntário aprovado.
+              {search ? "Nenhum voluntário encontrado." : "Nenhum voluntário aprovado."}
             </p>
           )}
           {approved.map((v) => (
-            <VolunteerCard key={v.id} volunteer={v} onSelect={() => { setSelected(v); setNewRole(v.role); }} />
+            <VolunteerCard key={v.id} volunteer={v} onSelect={() => setSelected(v)} onEdit={() => openEdit(v)} />
           ))}
         </TabsContent>
       </Tabs>
@@ -163,45 +335,101 @@ export function VolunteersClient({
                 </div>
               )}
 
-              <div className="space-y-2 pt-2">
-                <p className="font-medium">Perfil de acesso</p>
-                <Select value={newRole} onValueChange={(v) => setNewRole(v ?? "")} items={ROLE_LABELS}>
-                  <SelectTrigger className="h-12">
-                    <SelectValue />
-                  </SelectTrigger>
+              <Row label="Perfil de acesso" value={ROLE_LABELS[selected.role] ?? selected.role} />
+              <Row label="Status" value={selected.active ? "Ativo" : "Inativo"} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar voluntário</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Nome *</p>
+                <Input className="h-12" value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Email *</p>
+                <Input type="email" className="h-12" value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Telefone</p>
+                <Input type="tel" className="h-12" value={editForm.phone} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} />
+              </div>
+              {isLeadership && (
+                <>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">CPF</p>
+                    <Input className="h-12" value={editForm.cpf} onChange={(e) => setEditForm((f) => ({ ...f, cpf: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Data de nascimento</p>
+                    <Input type="date" className="h-12" value={editForm.birthdate} onChange={(e) => setEditForm((f) => ({ ...f, birthdate: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Nome da mãe</p>
+                    <Input className="h-12" value={editForm.motherName} onChange={(e) => setEditForm((f) => ({ ...f, motherName: e.target.value }))} />
+                  </div>
+                </>
+              )}
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Perfil de acesso *</p>
+                <Select value={editForm.role} onValueChange={(v) => setEditForm((f) => ({ ...f, role: v ?? "AUXILIAR" }))} items={ROLE_LABELS}>
+                  <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(ROLE_LABELS).map(([value, label]) => (
                       <SelectItem key={value} value={value}>{label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-
-                {selected.volunteerStatus === "PENDENTE" ? (
-                  <Button
-                    className="w-full h-12"
-                    disabled={saving}
-                    onClick={() => approve(selected)}
-                  >
-                    Aprovar voluntário
-                  </Button>
-                ) : (
-                  <div className="flex gap-2">
-                    <Button
-                      className="flex-1 h-12"
-                      disabled={saving}
-                      onClick={() => approve(selected)}
-                    >
-                      Salvar perfil
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-12"
-                      onClick={() => { toggleActive(selected); setSelected(null); }}
-                    >
-                      {selected.active ? "Desativar" : "Ativar"}
-                    </Button>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Funções</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {Object.entries(FUNCTION_LABELS).map(([value, label]) => (
+                    <label key={value} className="flex items-center gap-3 p-2 border rounded-lg cursor-pointer">
+                      <Checkbox
+                        checked={editForm.functions.includes(value)}
+                        onCheckedChange={() => toggleFunction(value)}
+                      />
+                      <span className="text-sm">{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {classes.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Turmas preferidas</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {classes.map((cls) => (
+                      <label key={cls.id} className="flex items-center gap-3 p-2 border rounded-lg cursor-pointer">
+                        <Checkbox
+                          checked={editForm.preferredClassIds.includes(cls.id)}
+                          onCheckedChange={() => toggleClass(cls.id)}
+                        />
+                        <span className="text-sm">{cls.name}</span>
+                      </label>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button className="flex-1 h-12" disabled={!editValid || editSaving} onClick={saveEdit}>
+                  {editing.volunteerStatus === "PENDENTE" ? "Salvar e aprovar" : "Salvar alterações"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-12"
+                  disabled={saving}
+                  onClick={() => { toggleActive(editing); setEditing(null); }}
+                >
+                  {editing.active ? "Desativar" : "Ativar"}
+                </Button>
               </div>
             </div>
           )}
@@ -211,7 +439,15 @@ export function VolunteersClient({
   );
 }
 
-function VolunteerCard({ volunteer, onSelect }: { volunteer: Volunteer; onSelect: () => void }) {
+function VolunteerCard({
+  volunteer,
+  onSelect,
+  onEdit,
+}: {
+  volunteer: Volunteer;
+  onSelect: () => void;
+  onEdit: () => void;
+}) {
   return (
     <button
       onClick={onSelect}
@@ -225,12 +461,22 @@ function VolunteerCard({ volunteer, onSelect }: { volunteer: Volunteer; onSelect
             {!volunteer.active && " · Inativo"}
           </p>
         </div>
-        {volunteer.volunteerStatus === "PENDENTE" && (
-          <Badge variant="secondary">Pendente</Badge>
-        )}
-        {!volunteer.active && (
-          <Badge variant="outline" className="text-muted-foreground">Inativo</Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {volunteer.volunteerStatus === "PENDENTE" && (
+            <Badge variant="secondary">Pendente</Badge>
+          )}
+          {!volunteer.active && (
+            <Badge variant="outline" className="text-muted-foreground">Inativo</Badge>
+          )}
+          <span
+            role="button"
+            aria-label="Editar"
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="p-1 -m-1"
+          >
+            <Pencil className="h-4 w-4 text-muted-foreground" />
+          </span>
+        </div>
       </div>
     </button>
   );
