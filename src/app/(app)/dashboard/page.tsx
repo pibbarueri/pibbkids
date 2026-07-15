@@ -1,7 +1,18 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
-import { ShoppingCart, PartyPopper, Users } from "lucide-react";
+import { ShoppingCart, PartyPopper, ClipboardCheck, Package } from "lucide-react";
+import { EventsCalendar } from "@/components/dashboard/events-calendar";
+import { NextSundaySchedule } from "@/components/dashboard/next-sunday-schedule";
+
+function getNextSunday() {
+  const now = new Date();
+  const utc = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const diff = utc.getUTCDay() === 0 ? 0 : 7 - utc.getUTCDay();
+  utc.setUTCDate(utc.getUTCDate() + diff);
+  return utc;
+}
 
 const ROLE_LABELS: Record<Role, string> = {
   LIDERANCA: "Liderança",
@@ -18,8 +29,26 @@ export default async function DashboardPage() {
   const shortcuts = [
     { href: "/purchase-requests", label: "Compras", icon: ShoppingCart, roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR] },
     { href: "/events", label: "Eventos", icon: PartyPopper, roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR, Role.RECEPCAO] },
-    { href: "/volunteers", label: "Voluntários", icon: Users, roles: [Role.LIDERANCA, Role.COORDENACAO] },
+    { href: "/attendance", label: "Presença", icon: ClipboardCheck, roles: [Role.LIDERANCA, Role.COORDENACAO, Role.RECEPCAO] },
+    { href: "/materials", label: "Materiais", icon: Package, roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR] },
   ].filter((s) => s.roles.includes(role));
+
+  const nextSunday = getNextSunday();
+
+  const [events, scheduleSlots] = await Promise.all([
+    prisma.event.findMany({
+      where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+      orderBy: { date: "asc" },
+      select: { id: true, title: true, date: true },
+    }),
+    prisma.scheduleSlot.findMany({
+      where: { date: nextSunday },
+      include: {
+        user: { select: { name: true } },
+        classGroup: { select: { name: true } },
+      },
+    }),
+  ]);
 
   return (
     <div className="p-4 space-y-4">
@@ -42,6 +71,9 @@ export default async function DashboardPage() {
           ))}
         </div>
       )}
+
+      <EventsCalendar events={events.map((e) => ({ ...e, date: e.date.toISOString() }))} />
+      <NextSundaySchedule date={nextSunday.toISOString()} slots={scheduleSlots} />
     </div>
   );
 }

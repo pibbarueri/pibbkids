@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
-import { Users, CalendarDays, BookOpen, Package, Home, ClipboardCheck } from "lucide-react";
+import { Users, CalendarDays, BookOpen, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -27,6 +27,12 @@ const NAV_ITEMS: NavItem[] = [
     roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR, Role.RECEPCAO],
   },
   {
+    href: "/volunteers",
+    label: "Voluntários",
+    icon: <Users className="h-5 w-5" />,
+    roles: [Role.LIDERANCA, Role.COORDENACAO],
+  },
+  {
     href: "/schedule",
     label: "Escala",
     icon: <CalendarDays className="h-5 w-5" />,
@@ -37,18 +43,6 @@ const NAV_ITEMS: NavItem[] = [
     label: "Aulas",
     icon: <BookOpen className="h-5 w-5" />,
     roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR],
-  },
-  {
-    href: "/materials",
-    label: "Materiais",
-    icon: <Package className="h-5 w-5" />,
-    roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR],
-  },
-  {
-    href: "/attendance",
-    label: "Presença",
-    icon: <ClipboardCheck className="h-5 w-5" />,
-    roles: [Role.LIDERANCA, Role.COORDENACAO, Role.RECEPCAO],
   },
 ];
 
