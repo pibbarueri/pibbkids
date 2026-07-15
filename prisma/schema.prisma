@@ -83,34 +83,23 @@ model UserPreferredClass {
 // ─── Crianças ─────────────────────────────────────────────────────────────────
 
 model Child {
-  id                    String       @id @default(cuid())
-  name                  String
-  birthdate             DateTime
-  classGroupId          String?      @map("class_group_id")
-  classGroup            ClassGroup?  @relation(fields: [classGroupId], references: [id])
-  frequencia            Frequencia
-  fatherName            String?      @map("father_name")
-  motherName            String?      @map("mother_name")
-  phone                 String?
-  whatsapp              String?
-  allergies             String?
-  restrictions          String?
-  revistaCertificateUrl String?      @map("revista_certificate_url")
-  parentExpectations    String?      @map("parent_expectations")
-  parentConsent         Boolean      @default(false) @map("parent_consent")
-  registrationStatus    ChildStatus  @default(PENDENTE) @map("registration_status")
-  active                Boolean      @default(true)
-  createdAt             DateTime     @default(now()) @map("created_at")
-  attendance            Attendance[]
+  id           String       @id @default(cuid())
+  name         String
+  birthdate    DateTime     @db.Date
+  classGroupId String?      @map("class_group_id")
+  classGroup   ClassGroup?  @relation(fields: [classGroupId], references: [id])
+  frequencia   Frequencia
+  fatherName   String?      @map("father_name")
+  motherName   String?      @map("mother_name")
+  phoneDad     String?      @map("phone_dad")
+  phoneMom     String?      @map("phone_mom")
+  allergies    String?
+  restrictions String?
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  attendance   Attendance[]
 
   @@map("children")
-}
-
-enum ChildStatus {
-  PENDENTE
-  APROVADO
-
-  @@map("child_status")
 }
 
 enum Frequencia {

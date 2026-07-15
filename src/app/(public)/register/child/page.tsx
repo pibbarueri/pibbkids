@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -24,13 +23,11 @@ const schema = z.object({
   birthdate: z.string().min(1, "Data de nascimento obrigatória"),
   fatherName: z.string().optional(),
   motherName: z.string().optional(),
-  phone: z.string().min(8, "Telefone obrigatório"),
-  whatsapp: z.string().optional(),
+  phoneDad: z.string().min(8, "Telefone obrigatório"),
+  phoneMom: z.string().optional(),
   frequencia: z.nativeEnum(Frequencia),
   allergies: z.string().optional(),
   restrictions: z.string().optional(),
-  parentExpectations: z.string().optional(),
-  parentConsent: z.literal(true, { message: "Aceite o termo de ciência" }),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -47,7 +44,6 @@ export default function RegisterChildPage() {
     register,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
@@ -100,12 +96,12 @@ export default function RegisterChildPage() {
             <Input {...register("motherName")} className="h-12" />
           </Field>
 
-          <Field label="Telefone de contato *" error={errors.phone?.message}>
-            <Input type="tel" {...register("phone")} className="h-12" />
+          <Field label="Telefone Pai *" error={errors.phoneDad?.message}>
+            <Input type="tel" {...register("phoneDad")} className="h-12" />
           </Field>
 
-          <Field label="WhatsApp" error={errors.whatsapp?.message}>
-            <Input type="tel" {...register("whatsapp")} className="h-12" />
+          <Field label="Telefone Mãe" error={errors.phoneMom?.message}>
+            <Input type="tel" {...register("phoneMom")} className="h-12" />
           </Field>
 
           <Field label="Frequência *" error={errors.frequencia?.message}>
@@ -138,29 +134,6 @@ export default function RegisterChildPage() {
               rows={2}
             />
           </Field>
-
-          <Field
-            label="O que você espera do Ministério Infantil?"
-            error={errors.parentExpectations?.message}
-          >
-            <Textarea {...register("parentExpectations")} rows={3} />
-          </Field>
-
-          <div className="flex items-start gap-3 py-2">
-            <Checkbox
-              id="consent"
-              onCheckedChange={(checked) =>
-                setValue("parentConsent", checked === true ? true : (undefined as unknown as true))
-              }
-              className="mt-0.5"
-            />
-            <label htmlFor="consent" className="text-sm leading-relaxed cursor-pointer">
-              Li e estou ciente das regras e responsabilidades do Ministério Infantil da PIBB.
-            </label>
-          </div>
-          {errors.parentConsent && (
-            <p className="text-sm text-destructive">{errors.parentConsent.message}</p>
-          )}
 
           <Button type="submit" className="w-full h-12" disabled={isSubmitting}>
             {isSubmitting ? "Enviando..." : "Enviar cadastro"}

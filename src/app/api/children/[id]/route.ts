@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { canManage, isLeadership } from "@/lib/permissions";
+import { canManage } from "@/lib/permissions";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -12,19 +12,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json();
 
-  // Delete certificate file — leadership only
-  if (body.revistaCertificateUrl === null && !isLeadership(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   const child = await prisma.child.update({
     where: { id },
     data: {
-      ...(body.registrationStatus !== undefined && { registrationStatus: body.registrationStatus }),
+      ...(body.name !== undefined && { name: body.name }),
+      ...(body.birthdate !== undefined && { birthdate: new Date(body.birthdate) }),
+      ...(body.fatherName !== undefined && { fatherName: body.fatherName }),
+      ...(body.motherName !== undefined && { motherName: body.motherName }),
+      ...(body.phoneDad !== undefined && { phoneDad: body.phoneDad }),
+      ...(body.phoneMom !== undefined && { phoneMom: body.phoneMom }),
+      ...(body.frequencia !== undefined && { frequencia: body.frequencia }),
+      ...(body.allergies !== undefined && { allergies: body.allergies }),
+      ...(body.restrictions !== undefined && { restrictions: body.restrictions }),
       ...(body.classGroupId !== undefined && { classGroupId: body.classGroupId }),
-      ...(body.revistaCertificateUrl !== undefined && {
-        revistaCertificateUrl: body.revistaCertificateUrl,
-      }),
     },
     include: { classGroup: { select: { name: true } } },
   });

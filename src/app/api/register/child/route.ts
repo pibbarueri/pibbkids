@@ -8,13 +8,11 @@ const schema = z.object({
   birthdate: z.string(),
   fatherName: z.string().optional(),
   motherName: z.string().optional(),
-  phone: z.string().min(8),
-  whatsapp: z.string().optional(),
+  phoneDad: z.string().min(8),
+  phoneMom: z.string().optional(),
   frequencia: z.nativeEnum(Frequencia),
   allergies: z.string().optional(),
   restrictions: z.string().optional(),
-  parentExpectations: z.string().optional(),
-  parentConsent: z.literal(true, { message: "Termo de ciência obrigatório" }),
 });
 
 export async function POST(req: NextRequest) {
@@ -25,14 +23,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ errors: parsed.error.flatten().fieldErrors }, { status: 422 });
   }
 
-  const { birthdate, parentConsent, ...rest } = parsed.data;
+  const { birthdate, ...rest } = parsed.data;
 
   const child = await prisma.child.create({
     data: {
       ...rest,
       birthdate: new Date(birthdate),
-      parentConsent,
-      registrationStatus: "PENDENTE",
     },
   });
 

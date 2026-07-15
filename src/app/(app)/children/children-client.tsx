@@ -1,15 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Role } from "@prisma/client";
+import { cn } from "@/lib/utils";
+import { Role, Frequencia } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -18,7 +22,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Pencil, Plus, Search } from "lucide-react";
+
+const FREQUENCIA_LABELS: Record<string, string> = {
+  EBD: "Escola Dominical (EBD)",
+  CULTO: "Culto Infantil",
+  AMBOS: "EBD e Culto",
+};
+
+const emptyChildForm = {
+  name: "",
+  birthdate: "",
+  fatherName: "",
+  motherName: "",
+  phoneDad: "",
+  phoneMom: "",
+  frequencia: "" as Frequencia | "",
+  allergies: "",
+  restrictions: "",
+  classGroupId: "",
+};
 
 type ClassGroup = { id: string; name: string };
 type Child = {
@@ -28,11 +51,10 @@ type Child = {
   frequencia: string;
   fatherName: string | null;
   motherName: string | null;
-  phone: string | null;
-  whatsapp: string | null;
+  phoneDad: string | null;
+  phoneMom: string | null;
   allergies: string | null;
   restrictions: string | null;
-  registrationStatus: string;
   classGroup: { name: string } | null;
   classGroupId: string | null;
 };
@@ -50,28 +72,162 @@ export function ChildrenClient({
 }) {
   const [children, setChildren] = useState(initialChildren);
   const [selected, setSelected] = useState<Child | null>(null);
-  const [classId, setClassId] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addForm, setAddForm] = useState(emptyChildForm);
+  const [addSaving, setAddSaving] = useState(false);
+  const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<Child | null>(null);
+  const [editForm, setEditForm] = useState(emptyChildForm);
+  const [editSaving, setEditSaving] = useState(false);
 
-  const pending = children.filter((c) => c.registrationStatus === "PENDENTE");
-  const approved = children.filter((c) => c.registrationStatus === "APROVADO");
+  const filtered = children.filter((c) => c.name.toLowerCase().includes(search.trim().toLowerCase()));
+  const pending = filtered.filter((c) => !c.classGroupId);
+  const approved = filtered.filter((c) => !!c.classGroupId);
 
-  async function approve(child: Child) {
-    if (!classId) return;
-    setSaving(true);
-    const res = await fetch(`/api/children/${child.id}`, {
+  const addValid = addForm.name && addForm.birthdate && addForm.frequencia && addForm.classGroupId;
+
+  async function createChild() {
+    if (!addValid) return;
+    setAddSaving(true);
+    const res = await fetch("/api/children", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(addForm),
+    });
+    if (res.ok) {
+      const created = await res.json();
+      setChildren((prev) => [...prev, created]);
+      setAddOpen(false);
+      setAddForm(emptyChildForm);
+    }
+    setAddSaving(false);
+  }
+
+  function openEdit(child: Child) {
+    setEditForm({
+      name: child.name,
+      birthdate: new Date(child.birthdate).toISOString().slice(0, 10),
+      fatherName: child.fatherName ?? "",
+      motherName: child.motherName ?? "",
+      phoneDad: child.phoneDad ?? "",
+      phoneMom: child.phoneMom ?? "",
+      frequencia: child.frequencia as Frequencia,
+      allergies: child.allergies ?? "",
+      restrictions: child.restrictions ?? "",
+      classGroupId: child.classGroupId ?? "",
+    });
+    setEditing(child);
+  }
+
+  const editValid = editForm.name && editForm.birthdate && editForm.frequencia;
+
+  async function saveEdit() {
+    if (!editing || !editValid) return;
+    setEditSaving(true);
+    const res = await fetch(`/api/children/${editing.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ registrationStatus: "APROVADO", classGroupId: classId }),
+      body: JSON.stringify(editForm),
     });
     const updated = await res.json();
-    setChildren((prev) => prev.map((c) => (c.id === child.id ? updated : c)));
-    setSaving(false);
-    setSelected(null);
+    setChildren((prev) => prev.map((c) => (c.id === editing.id ? updated : c)));
+    setEditSaving(false);
+    setEditing(null);
   }
 
   return (
     <>
+      {isManager && (
+        <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setAddForm(emptyChildForm); }}>
+          <DialogTrigger
+            className={cn(buttonVariants({ size: "icon" }), "fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40")}
+            aria-label="Nova criança"
+          >
+            <Plus className="h-6 w-6" />
+          </DialogTrigger>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Nova criança</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Nome *</p>
+                <Input className="h-12" value={addForm.name} onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Data de nascimento *</p>
+                <Input type="date" className="h-12" value={addForm.birthdate} onChange={(e) => setAddForm((f) => ({ ...f, birthdate: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Nome do pai</p>
+                <Input className="h-12" value={addForm.fatherName} onChange={(e) => setAddForm((f) => ({ ...f, fatherName: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Nome da mãe</p>
+                <Input className="h-12" value={addForm.motherName} onChange={(e) => setAddForm((f) => ({ ...f, motherName: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Telefone Pai</p>
+                <Input type="tel" className="h-12" value={addForm.phoneDad} onChange={(e) => setAddForm((f) => ({ ...f, phoneDad: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Telefone Mãe</p>
+                <Input type="tel" className="h-12" value={addForm.phoneMom} onChange={(e) => setAddForm((f) => ({ ...f, phoneMom: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Frequência *</p>
+                <Select
+                  value={addForm.frequencia}
+                  onValueChange={(v) => setAddForm((f) => ({ ...f, frequencia: (v as Frequencia) ?? "" }))}
+                  items={FREQUENCIA_LABELS}
+                >
+                  <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(FREQUENCIA_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Turma *</p>
+                <Select
+                  value={addForm.classGroupId}
+                  onValueChange={(v) => setAddForm((f) => ({ ...f, classGroupId: v ?? "" }))}
+                  items={Object.fromEntries(classes.map((c) => [c.id, c.name]))}
+                >
+                  <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {classes.map((cls) => <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Alergias</p>
+                <Textarea rows={2} value={addForm.allergies} onChange={(e) => setAddForm((f) => ({ ...f, allergies: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Cuidados especiais / restrições</p>
+                <Textarea rows={2} value={addForm.restrictions} onChange={(e) => setAddForm((f) => ({ ...f, restrictions: e.target.value }))} />
+              </div>
+              <Button className="w-full h-12" disabled={!addValid || addSaving} onClick={createChild}>
+                Cadastrar criança
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar criança..."
+          className="h-11 pl-9"
+        />
+      </div>
+
       <Tabs defaultValue={isManager && pending.length > 0 ? "pending" : "approved"}>
         {isManager && (
           <TabsList className="w-full">
@@ -88,15 +244,17 @@ export function ChildrenClient({
           <TabsContent value="pending" className="space-y-2 mt-3">
             {pending.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-8">
-                Nenhum cadastro pendente.
+                {search ? "Nenhuma criança encontrada." : "Nenhum cadastro pendente."}
               </p>
             )}
             {pending.map((child) => (
               <ChildCard
                 key={child.id}
                 child={child}
-                onSelect={() => { setSelected(child); setClassId(""); }}
+                onSelect={() => setSelected(child)}
+                onEdit={() => openEdit(child)}
                 showActions
+                canEdit={isManager}
               />
             ))}
           </TabsContent>
@@ -105,15 +263,17 @@ export function ChildrenClient({
         <TabsContent value="approved" className="space-y-2 mt-3">
           {approved.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
-              Nenhuma criança cadastrada.
+              {search ? "Nenhuma criança encontrada." : "Nenhuma criança cadastrada."}
             </p>
           )}
           {approved.map((child) => (
             <ChildCard
               key={child.id}
               child={child}
-              onSelect={() => { setSelected(child); setClassId(child.classGroupId ?? ""); }}
+              onSelect={() => setSelected(child)}
+              onEdit={() => openEdit(child)}
               showActions={isManager}
+              canEdit={isManager}
             />
           ))}
         </TabsContent>
@@ -126,11 +286,13 @@ export function ChildrenClient({
           </DialogHeader>
           {selected && (
             <div className="space-y-3 text-sm">
-              <Row label="Frequência" value={selected.frequencia} />
+              <Row label="Turma" value={selected.classGroup?.name ?? "Sem turma"} />
+              <Row label="Data de nascimento" value={new Date(selected.birthdate).toLocaleDateString("pt-BR", { timeZone: "UTC" })} />
+              <Row label="Frequência" value={FREQUENCIA_LABELS[selected.frequencia] ?? selected.frequencia} />
               <Row label="Pai" value={selected.fatherName} />
               <Row label="Mãe" value={selected.motherName} />
-              <Row label="Telefone" value={selected.phone} />
-              <Row label="WhatsApp" value={selected.whatsapp} />
+              <Row label="Telefone Pai" value={selected.phoneDad} />
+              <Row label="Telefone Mãe" value={selected.phoneMom} />
               {selected.allergies && (
                 <div className="flex gap-2 p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
                   <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
@@ -149,37 +311,81 @@ export function ChildrenClient({
                   </div>
                 </div>
               )}
-
-              {isManager && (
-                <div className="space-y-2 pt-2">
-                  <p className="font-medium">Turma</p>
-                  <Select
-                    value={classId}
-                    onValueChange={(v) => setClassId(v ?? "")}
-                    items={Object.fromEntries(classes.map((c) => [c.id, c.name]))}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Selecione a turma..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classes.map((cls) => (
-                        <SelectItem key={cls.id} value={cls.id}>
-                          {cls.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    className="w-full h-12"
-                    disabled={!classId || saving}
-                    onClick={() => approve(selected)}
-                  >
-                    {selected.registrationStatus === "PENDENTE" ? "Aprovar e definir turma" : "Salvar turma"}
-                  </Button>
-                </div>
-              )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar criança</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Nome *</p>
+              <Input className="h-12" value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Data de nascimento *</p>
+              <Input type="date" className="h-12" value={editForm.birthdate} onChange={(e) => setEditForm((f) => ({ ...f, birthdate: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Nome do pai</p>
+              <Input className="h-12" value={editForm.fatherName} onChange={(e) => setEditForm((f) => ({ ...f, fatherName: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Nome da mãe</p>
+              <Input className="h-12" value={editForm.motherName} onChange={(e) => setEditForm((f) => ({ ...f, motherName: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Telefone Pai</p>
+              <Input type="tel" className="h-12" value={editForm.phoneDad} onChange={(e) => setEditForm((f) => ({ ...f, phoneDad: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Telefone Mãe</p>
+              <Input type="tel" className="h-12" value={editForm.phoneMom} onChange={(e) => setEditForm((f) => ({ ...f, phoneMom: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Frequência *</p>
+              <Select
+                value={editForm.frequencia}
+                onValueChange={(v) => setEditForm((f) => ({ ...f, frequencia: (v as Frequencia) ?? "" }))}
+                items={FREQUENCIA_LABELS}
+              >
+                <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(FREQUENCIA_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Turma</p>
+              <Select
+                value={editForm.classGroupId}
+                onValueChange={(v) => setEditForm((f) => ({ ...f, classGroupId: v ?? "" }))}
+                items={Object.fromEntries(classes.map((c) => [c.id, c.name]))}
+              >
+                <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  {classes.map((cls) => <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Alergias</p>
+              <Textarea rows={2} value={editForm.allergies} onChange={(e) => setEditForm((f) => ({ ...f, allergies: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Cuidados especiais / restrições</p>
+              <Textarea rows={2} value={editForm.restrictions} onChange={(e) => setEditForm((f) => ({ ...f, restrictions: e.target.value }))} />
+            </div>
+            <Button className="w-full h-12" disabled={!editValid || editSaving} onClick={saveEdit}>
+              {!editing?.classGroupId && editForm.classGroupId ? "Salvar e aprovar" : "Salvar alterações"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>
@@ -189,11 +395,15 @@ export function ChildrenClient({
 function ChildCard({
   child,
   onSelect,
+  onEdit,
   showActions,
+  canEdit,
 }: {
   child: Child;
   onSelect: () => void;
+  onEdit: () => void;
   showActions: boolean;
+  canEdit: boolean;
 }) {
   return (
     <button
@@ -207,12 +417,22 @@ function ChildCard({
             {child.classGroup?.name ?? "Sem turma"} · {child.frequencia}
           </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           {child.allergies && (
             <AlertCircle className="h-4 w-4 text-yellow-500" />
           )}
-          {showActions && child.registrationStatus === "PENDENTE" && (
+          {showActions && !child.classGroupId && (
             <Badge variant="secondary">Pendente</Badge>
+          )}
+          {canEdit && (
+            <span
+              role="button"
+              aria-label="Editar"
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="p-1 -m-1"
+            >
+              <Pencil className="h-4 w-4 text-muted-foreground" />
+            </span>
           )}
         </div>
       </div>
