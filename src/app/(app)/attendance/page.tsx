@@ -23,16 +23,11 @@ export default async function AttendancePage() {
   const nextDay = new Date(sunday);
   nextDay.setDate(nextDay.getDate() + 1);
 
-  const [children, classes, attendance] = await Promise.all([
+  const [children, attendance] = await Promise.all([
     prisma.child.findMany({
-      where: { registrationStatus: "APROVADO", active: true },
+      where: { classGroupId: { not: null }, active: true },
       include: { classGroup: { select: { id: true, name: true } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.classGroup.findMany({
-      where: { active: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
+      orderBy: [{ classGroup: { name: "asc" } }, { name: "asc" }],
     }),
     prisma.attendance.findMany({
       where: { date: { gte: sunday, lt: nextDay } },
@@ -44,7 +39,6 @@ export default async function AttendancePage() {
       <h1 className="text-xl font-bold">Presença</h1>
       <AttendanceClient
         children={children as any}
-        classes={classes}
         initialAttendance={attendance as any}
         sunday={sunday.toISOString()}
       />
