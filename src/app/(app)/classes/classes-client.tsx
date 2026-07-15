@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -69,9 +70,10 @@ export function ClassesClient({ initialClasses }: { initialClasses: ClassGroup[]
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger
           onClick={openCreate}
-          className={buttonVariants({ className: "w-full h-12" })}
+          className={cn(buttonVariants({ size: "icon" }), "fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40")}
+          aria-label="Nova turma"
         >
-          <Plus className="h-4 w-4 mr-2" /> Nova turma
+          <Plus className="h-6 w-6" />
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>

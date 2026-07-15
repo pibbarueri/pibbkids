@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -156,9 +157,10 @@ export function CurriculumClient({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger
           onClick={openCreate}
-          className={buttonVariants({ className: "w-full h-12" })}
+          className={cn(buttonVariants({ size: "icon" }), "fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40")}
+          aria-label="Nova revista"
         >
-          <Plus className="h-4 w-4 mr-2" /> Nova revista
+          <Plus className="h-6 w-6" />
         </DialogTrigger>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>

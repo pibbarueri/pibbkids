@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,8 +87,11 @@ export function EventsClient({
     <div className="space-y-3">
       {isManager && (
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger className={buttonVariants({ className: "w-full h-12" })}>
-            <Plus className="h-4 w-4 mr-2" /> Novo evento
+          <DialogTrigger
+            className={cn(buttonVariants({ size: "icon" }), "fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40")}
+            aria-label="Novo evento"
+          >
+            <Plus className="h-6 w-6" />
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>

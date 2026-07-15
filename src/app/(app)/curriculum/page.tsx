@@ -29,7 +29,7 @@ export default async function CurriculumPage() {
   ]);
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 pb-24 space-y-4">
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-xl font-bold">Currículo</h1>
         <div className="flex gap-2">
