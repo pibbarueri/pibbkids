@@ -25,6 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(body.allergies !== undefined && { allergies: body.allergies }),
       ...(body.restrictions !== undefined && { restrictions: body.restrictions }),
       ...(body.classGroupId !== undefined && { classGroupId: body.classGroupId }),
+      ...(body.active !== undefined && { active: body.active }),
     },
     include: { classGroup: { select: { name: true } } },
   });
@@ -39,8 +40,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
 
   const { id } = await params;
-  // Attendance rows reference the child with no cascade — remove them first.
-  await prisma.attendance.deleteMany({ where: { childId: id } });
-  await prisma.child.delete({ where: { id } });
-  return new NextResponse(null, { status: 204 });
+  // Soft delete: keep the row (and its attendance history), just deactivate.
+  const child = await prisma.child.update({
+    where: { id },
+    data: { active: false },
+    include: { classGroup: { select: { name: true } } },
+  });
+  return NextResponse.json(child);
 }

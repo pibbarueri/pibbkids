@@ -18,7 +18,6 @@ export default async function VolunteersPage() {
   });
 
   const volunteers = await prisma.user.findMany({
-    where: { active: true },
     orderBy: [{ status: "asc" }, { name: "asc" }],
     select: {
       id: true,

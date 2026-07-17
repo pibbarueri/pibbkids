@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Pencil, Plus, Search } from "lucide-react";
+import { Check, Pencil, Plus, RotateCcw, Search, X } from "lucide-react";
 
 const FUNCTION_OPTIONS = [
   { value: "PROFESSOR", label: "Professor" },
@@ -111,10 +111,14 @@ export function VolunteersClient({
   const [editForm, setEditForm] = useState(emptyEditForm);
   const [editSaving, setEditSaving] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState<Volunteer | null>(null);
+  const [tab, setTab] = useState(
+    initialVolunteers.some((v) => v.active && v.status === "PENDING") ? "pending" : "approved"
+  );
 
   const filtered = volunteers.filter((v) => v.name.toLowerCase().includes(search.trim().toLowerCase()));
-  const pending = filtered.filter((v) => v.status === "PENDING");
-  const approved = filtered.filter((v) => v.status === "APPROVED");
+  const pending = filtered.filter((v) => v.active && v.status === "PENDING");
+  const approved = filtered.filter((v) => v.active && v.status === "APPROVED");
+  const inactive = filtered.filter((v) => !v.active);
 
   const addValid = addForm.name && addForm.username && addForm.password.length >= 6 && addForm.role;
 
@@ -174,16 +178,33 @@ export function VolunteersClient({
     setEditing(null);
   }
 
-  async function deactivate(v: Volunteer) {
-    await fetch(`/api/volunteers/${v.id}`, {
+  async function patchVolunteer(id: string, data: Record<string, unknown>) {
+    const res = await fetch(`/api/volunteers/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: false }),
+      body: JSON.stringify(data),
     });
-    // Inactive volunteers are hidden from the list entirely.
-    setVolunteers((prev) => prev.filter((x) => x.id !== v.id));
+    const updated = await res.json();
+    setVolunteers((prev) => prev.map((x) => (x.id === id ? updated : x)));
+  }
+
+  async function deactivate(v: Volunteer) {
+    await patchVolunteer(v.id, { active: false });
     setDeactivateTarget(null);
     setEditing(null);
+  }
+
+  async function approve(v: Volunteer) {
+    await patchVolunteer(v.id, { status: "APPROVED" });
+  }
+
+  async function reject(v: Volunteer) {
+    // Rejected volunteers are deactivated so they land in the Inativos tab.
+    await patchVolunteer(v.id, { status: "REJECTED", active: false });
+  }
+
+  async function restore(v: Volunteer) {
+    await patchVolunteer(v.id, { active: true, status: "APPROVED" });
   }
 
   return (
@@ -281,13 +302,16 @@ export function VolunteersClient({
         />
       </div>
 
-      <Tabs defaultValue={pending.length > 0 ? "pending" : "approved"}>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as string)}>
         <TabsList className="w-full">
           <TabsTrigger value="pending" className="flex-1">
             Pendentes {pending.length > 0 && <Badge className="ml-1">{pending.length}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="approved" className="flex-1">
             Aprovados
+          </TabsTrigger>
+          <TabsTrigger value="inactive" className="flex-1">
+            Inativos
           </TabsTrigger>
         </TabsList>
 
@@ -298,7 +322,14 @@ export function VolunteersClient({
             </p>
           )}
           {pending.map((v) => (
-            <VolunteerCard key={v.id} volunteer={v} onSelect={() => setSelected(v)} onEdit={() => openEdit(v)} />
+            <VolunteerCard
+              key={v.id}
+              volunteer={v}
+              onSelect={() => setSelected(v)}
+              onEdit={() => openEdit(v)}
+              onApprove={() => approve(v)}
+              onReject={() => reject(v)}
+            />
           ))}
         </TabsContent>
 
@@ -310,6 +341,23 @@ export function VolunteersClient({
           )}
           {approved.map((v) => (
             <VolunteerCard key={v.id} volunteer={v} onSelect={() => setSelected(v)} onEdit={() => openEdit(v)} />
+          ))}
+        </TabsContent>
+
+        <TabsContent value="inactive" className="space-y-2 mt-3">
+          {inactive.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              {search ? "Nenhum voluntário encontrado." : "Nenhum voluntário inativo."}
+            </p>
+          )}
+          {inactive.map((v) => (
+            <VolunteerCard
+              key={v.id}
+              volunteer={v}
+              onSelect={() => setSelected(v)}
+              onEdit={() => openEdit(v)}
+              onRestore={() => restore(v)}
+            />
           ))}
         </TabsContent>
       </Tabs>
@@ -451,7 +499,7 @@ export function VolunteersClient({
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Desativar <span className="font-medium text-foreground">{deactivateTarget?.name}</span>?
-            O voluntário deixará de aparecer na lista.
+            Ele irá para a aba Inativos e pode ser restaurado depois.
           </p>
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1 h-12" onClick={() => setDeactivateTarget(null)}>
@@ -475,10 +523,16 @@ function VolunteerCard({
   volunteer,
   onSelect,
   onEdit,
+  onApprove,
+  onReject,
+  onRestore,
 }: {
   volunteer: Volunteer;
   onSelect: () => void;
   onEdit: () => void;
+  onApprove?: () => void;
+  onReject?: () => void;
+  onRestore?: () => void;
 }) {
   return (
     <button
@@ -494,20 +548,46 @@ function VolunteerCard({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {volunteer.status === "PENDING" && (
-            <Badge variant="secondary">Pendente</Badge>
+          {onApprove && (
+            <span
+              role="button"
+              aria-label="Aprovar"
+              onClick={(e) => { e.stopPropagation(); onApprove(); }}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 text-white"
+            >
+              <Check className="h-4 w-4" />
+            </span>
           )}
-          {!volunteer.active && (
-            <Badge variant="outline" className="text-muted-foreground">Inativo</Badge>
+          {onReject && (
+            <span
+              role="button"
+              aria-label="Rejeitar"
+              onClick={(e) => { e.stopPropagation(); onReject(); }}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-white"
+            >
+              <X className="h-4 w-4" />
+            </span>
           )}
-          <span
-            role="button"
-            aria-label="Editar"
-            onClick={(e) => { e.stopPropagation(); onEdit(); }}
-            className="p-1 -m-1"
-          >
-            <Pencil className="h-4 w-4 text-muted-foreground" />
-          </span>
+          {onRestore && (
+            <span
+              role="button"
+              aria-label="Restaurar"
+              onClick={(e) => { e.stopPropagation(); onRestore(); }}
+              className="flex h-8 w-8 items-center justify-center rounded-full border"
+            >
+              <RotateCcw className="h-4 w-4 text-muted-foreground" />
+            </span>
+          )}
+          {!onApprove && !onRestore && (
+            <span
+              role="button"
+              aria-label="Editar"
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="p-1 -m-1"
+            >
+              <Pencil className="h-4 w-4 text-muted-foreground" />
+            </span>
+          )}
         </div>
       </div>
     </button>

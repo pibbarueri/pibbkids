@@ -25,7 +25,7 @@ export default async function ChildrenPage() {
         });
         const classIds = user?.preferredClasses.map((c) => c.classGroupId) ?? [];
         return prisma.child.findMany({
-          where: { classGroupId: { in: classIds } },
+          where: { classGroupId: { in: classIds }, active: true },
           include: { classGroup: { select: { name: true } } },
           orderBy: { name: "asc" },
         });

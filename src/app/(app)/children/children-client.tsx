@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { AlertCircle, Check, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
 
 const FREQUENCIA_LABELS: Record<string, string> = {
   EBD: "Escola Dominical (EBD)",
@@ -57,6 +57,7 @@ type Child = {
   restrictions: string | null;
   classGroup: { name: string } | null;
   classGroupId: string | null;
+  active: boolean;
 };
 
 export function ChildrenClient({
@@ -81,10 +82,14 @@ export function ChildrenClient({
   const [editSaving, setEditSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Child | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [tab, setTab] = useState(
+    isManager && initialChildren.some((c) => c.active && !c.classGroupId) ? "pending" : "approved"
+  );
 
   const filtered = children.filter((c) => c.name.toLowerCase().includes(search.trim().toLowerCase()));
-  const pending = filtered.filter((c) => !c.classGroupId);
-  const approved = filtered.filter((c) => !!c.classGroupId);
+  const pending = filtered.filter((c) => c.active && !c.classGroupId);
+  const approved = filtered.filter((c) => c.active && !!c.classGroupId);
+  const inactive = filtered.filter((c) => !c.active);
 
   const addValid = addForm.name && addForm.birthdate && addForm.frequency && addForm.classGroupId;
 
@@ -142,11 +147,24 @@ export function ChildrenClient({
     setDeleting(true);
     const res = await fetch(`/api/children/${deleteTarget.id}`, { method: "DELETE" });
     if (res.ok) {
-      setChildren((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+      // Soft delete: mark inactive so it moves to the Inativos tab.
+      setChildren((prev) => prev.map((c) => (c.id === deleteTarget.id ? { ...c, active: false } : c)));
       setEditing(null);
     }
     setDeleting(false);
     setDeleteTarget(null);
+  }
+
+  async function restore(child: Child) {
+    const res = await fetch(`/api/children/${child.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: true }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setChildren((prev) => prev.map((c) => (c.id === child.id ? { ...updated, active: true } : c)));
+    }
   }
 
   return (
@@ -242,7 +260,7 @@ export function ChildrenClient({
         />
       </div>
 
-      <Tabs defaultValue={isManager && pending.length > 0 ? "pending" : "approved"}>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as string)}>
         {isManager && (
           <TabsList className="w-full">
             <TabsTrigger value="pending" className="flex-1">
@@ -250,6 +268,9 @@ export function ChildrenClient({
             </TabsTrigger>
             <TabsTrigger value="approved" className="flex-1">
               Aprovadas
+            </TabsTrigger>
+            <TabsTrigger value="inactive" className="flex-1">
+              Inativos
             </TabsTrigger>
           </TabsList>
         )}
@@ -267,8 +288,9 @@ export function ChildrenClient({
                 child={child}
                 onSelect={() => setSelected(child)}
                 onEdit={() => openEdit(child)}
-                showActions
                 canEdit={isManager}
+                onApprove={() => openEdit(child)}
+                onReject={() => setDeleteTarget(child)}
               />
             ))}
           </TabsContent>
@@ -286,11 +308,30 @@ export function ChildrenClient({
               child={child}
               onSelect={() => setSelected(child)}
               onEdit={() => openEdit(child)}
-              showActions={isManager}
               canEdit={isManager}
             />
           ))}
         </TabsContent>
+
+        {isManager && (
+          <TabsContent value="inactive" className="space-y-2 mt-3">
+            {inactive.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {search ? "Nenhuma criança encontrada." : "Nenhuma criança inativa."}
+              </p>
+            )}
+            {inactive.map((child) => (
+              <ChildCard
+                key={child.id}
+                child={child}
+                onSelect={() => setSelected(child)}
+                onEdit={() => openEdit(child)}
+                canEdit={false}
+                onRestore={() => restore(child)}
+              />
+            ))}
+          </TabsContent>
+        )}
       </Tabs>
 
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
@@ -405,7 +446,7 @@ export function ChildrenClient({
                 className="w-full h-12 text-destructive hover:text-destructive"
                 onClick={() => setDeleteTarget(editing)}
               >
-                <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                <Trash2 className="h-4 w-4 mr-2" /> Remover
               </Button>
             )}
           </div>
@@ -415,18 +456,18 @@ export function ChildrenClient({
       <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Excluir criança</DialogTitle>
+            <DialogTitle>Remover criança</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Excluir <span className="font-medium text-foreground">{deleteTarget?.name}</span> permanentemente?
-            Esta ação não pode ser desfeita.
+            Remover <span className="font-medium text-foreground">{deleteTarget?.name}</span>?
+            Ela irá para a aba Inativos e pode ser restaurada depois.
           </p>
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1 h-12" onClick={() => setDeleteTarget(null)}>
               Cancelar
             </Button>
             <Button variant="destructive" className="flex-1 h-12" disabled={deleting} onClick={confirmDelete}>
-              Excluir
+              Remover
             </Button>
           </div>
         </DialogContent>
@@ -439,14 +480,18 @@ function ChildCard({
   child,
   onSelect,
   onEdit,
-  showActions,
   canEdit,
+  onApprove,
+  onReject,
+  onRestore,
 }: {
   child: Child;
   onSelect: () => void;
   onEdit: () => void;
-  showActions: boolean;
   canEdit: boolean;
+  onApprove?: () => void;
+  onReject?: () => void;
+  onRestore?: () => void;
 }) {
   return (
     <button
@@ -461,11 +506,36 @@ function ChildCard({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {child.allergies && (
-            <AlertCircle className="h-4 w-4 text-yellow-500" />
+          {child.allergies && <AlertCircle className="h-4 w-4 text-yellow-500" />}
+          {onApprove && (
+            <span
+              role="button"
+              aria-label="Aprovar"
+              onClick={(e) => { e.stopPropagation(); onApprove(); }}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 text-white"
+            >
+              <Check className="h-4 w-4" />
+            </span>
           )}
-          {showActions && !child.classGroupId && (
-            <Badge variant="secondary">Pendente</Badge>
+          {onReject && (
+            <span
+              role="button"
+              aria-label="Rejeitar"
+              onClick={(e) => { e.stopPropagation(); onReject(); }}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-white"
+            >
+              <X className="h-4 w-4" />
+            </span>
+          )}
+          {onRestore && (
+            <span
+              role="button"
+              aria-label="Restaurar"
+              onClick={(e) => { e.stopPropagation(); onRestore(); }}
+              className="flex h-8 w-8 items-center justify-center rounded-full border"
+            >
+              <RotateCcw className="h-4 w-4 text-muted-foreground" />
+            </span>
           )}
           {canEdit && (
             <span
