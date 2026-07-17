@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { childId, date, tipo, present } = body;
+  const { childId, date, type, present } = body;
 
   // Future dates: nobody can mark attendance. Past dates: admin only.
   const today = todayMidnight().getTime();
@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
   }
 
   const attendance = await prisma.attendance.upsert({
-    where: { childId_date_tipo: { childId, date: new Date(date), tipo } },
+    where: { childId_date_type: { childId, date: new Date(date), type } },
     update: { present, userId: session.user.id },
-    create: { childId, date: new Date(date), tipo, present, userId: session.user.id },
+    create: { childId, date: new Date(date), type, present, userId: session.user.id },
   });
 
   return NextResponse.json(attendance, { status: 201 });

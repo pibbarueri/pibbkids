@@ -15,7 +15,7 @@ type Child = {
   classGroupId: string | null;
   classGroup: ClassGroup | null;
 };
-type Attendance = { childId: string; tipo: string; present: boolean };
+type Attendance = { childId: string; type: string; present: boolean };
 
 export function AttendanceClient({
   children,
@@ -80,24 +80,24 @@ export function AttendanceClient({
     c.name.toLowerCase().includes(search.trim().toLowerCase())
   );
 
-  function statusFor(childId: string, tipo: string) {
-    return attendance.find((a) => a.childId === childId && a.tipo === tipo);
+  function statusFor(childId: string, type: string) {
+    return attendance.find((a) => a.childId === childId && a.type === type);
   }
 
-  async function toggle(childId: string, tipo: string, current: boolean | undefined) {
+  async function toggle(childId: string, type: string, current: boolean | undefined) {
     if (!editable) return;
     const present = !current;
-    const key = `${childId}-${tipo}`;
+    const key = `${childId}-${type}`;
     setSaving(key);
     const res = await fetch("/api/attendance", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ childId, date: selectedISO, tipo, present }),
+      body: JSON.stringify({ childId, date: selectedISO, type, present }),
     });
     if (res.ok) {
       const saved = await res.json();
       setAttendance((prev) => {
-        const idx = prev.findIndex((a) => a.childId === childId && a.tipo === tipo);
+        const idx = prev.findIndex((a) => a.childId === childId && a.type === type);
         if (idx === -1) return [...prev, saved];
         const copy = [...prev];
         copy[idx] = saved;
@@ -159,7 +159,7 @@ export function AttendanceClient({
 
       <div className="space-y-2">
         {filtered.map((child) => {
-          const tipos = child.frequencia === "AMBOS" ? ["EBD", "CULTO"] : [child.frequencia];
+          const types = child.frequencia === "AMBOS" ? ["EBD", "CULTO"] : [child.frequencia];
           return (
             <div key={child.id} className="flex items-center gap-2 p-3 border rounded-lg bg-background">
               <div className="min-w-0 flex-1">
@@ -167,15 +167,15 @@ export function AttendanceClient({
                 <p className="text-xs text-muted-foreground truncate">{child.classGroup?.name ?? "Sem turma"}</p>
               </div>
               <div className="flex gap-2 shrink-0">
-                {tipos.map((tipo) => {
-                  const status = statusFor(child.id, tipo);
-                  const key = `${child.id}-${tipo}`;
+                {types.map((type) => {
+                  const status = statusFor(child.id, type);
+                  const key = `${child.id}-${type}`;
                   return (
-                    <div key={tipo} className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground">{tipo}</span>
+                    <div key={type} className="flex flex-col items-center gap-1">
+                      <span className="text-[10px] text-muted-foreground">{type}</span>
                       <button
                         disabled={saving === key || !editable}
-                        onClick={() => toggle(child.id, tipo, status?.present)}
+                        onClick={() => toggle(child.id, type, status?.present)}
                         className={cn(
                           "h-9 w-9 rounded-full border flex items-center justify-center transition-colors",
                           status?.present ? "bg-green-600 border-green-600 text-white" : "border-input",

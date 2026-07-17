@@ -237,10 +237,10 @@ model Attendance {
   userId  String     @map("user_id")
   user    User       @relation(fields: [userId], references: [id])
   date    DateTime
-  tipo    SundayTipo
+  type    SundayTipo
   present Boolean
 
-  @@unique([childId, date, tipo])
+  @@unique([childId, date, type])
   @@map("attendance")
 }
 
