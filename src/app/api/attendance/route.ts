@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { Role } from "@prisma/client";
-import { canManage } from "@/lib/permissions";
+import { canManage, isLeadership } from "@/lib/permissions";
+
+// Today at local 00:00.
+function todayMidnight(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -31,6 +37,17 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const { childId, date, tipo, present } = body;
+
+  // Future dates: nobody can mark attendance. Past dates: admin only.
+  const today = todayMidnight().getTime();
+  const target = new Date(date);
+  const targetMidnight = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+  if (targetMidnight > today) {
+    return NextResponse.json({ error: "Domingo futuro" }, { status: 403 });
+  }
+  if (targetMidnight < today && !isLeadership(session.user.role)) {
+    return NextResponse.json({ error: "Somente admin edita domingos passados" }, { status: 403 });
+  }
 
   const attendance = await prisma.attendance.upsert({
     where: { childId_date_tipo: { childId, date: new Date(date), tipo } },
