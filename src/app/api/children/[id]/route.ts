@@ -31,3 +31,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   return NextResponse.json(child);
 }
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session || !canManage(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  // Attendance rows reference the child with no cascade — remove them first.
+  await prisma.attendance.deleteMany({ where: { childId: id } });
+  await prisma.child.delete({ where: { id } });
+  return new NextResponse(null, { status: 204 });
+}

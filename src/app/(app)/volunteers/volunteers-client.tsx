@@ -99,6 +99,7 @@ export function VolunteersClient({
   const [editing, setEditing] = useState<Volunteer | null>(null);
   const [editForm, setEditForm] = useState(emptyEditForm);
   const [editSaving, setEditSaving] = useState(false);
+  const [deactivateTarget, setDeactivateTarget] = useState<Volunteer | null>(null);
 
   const filtered = volunteers.filter((v) => v.name.toLowerCase().includes(search.trim().toLowerCase()));
   const pending = filtered.filter((v) => v.volunteerStatus === "PENDENTE");
@@ -177,14 +178,16 @@ export function VolunteersClient({
     setEditing(null);
   }
 
-  async function toggleActive(v: Volunteer) {
-    const res = await fetch(`/api/volunteers/${v.id}`, {
+  async function deactivate(v: Volunteer) {
+    await fetch(`/api/volunteers/${v.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !v.active }),
+      body: JSON.stringify({ active: false }),
     });
-    const updated = await res.json();
-    setVolunteers((prev) => prev.map((x) => (x.id === v.id ? updated : x)));
+    // Inactive volunteers are hidden from the list entirely.
+    setVolunteers((prev) => prev.filter((x) => x.id !== v.id));
+    setDeactivateTarget(null);
+    setEditing(null);
   }
 
   return (
@@ -425,14 +428,37 @@ export function VolunteersClient({
                 <Button
                   variant="outline"
                   className="h-12"
-                  disabled={saving}
-                  onClick={() => { toggleActive(editing); setEditing(null); }}
+                  onClick={() => setDeactivateTarget(editing)}
                 >
-                  {editing.active ? "Desativar" : "Ativar"}
+                  Desativar
                 </Button>
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deactivateTarget} onOpenChange={(o) => !o && setDeactivateTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Desativar voluntário</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Desativar <span className="font-medium text-foreground">{deactivateTarget?.name}</span>?
+            O voluntário deixará de aparecer na lista.
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 h-12" onClick={() => setDeactivateTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1 h-12"
+              onClick={() => deactivateTarget && deactivate(deactivateTarget)}
+            >
+              Desativar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>

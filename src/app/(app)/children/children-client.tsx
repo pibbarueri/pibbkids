@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, Pencil, Plus, Search } from "lucide-react";
+import { AlertCircle, Pencil, Plus, Search, Trash2 } from "lucide-react";
 
 const FREQUENCIA_LABELS: Record<string, string> = {
   EBD: "Escola Dominical (EBD)",
@@ -79,6 +79,8 @@ export function ChildrenClient({
   const [editing, setEditing] = useState<Child | null>(null);
   const [editForm, setEditForm] = useState(emptyChildForm);
   const [editSaving, setEditSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Child | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const filtered = children.filter((c) => c.name.toLowerCase().includes(search.trim().toLowerCase()));
   const pending = filtered.filter((c) => !c.classGroupId);
@@ -133,6 +135,18 @@ export function ChildrenClient({
     setChildren((prev) => prev.map((c) => (c.id === editing.id ? updated : c)));
     setEditSaving(false);
     setEditing(null);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const res = await fetch(`/api/children/${deleteTarget.id}`, { method: "DELETE" });
+    if (res.ok) {
+      setChildren((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+      setEditing(null);
+    }
+    setDeleting(false);
+    setDeleteTarget(null);
   }
 
   return (
@@ -384,6 +398,35 @@ export function ChildrenClient({
             </div>
             <Button className="w-full h-12" disabled={!editValid || editSaving} onClick={saveEdit}>
               {!editing?.classGroupId && editForm.classGroupId ? "Salvar e aprovar" : "Salvar alterações"}
+            </Button>
+            {isManager && editing && (
+              <Button
+                variant="ghost"
+                className="w-full h-12 text-destructive hover:text-destructive"
+                onClick={() => setDeleteTarget(editing)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" /> Excluir
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir criança</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Excluir <span className="font-medium text-foreground">{deleteTarget?.name}</span> permanentemente?
+            Esta ação não pode ser desfeita.
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 h-12" onClick={() => setDeleteTarget(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" className="flex-1 h-12" disabled={deleting} onClick={confirmDelete}>
+              Excluir
             </Button>
           </div>
         </DialogContent>

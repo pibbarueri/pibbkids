@@ -28,6 +28,7 @@ export async function GET() {
   const showSensitive = isLeadership(session.user.role);
 
   const volunteers = await prisma.user.findMany({
+    where: { active: true },
     orderBy: [{ volunteerStatus: "asc" }, { name: "asc" }],
     select: {
       id: true,
