@@ -17,6 +17,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data: {
       ...(body.name !== undefined && { name: body.name }),
       ...(body.unit !== undefined && { unit: body.unit }),
+      ...(body.quantityDelta !== undefined && { quantity: { increment: Number(body.quantityDelta) } }),
     },
   });
 

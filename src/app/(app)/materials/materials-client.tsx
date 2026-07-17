@@ -32,7 +32,7 @@ export function MaterialsClient({
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ name: "", unit: "" });
   const [moveTarget, setMoveTarget] = useState<Material | null>(null);
-  const [moveForm, setMoveForm] = useState({ delta: "", reason: "" });
+  const [moveForm, setMoveForm] = useState({ delta: "" });
   const [saving, setSaving] = useState(false);
 
   async function createMaterial() {
@@ -57,10 +57,10 @@ export function MaterialsClient({
     const delta = Number(moveForm.delta);
     if (!delta) return;
     setSaving(true);
-    const res = await fetch(`/api/materials/${moveTarget.id}/movements`, {
-      method: "POST",
+    const res = await fetch(`/api/materials/${moveTarget.id}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ delta, reason: moveForm.reason }),
+      body: JSON.stringify({ quantityDelta: delta }),
     });
     await res.json();
     setMaterials((prev) =>
@@ -68,7 +68,7 @@ export function MaterialsClient({
     );
     setSaving(false);
     setMoveTarget(null);
-    setMoveForm({ delta: "", reason: "" });
+    setMoveForm({ delta: "" });
   }
 
   return (
@@ -160,18 +160,9 @@ export function MaterialsClient({
                 placeholder="Ex: 10 ou -5"
               />
             </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Motivo</p>
-              <Input
-                className="h-12"
-                value={moveForm.reason}
-                onChange={(e) => setMoveForm((f) => ({ ...f, reason: e.target.value }))}
-                placeholder="Ex: compra, uso em aula..."
-              />
-            </div>
             <Button
               className="w-full h-12"
-              disabled={!moveForm.delta || !moveForm.reason || saving}
+              disabled={!moveForm.delta || saving}
               onClick={move}
             >
               Registrar

@@ -249,21 +249,9 @@ model Material {
   name        String
   unit        String
   quantity    Int               @default(0)
-  movements   StockMovement[]
   requests    PurchaseRequest[]
 
   @@map("materials")
-}
-
-model StockMovement {
-  id         String   @id @default(cuid())
-  materialId String   @map("material_id")
-  material   Material @relation(fields: [materialId], references: [id])
-  delta      Int
-  reason     String
-  date       DateTime @default(now())
-
-  @@map("stock_movements")
 }
 
 model PurchaseRequest {
