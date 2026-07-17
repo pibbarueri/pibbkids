@@ -39,12 +39,12 @@ async function main() {
 
   // Admin user
   const admin = await prisma.user.upsert({
-    where: { email: "admin@pibbkids.com.br" },
-    update: {},
+    where: { email: "admin" },
+    update: { password: await bcrypt.hash("admin", 12) },
     create: {
       name: "Administrador",
-      email: "admin@pibbkids.com.br",
-      password: await bcrypt.hash("pibbkids2026", 12),
+      email: "admin",
+      password: await bcrypt.hash("admin", 12),
       role: Role.LIDERANCA,
       volunteerStatus: "APROVADO",
       functions: {

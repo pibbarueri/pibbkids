@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -19,17 +19,19 @@ import {
 import { ChevronLeft, ChevronRight, Copy, Pencil, Plus, Trash2 } from "lucide-react";
 
 const SLOT_LABELS: Record<string, string> = {
-  SALA_PLUS: "Sala Plus",
-  APOIO_EBD: "Apoio EBD",
-  APOIO_CULTO: "Apoio Culto",
+  SALA_PLUS: "Coordenação",
+  APOIO_EBD: "Recepção",
+  APOIO_CULTO: "Recepção",
   LANCHE: "Lanche",
   EBD: "EBD",
   CULTO: "Culto",
 };
 
-const ROLE_LABELS: Record<string, string> = {
-  PROFESSOR: "Professor",
-  AUXILIAR: "Auxiliar",
+// Pseudo "turma" options that aren't real ClassGroups — Coordenação/Recepção/Lanche support slots.
+const PSEUDO_TURMAS: Record<string, string> = {
+  SALA_PLUS: "Coordenação",
+  APOIO: "Recepção",
+  LANCHE: "Lanche",
 };
 
 type Slot = {
@@ -76,7 +78,7 @@ function formatWhatsApp(sundays: string[], slots: Slot[], classes: ClassGroup[])
       if (classSlots.length === 0) continue;
       lines.push(`  *${cls.name}*`);
       for (const s of classSlots) {
-        lines.push(`    ${SLOT_LABELS[s.slotType]} ${ROLE_LABELS[s.role]}: ${s.user.name}`);
+        lines.push(`    ${SLOT_LABELS[s.slotType]}: ${s.user.name}`);
       }
     }
     lines.push("");
@@ -108,8 +110,9 @@ export function ScheduleClient({
   const [addOpen, setAddOpen] = useState(false);
   const [editingSlot, setEditingSlot] = useState<Slot | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Slot | null>(null);
-  const emptyForm = { horario: "" as "EBD" | "CULTO" | "", classGroupId: "", role: "PROFESSOR", userId: "" };
+  const emptyForm = { horario: "" as "EBD" | "CULTO" | "", turma: "", userId: "" };
   const [form, setForm] = useState(emptyForm);
+  const [repeatDates, setRepeatDates] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   const selectedSunday = sundays[sundayIdx];
@@ -117,33 +120,47 @@ export function ScheduleClient({
 
   const mySlots = canViewAll ? daySlots : daySlots.filter((s) => s.user.id === currentUserId);
 
-  const eligibleVolunteers = form.classGroupId
-    ? volunteers.filter((v) => v.preferredClasses.some((c) => c.classGroupId === form.classGroupId))
-    : [];
+  const isRealClass = !!form.turma && !(form.turma in PSEUDO_TURMAS);
+
+  const eligibleVolunteers = !form.turma
+    ? []
+    : isRealClass
+    ? volunteers.filter((v) => v.preferredClasses.some((c) => c.classGroupId === form.turma))
+    : volunteers;
 
   function openAdd() {
     setEditingSlot(null);
     setForm(emptyForm);
+    setRepeatDates([selectedSunday]);
     setAddOpen(true);
   }
 
   function openEdit(slot: Slot) {
     setEditingSlot(slot);
+    const turma =
+      slot.classGroupId ??
+      (slot.slotType === "SALA_PLUS" ? "SALA_PLUS" : slot.slotType === "LANCHE" ? "LANCHE" : "APOIO");
     setForm({
-      horario: slot.slotType === "CULTO" ? "CULTO" : "EBD",
-      classGroupId: slot.classGroupId ?? "",
-      role: slot.role,
+      horario: slot.slotType === "CULTO" || slot.slotType === "APOIO_CULTO" ? "CULTO" : "EBD",
+      turma,
       userId: slot.user.id,
     });
     setAddOpen(true);
   }
 
+  function slotTypeFor(turma: string, horario: "EBD" | "CULTO" | "") {
+    if (turma === "SALA_PLUS") return "SALA_PLUS";
+    if (turma === "LANCHE") return "LANCHE";
+    if (turma === "APOIO") return horario === "CULTO" ? "APOIO_CULTO" : "APOIO_EBD";
+    return horario; // real class: slotType mirrors horário (EBD/CULTO)
+  }
+
   async function saveSlot() {
     setSaving(true);
     const payload = {
-      slotType: form.horario,
-      classGroupId: form.classGroupId,
-      role: form.role,
+      slotType: slotTypeFor(form.turma, form.horario),
+      classGroupId: isRealClass ? form.turma : null,
+      role: "PROFESSOR",
       userId: form.userId,
     };
 
@@ -155,11 +172,19 @@ export function ScheduleClient({
       });
       const updated = await res.json();
       setSlots((prev) => prev.map((s) => (s.id === editingSlot.id ? updated : s)));
+    } else if (repeatDates.length > 1) {
+      const res = await fetch("/api/schedule/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dates: repeatDates, ...payload }),
+      });
+      const created = await res.json();
+      setSlots((prev) => [...prev, ...created]);
     } else {
       const res = await fetch("/api/schedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: selectedSunday, ...payload }),
+        body: JSON.stringify({ date: repeatDates[0] ?? selectedSunday, ...payload }),
       });
       const slot = await res.json();
       setSlots((prev) => [...prev, slot]);
@@ -169,6 +194,11 @@ export function ScheduleClient({
     setAddOpen(false);
     setEditingSlot(null);
     setForm(emptyForm);
+    setRepeatDates([]);
+  }
+
+  function toggleRepeatDate(date: string) {
+    setRepeatDates((prev) => (prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]));
   }
 
   async function confirmDelete() {
@@ -252,7 +282,7 @@ export function ScheduleClient({
 
       {/* Add/edit slot dialog */}
       <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setEditingSlot(null); }}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingSlot ? "Editar slot" : "Adicionar à escala"}</DialogTitle>
           </DialogHeader>
@@ -264,7 +294,7 @@ export function ScheduleClient({
                   type="button"
                   variant={form.horario === "EBD" ? "default" : "outline"}
                   className="h-12"
-                  onClick={() => setForm((f) => ({ ...f, horario: "EBD", classGroupId: "", userId: "" }))}
+                  onClick={() => setForm((f) => ({ ...f, horario: "EBD", userId: "" }))}
                 >
                   EBD
                 </Button>
@@ -272,7 +302,7 @@ export function ScheduleClient({
                   type="button"
                   variant={form.horario === "CULTO" ? "default" : "outline"}
                   className="h-12"
-                  onClick={() => setForm((f) => ({ ...f, horario: "CULTO", classGroupId: "", userId: "" }))}
+                  onClick={() => setForm((f) => ({ ...f, horario: "CULTO", userId: "" }))}
                 >
                   Culto
                 </Button>
@@ -282,25 +312,17 @@ export function ScheduleClient({
             <div className="space-y-1">
               <p className="text-sm font-medium">Turma</p>
               <Select
-                value={form.classGroupId}
-                onValueChange={(v) => setForm((f) => ({ ...f, classGroupId: v ?? "", userId: "" }))}
-                items={Object.fromEntries(classes.map((c) => [c.id, c.name]))}
+                value={form.turma}
+                onValueChange={(v) => setForm((f) => ({ ...f, turma: v ?? "", userId: "" }))}
+                items={{ ...Object.fromEntries(classes.map((c) => [c.id, c.name])), ...PSEUDO_TURMAS }}
                 disabled={!form.horario}
               >
                 <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
                   {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Papel</p>
-              <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v ?? "PROFESSOR" }))} items={ROLE_LABELS}>
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PROFESSOR">Professor</SelectItem>
-                  <SelectItem value="AUXILIAR">Auxiliar</SelectItem>
+                  {Object.entries(PSEUDO_TURMAS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -311,14 +333,14 @@ export function ScheduleClient({
                 value={form.userId}
                 onValueChange={(v) => setForm((f) => ({ ...f, userId: v ?? "" }))}
                 items={Object.fromEntries(eligibleVolunteers.map((v) => [v.id, v.name]))}
-                disabled={!form.classGroupId}
+                disabled={!form.turma}
               >
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder={form.classGroupId ? "Selecione..." : "Selecione a turma primeiro"} />
+                  <SelectValue placeholder={form.turma ? "Selecione..." : "Selecione a turma primeiro"} />
                 </SelectTrigger>
                 <SelectContent>
                   {eligibleVolunteers.length === 0 ? (
-                    <p className="p-2 text-sm text-muted-foreground">Nenhum voluntário disponível para essa turma.</p>
+                    <p className="p-2 text-sm text-muted-foreground">Nenhum voluntário disponível.</p>
                   ) : (
                     eligibleVolunteers.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)
                   )}
@@ -326,12 +348,29 @@ export function ScheduleClient({
               </Select>
             </div>
 
+            {!editingSlot && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Repetir em</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {sundays.map((s) => (
+                    <label key={s} className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer text-sm">
+                      <Checkbox
+                        checked={repeatDates.includes(s)}
+                        onCheckedChange={() => toggleRepeatDate(s)}
+                      />
+                      {new Date(s).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" })}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <Button
               className="w-full h-12"
-              disabled={!form.horario || !form.classGroupId || !form.userId || saving}
+              disabled={!form.horario || !form.turma || !form.userId || (!editingSlot && repeatDates.length === 0) || saving}
               onClick={saveSlot}
             >
-              Salvar
+              Salvar{!editingSlot && repeatDates.length > 1 ? ` (${repeatDates.length} domingos)` : ""}
             </Button>
           </div>
         </DialogContent>
@@ -376,7 +415,7 @@ function SlotRow({
       <div>
         <p className="font-medium text-sm">{slot.user.name}</p>
         <p className="text-xs text-muted-foreground">
-          {SLOT_LABELS[slot.slotType]} · {ROLE_LABELS[slot.role]}
+          {SLOT_LABELS[slot.slotType]}
         </p>
       </div>
       {canEdit && (

@@ -277,8 +277,10 @@ model PurchaseRequest {
   material      Material?     @relation(fields: [materialId], references: [id])
   freeTextItem  String?       @map("free_text_item")
   quantity      Int
+  unit          String?
   justification String?
   status        RequestStatus @default(PENDENTE)
+  rejectionReason String?     @map("rejection_reason")
   createdAt     DateTime      @default(now()) @map("created_at")
 
   @@map("purchase_requests")
@@ -289,6 +291,7 @@ enum RequestStatus {
   APROVADO
   REJEITADO
   COMPRADO
+  EM_ESTOQUE
 
   @@map("request_status")
 }
