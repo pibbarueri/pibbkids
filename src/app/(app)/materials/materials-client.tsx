@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 
 type Material = {
   id: string;
@@ -31,9 +31,8 @@ export function MaterialsClient({
   const [materials, setMaterials] = useState(initialMaterials);
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ name: "", unit: "" });
-  const [moveTarget, setMoveTarget] = useState<Material | null>(null);
-  const [moveForm, setMoveForm] = useState({ delta: "" });
   const [saving, setSaving] = useState(false);
+  const [adjusting, setAdjusting] = useState<string | null>(null);
 
   async function createMaterial() {
     setSaving(true);
@@ -52,23 +51,19 @@ export function MaterialsClient({
     setCreateForm({ name: "", unit: "" });
   }
 
-  async function move() {
-    if (!moveTarget) return;
-    const delta = Number(moveForm.delta);
-    if (!delta) return;
-    setSaving(true);
-    const res = await fetch(`/api/materials/${moveTarget.id}`, {
+  async function adjust(m: Material, delta: number) {
+    // Never go below zero.
+    if (delta < 0 && m.quantity <= 0) return;
+    setAdjusting(m.id);
+    setMaterials((prev) =>
+      prev.map((x) => (x.id === m.id ? { ...x, quantity: x.quantity + delta } : x))
+    );
+    await fetch(`/api/materials/${m.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ quantityDelta: delta }),
     });
-    await res.json();
-    setMaterials((prev) =>
-      prev.map((m) => (m.id === moveTarget.id ? { ...m, quantity: m.quantity + delta } : m))
-    );
-    setSaving(false);
-    setMoveTarget(null);
-    setMoveForm({ delta: "" });
+    setAdjusting(null);
   }
 
   return (
@@ -125,17 +120,35 @@ export function MaterialsClient({
           >
             <div>
               <p className="font-medium text-sm">{m.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {m.quantity} {m.unit}
-              </p>
+              <p className="text-xs text-muted-foreground">{m.unit}</p>
             </div>
-            <div className="flex items-center gap-2">
-              {isManager && (
-                <Button variant="outline" size="sm" onClick={() => setMoveTarget(m)}>
-                  Movimentar
+            {isManager ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 rounded-full"
+                  disabled={m.quantity <= 0 || adjusting === m.id}
+                  onClick={() => adjust(m, -1)}
+                  aria-label="Diminuir"
+                >
+                  <Minus className="h-4 w-4" />
                 </Button>
-              )}
-            </div>
+                <span className="w-10 text-center font-medium tabular-nums">{m.quantity}</span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 rounded-full"
+                  disabled={adjusting === m.id}
+                  onClick={() => adjust(m, 1)}
+                  aria-label="Aumentar"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <span className="text-sm font-medium">{m.quantity}</span>
+            )}
           </div>
         );
       })}
@@ -143,33 +156,6 @@ export function MaterialsClient({
       {materials.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">Nenhum material cadastrado.</p>
       )}
-
-      <Dialog open={!!moveTarget} onOpenChange={(o) => !o && setMoveTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{moveTarget?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Quantidade (negativo = saída)</p>
-              <Input
-                type="number"
-                className="h-12"
-                value={moveForm.delta}
-                onChange={(e) => setMoveForm((f) => ({ ...f, delta: e.target.value }))}
-                placeholder="Ex: 10 ou -5"
-              />
-            </div>
-            <Button
-              className="w-full h-12"
-              disabled={!moveForm.delta || saving}
-              onClick={move}
-            >
-              Registrar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
