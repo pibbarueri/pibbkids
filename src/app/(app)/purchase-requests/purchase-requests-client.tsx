@@ -12,56 +12,112 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Check } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDENTE: "Pendente",
-  APROVADO: "Aprovado",
+  PENDENTE: "Solicitado",
+  APROVADO: "Aprovado para compra",
   REJEITADO: "Rejeitado",
-  COMPRADO: "Comprado",
+  COMPRADO: "Compra realizada",
+  EM_ESTOQUE: "Em estoque",
 };
 
-const STATUS_VARIANT: Record<string, "secondary" | "default" | "destructive" | "outline"> = {
-  PENDENTE: "secondary",
-  APROVADO: "default",
-  REJEITADO: "destructive",
-  COMPRADO: "outline",
+// Badge visual per status. APROVADO uses a yellow badge for the requester.
+function statusBadgeClass(status: string): string {
+  switch (status) {
+    case "APROVADO":
+      return "bg-yellow-400 text-yellow-950 hover:bg-yellow-400";
+    case "REJEITADO":
+      return "bg-destructive text-destructive-foreground hover:bg-destructive";
+    case "COMPRADO":
+      return "bg-blue-500 text-white hover:bg-blue-500";
+    case "EM_ESTOQUE":
+      return "bg-green-600 text-white hover:bg-green-600";
+    default:
+      return "bg-secondary text-secondary-foreground hover:bg-secondary";
+  }
+}
+
+// Ordered breadcrumb steps for the happy path; rejection is handled separately.
+const FLOW = ["PENDENTE", "APROVADO", "COMPRADO", "EM_ESTOQUE"];
+const FLOW_LABELS: Record<string, string> = {
+  PENDENTE: "Solicitado",
+  APROVADO: "Aprovado (aguardando compra)",
+  COMPRADO: "Compra realizada",
+  EM_ESTOQUE: "Em estoque",
 };
 
-type Material = { id: string; name: string; unit: string };
 type PurchaseRequest = {
   id: string;
   requester: { id: string; name: string };
-  material: Material | null;
   freeTextItem: string | null;
   quantity: number;
+  unit: string | null;
   justification: string | null;
   status: string;
+  rejectionReason: string | null;
   createdAt: string;
 };
 
+function formatWhen(iso: string): string {
+  const d = new Date(iso);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `dia ${dd}/${mm} às ${hh}h${min}`;
+}
+
+function Breadcrumb({ status }: { status: string }) {
+  if (status === "REJEITADO") {
+    return (
+      <div className="flex items-center gap-2 text-xs">
+        <span className="font-medium text-foreground">Solicitado</span>
+        <span className="text-muted-foreground">›</span>
+        <span className="font-medium text-destructive">Rejeitado</span>
+      </div>
+    );
+  }
+  const currentIdx = FLOW.indexOf(status);
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+      {FLOW.map((s, i) => {
+        const done = i <= currentIdx;
+        return (
+          <span key={s} className="flex items-center gap-2">
+            {i > 0 && <span className="text-muted-foreground">›</span>}
+            <span
+              className={cn(
+                "flex items-center gap-1",
+                done ? "font-medium text-foreground" : "text-muted-foreground"
+              )}
+            >
+              {done && <Check className="h-3 w-3 text-green-600" />}
+              {FLOW_LABELS[s]}
+            </span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 export function PurchaseRequestsClient({
   initialRequests,
-  materials,
   isManager,
-  canRequest,
 }: {
   initialRequests: PurchaseRequest[];
-  materials: Material[];
   isManager: boolean;
-  canRequest: boolean;
 }) {
   const [requests, setRequests] = useState(initialRequests);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ materialId: "", freeTextItem: "", quantity: "1", justification: "" });
+  const [form, setForm] = useState({ freeTextItem: "", quantity: "1", unit: "", justification: "" });
   const [saving, setSaving] = useState(false);
+
+  // Details modal
+  const [selected, setSelected] = useState<PurchaseRequest | null>(null);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   async function create() {
     setSaving(true);
@@ -69,9 +125,9 @@ export function PurchaseRequestsClient({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        materialId: form.materialId || null,
-        freeTextItem: form.materialId ? null : form.freeTextItem,
+        freeTextItem: form.freeTextItem,
         quantity: Number(form.quantity) || 1,
+        unit: form.unit || null,
         justification: form.justification,
       }),
     });
@@ -79,64 +135,51 @@ export function PurchaseRequestsClient({
     setRequests((prev) => [saved, ...prev]);
     setSaving(false);
     setOpen(false);
-    setForm({ materialId: "", freeTextItem: "", quantity: "1", justification: "" });
+    setForm({ freeTextItem: "", quantity: "1", unit: "", justification: "" });
   }
 
-  async function setStatus(id: string, status: string) {
+  async function setStatus(id: string, status: string, reason?: string) {
     const res = await fetch(`/api/purchase-requests/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, rejectionReason: reason }),
     });
     const updated = await res.json();
     setRequests((prev) => prev.map((r) => (r.id === id ? updated : r)));
+    setSelected(updated);
+    setRejecting(false);
+    setRejectReason("");
   }
 
-  const valid = (form.materialId || form.freeTextItem) && Number(form.quantity) > 0;
+  const valid = form.freeTextItem.trim() && Number(form.quantity) > 0;
 
   return (
     <div className="space-y-3">
-      {canRequest && (
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger
-            className={cn(buttonVariants({ size: "icon" }), "fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40")}
-            aria-label="Nova solicitação"
-          >
-            <Plus className="h-6 w-6" />
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nova solicitação</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Material do estoque</p>
-                <Select
-                  value={form.materialId}
-                  onValueChange={(v) => setForm((f) => ({ ...f, materialId: v ?? "" }))}
-                  items={Object.fromEntries(materials.map((m) => [m.id, m.name]))}
-                >
-                  <SelectTrigger className="h-12"><SelectValue placeholder="Ou digite abaixo..." /></SelectTrigger>
-                  <SelectContent>
-                    {materials.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger
+          className={cn(buttonVariants({ size: "icon" }), "fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40")}
+          aria-label="Nova solicitação"
+        >
+          <Plus className="h-6 w-6" />
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova solicitação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Item</p>
+              <Input
+                className="h-12"
+                value={form.freeTextItem}
+                onChange={(e) => setForm((f) => ({ ...f, freeTextItem: e.target.value }))}
+                placeholder="Ex: Caneta vermelha Pilot"
+              />
+            </div>
 
-              {!form.materialId && (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Item (texto livre)</p>
-                  <Input
-                    className="h-12"
-                    value={form.freeTextItem}
-                    onChange={(e) => setForm((f) => ({ ...f, freeTextItem: e.target.value }))}
-                    placeholder="Ex: Caneta vermelha Pilot"
-                  />
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Quantidade</p>
+            <div className="flex gap-3">
+              <div className="space-y-1 w-24">
+                <p className="text-sm font-medium">Qtde</p>
                 <Input
                   type="number"
                   className="h-12"
@@ -144,58 +187,152 @@ export function PurchaseRequestsClient({
                   onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
                 />
               </div>
-
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Justificativa</p>
+              <div className="space-y-1 flex-1">
+                <p className="text-sm font-medium">Unidade</p>
                 <Input
                   className="h-12"
-                  value={form.justification}
-                  onChange={(e) => setForm((f) => ({ ...f, justification: e.target.value }))}
+                  value={form.unit}
+                  onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
+                  placeholder="cx, rolo, etc"
                 />
               </div>
-
-              <Button className="w-full h-12" disabled={!valid || saving} onClick={create}>
-                Enviar solicitação
-              </Button>
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Justificativa</p>
+              <Input
+                className="h-12"
+                value={form.justification}
+                onChange={(e) => setForm((f) => ({ ...f, justification: e.target.value }))}
+              />
+            </div>
+
+            <Button className="w-full h-12" disabled={!valid || saving} onClick={create}>
+              Enviar solicitação
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {requests.map((r) => (
-        <div key={r.id} className="p-4 border rounded-lg bg-background space-y-2">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="font-medium text-sm">
-                {r.quantity}x {r.material?.name ?? r.freeTextItem}
-              </p>
-              <p className="text-xs text-muted-foreground">{r.requester.name}</p>
-              {r.justification && <p className="text-xs text-muted-foreground mt-1">{r.justification}</p>}
-            </div>
-            <Badge variant={STATUS_VARIANT[r.status]}>{STATUS_LABELS[r.status]}</Badge>
+        <button
+          key={r.id}
+          onClick={() => {
+            setSelected(r);
+            setRejecting(false);
+          }}
+          className="w-full text-left p-4 border rounded-lg bg-background flex items-start justify-between gap-2 hover:bg-muted/50 transition-colors"
+        >
+          <div>
+            <p className="font-medium text-sm">
+              {r.quantity}
+              {r.unit ? ` ${r.unit}` : "x"} {r.freeTextItem}
+            </p>
+            <p className="text-xs text-muted-foreground">{r.requester.name}</p>
           </div>
-
-          {isManager && r.status === "PENDENTE" && (
-            <div className="flex gap-2">
-              <Button size="sm" className="flex-1" onClick={() => setStatus(r.id, "APROVADO")}>
-                Aprovar
-              </Button>
-              <Button size="sm" variant="destructive" className="flex-1" onClick={() => setStatus(r.id, "REJEITADO")}>
-                Rejeitar
-              </Button>
-            </div>
-          )}
-          {isManager && r.status === "APROVADO" && (
-            <Button size="sm" className="w-full" onClick={() => setStatus(r.id, "COMPRADO")}>
-              Marcar como comprado
-            </Button>
-          )}
-        </div>
+          <Badge className={statusBadgeClass(r.status)}>{STATUS_LABELS[r.status]}</Badge>
+        </button>
       ))}
 
       {requests.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">Nenhuma solicitação.</p>
       )}
+
+      {/* Details modal */}
+      <Dialog open={!!selected} onOpenChange={(v) => !v && setSelected(null)}>
+        <DialogContent>
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {selected.quantity}
+                  {selected.unit ? ` ${selected.unit}` : "x"} {selected.freeTextItem}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <Breadcrumb status={selected.status} />
+
+                {selected.justification && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Justificativa</p>
+                    <p className="text-sm">{selected.justification}</p>
+                  </div>
+                )}
+
+                {selected.status === "REJEITADO" && selected.rejectionReason && (
+                  <div>
+                    <p className="text-xs font-medium text-destructive">Motivo da rejeição</p>
+                    <p className="text-sm">{selected.rejectionReason}</p>
+                  </div>
+                )}
+
+                {/* Admin actions */}
+                {isManager && !rejecting && (
+                  <div className="flex flex-col gap-2">
+                    {selected.status === "PENDENTE" && (
+                      <div className="flex gap-2">
+                        <Button size="sm" className="flex-1" onClick={() => setStatus(selected.id, "APROVADO")}>
+                          Aprovar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="flex-1"
+                          onClick={() => setRejecting(true)}
+                        >
+                          Rejeitar
+                        </Button>
+                      </div>
+                    )}
+                    {selected.status === "APROVADO" && (
+                      <Button size="sm" onClick={() => setStatus(selected.id, "COMPRADO")}>
+                        Marcar compra realizada
+                      </Button>
+                    )}
+                    {selected.status === "COMPRADO" && (
+                      <Button size="sm" onClick={() => setStatus(selected.id, "EM_ESTOQUE")}>
+                        Marcar em estoque
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {/* Reject reason sub-flow */}
+                {isManager && rejecting && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Motivo da rejeição</p>
+                    <Input
+                      className="h-12"
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      placeholder="Ex: Fora do orçamento"
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" className="flex-1" onClick={() => setRejecting(false)}>
+                        Cancelar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="flex-1"
+                        disabled={!rejectReason.trim()}
+                        onClick={() => setStatus(selected.id, "REJEITADO", rejectReason)}
+                      >
+                        Confirmar rejeição
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground border-t pt-3">
+                  Solicitado por: &apos;{selected.requester.name}&apos;, {formatWhen(selected.createdAt)}
+                </p>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

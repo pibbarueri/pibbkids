@@ -14,10 +14,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const request = await prisma.purchaseRequest.update({
     where: { id },
-    data: { status: body.status },
+    data: {
+      status: body.status,
+      rejectionReason: body.status === "REJEITADO" ? body.rejectionReason || null : null,
+    },
     include: {
       requester: { select: { id: true, name: true } },
-      material: { select: { id: true, name: true, unit: true } },
     },
   });
 
