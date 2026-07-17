@@ -3,9 +3,19 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-type CalendarEvent = { id: string; title: string; date: string };
+type CalendarEvent = { id: string; title: string; date: string; description: string | null };
+
+function formatFullDate(iso: string) {
+  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
+}
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 const MONTH_LABELS = [
@@ -21,6 +31,7 @@ export function EventsCalendar({ events }: { events: CalendarEvent[] }) {
   const today = new Date();
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [detail, setDetail] = useState<CalendarEvent | null>(null);
 
   const viewDate = new Date(Date.UTC(today.getFullYear(), today.getMonth() + monthOffset, 1));
   const year = viewDate.getUTCFullYear();
@@ -92,7 +103,13 @@ export function EventsCalendar({ events }: { events: CalendarEvent[] }) {
         <div className="space-y-1 mt-3 pt-3 border-t">
           {selectedEvents.length > 0 ? (
             selectedEvents.map((ev) => (
-              <p key={ev.id} className="text-sm">🎉 {ev.title}</p>
+              <button
+                key={ev.id}
+                onClick={() => setDetail(ev)}
+                className="block w-full text-left text-sm rounded-md px-1 py-0.5 hover:bg-muted"
+              >
+                🎉 {ev.title}
+              </button>
             ))
           ) : (
             <p className="text-xs text-muted-foreground">Nenhum evento nesse dia.</p>
@@ -103,6 +120,22 @@ export function EventsCalendar({ events }: { events: CalendarEvent[] }) {
       {events.length === 0 && (
         <p className="text-xs text-muted-foreground text-center py-2">Nenhum evento futuro.</p>
       )}
+
+      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent>
+          {detail && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{detail.title}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">📅 {formatFullDate(detail.date)}</p>
+                {detail.description && <p className="text-sm">{detail.description}</p>}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

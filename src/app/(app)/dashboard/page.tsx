@@ -39,7 +39,7 @@ export default async function DashboardPage() {
     prisma.event.findMany({
       where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
       orderBy: { date: "asc" },
-      select: { id: true, title: true, date: true },
+      select: { id: true, title: true, date: true, description: true },
     }),
     prisma.scheduleSlot.findMany({
       where: { date: nextSunday },
