@@ -23,7 +23,6 @@ export async function POST(req: NextRequest) {
       name: body.name,
       unit: body.unit,
       quantity: body.quantity ?? 0,
-      minQuantity: body.minQuantity ?? 0,
     },
   });
 

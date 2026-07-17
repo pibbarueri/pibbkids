@@ -249,7 +249,6 @@ model Material {
   name        String
   unit        String
   quantity    Int               @default(0)
-  minQuantity Int               @default(0) @map("min_quantity")
   movements   StockMovement[]
   requests    PurchaseRequest[]
 

@@ -12,14 +12,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, AlertTriangle } from "lucide-react";
+import { Plus } from "lucide-react";
 
 type Material = {
   id: string;
   name: string;
   unit: string;
   quantity: number;
-  minQuantity: number;
 };
 
 export function MaterialsClient({
@@ -31,7 +30,7 @@ export function MaterialsClient({
 }) {
   const [materials, setMaterials] = useState(initialMaterials);
   const [createOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: "", unit: "", minQuantity: "0" });
+  const [createForm, setCreateForm] = useState({ name: "", unit: "" });
   const [moveTarget, setMoveTarget] = useState<Material | null>(null);
   const [moveForm, setMoveForm] = useState({ delta: "", reason: "" });
   const [saving, setSaving] = useState(false);
@@ -44,14 +43,13 @@ export function MaterialsClient({
       body: JSON.stringify({
         name: createForm.name,
         unit: createForm.unit,
-        minQuantity: Number(createForm.minQuantity) || 0,
       }),
     });
     const saved = await res.json();
     setMaterials((prev) => [...prev, saved].sort((a, b) => a.name.localeCompare(b.name)));
     setSaving(false);
     setCreateOpen(false);
-    setCreateForm({ name: "", unit: "", minQuantity: "0" });
+    setCreateForm({ name: "", unit: "" });
   }
 
   async function move() {
@@ -106,15 +104,6 @@ export function MaterialsClient({
                     onChange={(e) => setCreateForm((f) => ({ ...f, unit: e.target.value }))}
                   />
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Qtd. mínima</p>
-                  <Input
-                    type="number"
-                    className="h-12"
-                    value={createForm.minQuantity}
-                    onChange={(e) => setCreateForm((f) => ({ ...f, minQuantity: e.target.value }))}
-                  />
-                </div>
               </div>
               <Button
                 className="w-full h-12"
@@ -129,7 +118,6 @@ export function MaterialsClient({
       )}
 
       {materials.map((m) => {
-        const low = m.quantity < m.minQuantity;
         return (
           <div
             key={m.id}
@@ -138,11 +126,10 @@ export function MaterialsClient({
             <div>
               <p className="font-medium text-sm">{m.name}</p>
               <p className="text-xs text-muted-foreground">
-                {m.quantity} {m.unit} {m.minQuantity > 0 && `· mínimo ${m.minQuantity}`}
+                {m.quantity} {m.unit}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {low && <AlertTriangle className="h-4 w-4 text-destructive" />}
               {isManager && (
                 <Button variant="outline" size="sm" onClick={() => setMoveTarget(m)}>
                   Movimentar
