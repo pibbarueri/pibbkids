@@ -8,7 +8,7 @@ import { FunctionType, Role } from "@prisma/client";
 
 const createSchema = z.object({
   name: z.string().min(2),
-  email: z.string().email(),
+  username: z.string().min(3),
   password: z.string().min(6),
   phone: z.string().optional(),
   cpf: z.string().optional(),
@@ -32,7 +32,7 @@ export async function GET() {
     select: {
       id: true,
       name: true,
-      email: true,
+      username: true,
       phone: true,
       role: true,
       volunteerStatus: true,
@@ -60,9 +60,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ errors: parsed.error.flatten().fieldErrors }, { status: 422 });
   }
 
-  const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  const existing = await prisma.user.findUnique({ where: { username: parsed.data.username } });
   if (existing) {
-    return NextResponse.json({ error: "Email já cadastrado" }, { status: 409 });
+    return NextResponse.json({ error: "Usuário já cadastrado" }, { status: 409 });
   }
 
   const { password, functions, preferredClassIds, birthdate, ...rest } = parsed.data;
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     select: {
       id: true,
       name: true,
-      email: true,
+      username: true,
       phone: true,
       role: true,
       volunteerStatus: true,

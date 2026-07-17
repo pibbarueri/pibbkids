@@ -22,7 +22,7 @@ export default async function VolunteersPage() {
     select: {
       id: true,
       name: true,
-      email: true,
+      username: true,
       phone: true,
       role: true,
       volunteerStatus: true,

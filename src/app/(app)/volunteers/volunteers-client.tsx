@@ -25,7 +25,7 @@ import { Pencil, Plus, Search } from "lucide-react";
 
 const emptyVolunteerForm = {
   name: "",
-  email: "",
+  username: "",
   password: "",
   phone: "",
   cpf: "",
@@ -36,7 +36,7 @@ const emptyVolunteerForm = {
 
 const emptyEditForm = {
   name: "",
-  email: "",
+  username: "",
   phone: "",
   cpf: "",
   birthdate: "",
@@ -67,7 +67,7 @@ type ClassGroup = { id: string; name: string };
 type Volunteer = {
   id: string;
   name: string;
-  email: string;
+  username: string;
   phone: string | null;
   role: string;
   volunteerStatus: string;
@@ -104,7 +104,7 @@ export function VolunteersClient({
   const pending = filtered.filter((v) => v.volunteerStatus === "PENDENTE");
   const approved = filtered.filter((v) => v.volunteerStatus === "APROVADO");
 
-  const addValid = addForm.name && addForm.email && addForm.password.length >= 6 && addForm.role;
+  const addValid = addForm.name && addForm.username && addForm.password.length >= 6 && addForm.role;
 
   async function createVolunteer() {
     if (!addValid) return;
@@ -130,7 +130,7 @@ export function VolunteersClient({
   function openEdit(v: Volunteer) {
     setEditForm({
       name: v.name,
-      email: v.email,
+      username: v.username,
       phone: v.phone ?? "",
       cpf: v.cpf ?? "",
       birthdate: v.birthdate ? new Date(v.birthdate).toISOString().slice(0, 10) : "",
@@ -158,7 +158,7 @@ export function VolunteersClient({
     }));
   }
 
-  const editValid = editForm.name && editForm.email && editForm.role;
+  const editValid = editForm.name && editForm.username && editForm.role;
 
   async function saveEdit() {
     if (!editing || !editValid) return;
@@ -206,8 +206,8 @@ export function VolunteersClient({
               <Input className="h-12" value={addForm.name} onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))} />
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium">Email *</p>
-              <Input type="email" className="h-12" value={addForm.email} onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))} />
+              <p className="text-sm font-medium">Usuário *</p>
+              <Input type="text" className="h-12" value={addForm.username} onChange={(e) => setAddForm((f) => ({ ...f, username: e.target.value }))} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Senha *</p>
@@ -302,7 +302,7 @@ export function VolunteersClient({
           </DialogHeader>
           {selected && (
             <div className="space-y-3 text-sm">
-              <Row label="Email" value={selected.email} />
+              <Row label="Usuário" value={selected.username} />
               <Row label="Telefone" value={selected.phone} />
 
               {isLeadership && (
@@ -354,8 +354,8 @@ export function VolunteersClient({
                 <Input className="h-12" value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium">Email *</p>
-                <Input type="email" className="h-12" value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} />
+                <p className="text-sm font-medium">Usuário *</p>
+                <Input type="text" className="h-12" value={editForm.username} onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))} />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Telefone</p>

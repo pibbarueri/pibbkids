@@ -22,7 +22,7 @@ const FUNCTION_LABELS: Record<FunctionType, string> = {
 
 const schema = z.object({
   name: z.string().min(2, "Nome obrigatório"),
-  email: z.string().email("Email inválido"),
+  username: z.string().min(3, "Usuário obrigatório"),
   password: z.string().min(6, "Senha mínima 6 caracteres"),
   phone: z.string().min(8, "Telefone obrigatório"),
   cpf: z.string().optional(),
@@ -113,8 +113,8 @@ export default function RegisterVolunteerPage() {
             <Input {...register("name")} className="h-12" />
           </Field>
 
-          <Field label="Email *" error={errors.email?.message}>
-            <Input type="email" {...register("email")} className="h-12" />
+          <Field label="Usuário *" error={errors.username?.message}>
+            <Input type="text" {...register("username")} className="h-12" />
           </Field>
 
           <Field label="Senha *" error={errors.password?.message}>

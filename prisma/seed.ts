@@ -39,11 +39,11 @@ async function main() {
 
   // Admin user
   const admin = await prisma.user.upsert({
-    where: { email: "admin" },
+    where: { username: "admin" },
     update: { password: await bcrypt.hash("admin", 12) },
     create: {
       name: "Administrador",
-      email: "admin",
+      username: "admin",
       password: await bcrypt.hash("admin", 12),
       role: Role.LIDERANCA,
       volunteerStatus: "APROVADO",
@@ -53,7 +53,7 @@ async function main() {
     },
   });
 
-  console.log(`✓ Admin user: ${admin.email}`);
+  console.log(`✓ Admin user: ${admin.username}`);
 }
 
 main()

@@ -20,13 +20,13 @@ export default function LoginPage() {
 
     const form = new FormData(e.currentTarget);
     const result = await signIn("credentials", {
-      email: form.get("email"),
+      username: form.get("username"),
       password: form.get("password"),
       redirect: false,
     });
 
     if (result?.error) {
-      setError("Email ou senha inválidos.");
+      setError("Usuário ou senha inválidos.");
       setLoading(false);
     } else {
       router.push("/dashboard");
@@ -41,16 +41,16 @@ export default function LoginPage() {
             PIBB<span className="text-secondary italic ml-1">Kids</span>
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Entre com seu email e senha
+            Entre com seu usuário e senha
           </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Usuário</Label>
+              <Label htmlFor="username">Usuário</Label>
               <Input
-                id="email"
-                name="email"
+                id="username"
+                name="username"
                 type="text"
                 required
                 autoComplete="username"

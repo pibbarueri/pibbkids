@@ -16,7 +16,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     where: { id },
     data: {
       ...(body.name !== undefined && { name: body.name }),
-      ...(body.email !== undefined && { email: body.email }),
+      ...(body.username !== undefined && { username: body.username }),
       ...(body.phone !== undefined && { phone: body.phone }),
       ...(body.cpf !== undefined && { cpf: body.cpf }),
       ...(body.birthdate !== undefined && { birthdate: body.birthdate ? new Date(body.birthdate) : null }),
@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     select: {
       id: true,
       name: true,
-      email: true,
+      username: true,
       phone: true,
       role: true,
       volunteerStatus: true,
