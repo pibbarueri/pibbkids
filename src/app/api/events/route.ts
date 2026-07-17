@@ -9,7 +9,6 @@ export async function GET() {
 
   const events = await prisma.event.findMany({
     where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
-    include: { classes: { include: { classGroup: { select: { id: true, name: true } } } } },
     orderBy: { date: "asc" },
   });
 
@@ -23,16 +22,14 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { title, date, description, classGroupIds } = body;
+  const { title, date, description } = body;
 
   const event = await prisma.event.create({
     data: {
       title,
       date: new Date(date),
       description: description || null,
-      classes: { create: (classGroupIds ?? []).map((classGroupId: string) => ({ classGroupId })) },
     },
-    include: { classes: { include: { classGroup: { select: { id: true, name: true } } } } },
   });
 
   return NextResponse.json(event, { status: 201 });

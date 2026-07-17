@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -15,14 +13,11 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Copy, Trash2 } from "lucide-react";
 
-type ClassGroup = { id: string; name: string };
-type EventClass = { classGroupId: string; classGroup: ClassGroup };
 type Event = {
   id: string;
   title: string;
   date: string;
   description: string | null;
-  classes: EventClass[];
 };
 
 function formatDate(iso: string) {
@@ -31,28 +26,17 @@ function formatDate(iso: string) {
 
 export function EventsClient({
   initialEvents,
-  classes,
   isManager,
 }: {
   initialEvents: Event[];
-  classes: ClassGroup[];
   isManager: boolean;
 }) {
   const [events, setEvents] = useState(() =>
     initialEvents.map((e) => ({ ...e, date: new Date(e.date).toISOString() }))
   );
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ title: "", date: "", description: "", classGroupIds: [] as string[] });
+  const [form, setForm] = useState({ title: "", date: "", description: "" });
   const [saving, setSaving] = useState(false);
-
-  function toggleClass(id: string) {
-    setForm((f) => ({
-      ...f,
-      classGroupIds: f.classGroupIds.includes(id)
-        ? f.classGroupIds.filter((c) => c !== id)
-        : [...f.classGroupIds, id],
-    }));
-  }
 
   async function create() {
     setSaving(true);
@@ -65,7 +49,7 @@ export function EventsClient({
     setEvents((prev) => [...prev, saved].sort((a, b) => a.date.localeCompare(b.date)));
     setSaving(false);
     setOpen(false);
-    setForm({ title: "", date: "", description: "", classGroupIds: [] });
+    setForm({ title: "", date: "", description: "" });
   }
 
   async function remove(id: string) {
@@ -77,7 +61,6 @@ export function EventsClient({
     const lines = [
       `📅 *${event.title}*`,
       formatDate(event.date),
-      event.classes.length > 0 ? `Turmas: ${event.classes.map((c) => c.classGroup.name).join(", ")}` : "",
       event.description ?? "",
     ].filter(Boolean);
     navigator.clipboard.writeText(lines.join("\n"));
@@ -123,18 +106,6 @@ export function EventsClient({
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 />
               </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Turmas envolvidas</p>
-                {classes.map((c) => (
-                  <label key={c.id} className="flex items-center gap-2 p-2">
-                    <Checkbox
-                      checked={form.classGroupIds.includes(c.id)}
-                      onCheckedChange={() => toggleClass(c.id)}
-                    />
-                    <span className="text-sm">{c.name}</span>
-                  </label>
-                ))}
-              </div>
               <Button className="w-full h-12" disabled={!form.title || !form.date || saving} onClick={create}>
                 Salvar
               </Button>
@@ -149,13 +120,6 @@ export function EventsClient({
             <div>
               <p className="font-medium text-sm">{e.title}</p>
               <p className="text-xs text-muted-foreground">{formatDate(e.date)}</p>
-              {e.classes.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {e.classes.map((c) => (
-                    <Badge key={c.classGroupId} variant="outline">{c.classGroup.name}</Badge>
-                  ))}
-                </div>
-              )}
               {e.description && <p className="text-xs mt-1">{e.description}</p>}
             </div>
             <div className="flex gap-1 shrink-0">

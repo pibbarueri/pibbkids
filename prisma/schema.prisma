@@ -121,7 +121,6 @@ model ClassGroup {
   scheduleSlots  ScheduleSlot[]
   sundayPlans    SundayPlan[]
   preferredBy    UserPreferredClass[]
-  events         EventClass[]
 
   @@map("class_groups")
 }
@@ -298,21 +297,10 @@ enum RequestStatus {
 // ─── Eventos ──────────────────────────────────────────────────────────────────
 
 model Event {
-  id          String       @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   date        DateTime
   description String?
-  classes     EventClass[]
 
   @@map("events")
-}
-
-model EventClass {
-  eventId      String     @map("event_id")
-  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  classGroupId String     @map("class_group_id")
-  classGroup   ClassGroup @relation(fields: [classGroupId], references: [id])
-
-  @@id([eventId, classGroupId])
-  @@map("event_classes")
 }
