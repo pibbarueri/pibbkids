@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -21,7 +20,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { Pencil, Plus, Search } from "lucide-react";
+
+const FUNCTION_OPTIONS = [
+  { value: "PROFESSOR", label: "Professor" },
+  { value: "AUXILIAR", label: "Auxiliar" },
+  { value: "APOIO_GERAL", label: "Apoio Geral" },
+  { value: "LOUVOR", label: "Louvor" },
+  { value: "RECEPCAO", label: "Recepção" },
+  { value: "TEATRO", label: "Teatro" },
+];
 
 const emptyVolunteerForm = {
   name: "",
@@ -32,6 +41,8 @@ const emptyVolunteerForm = {
   birthdate: "",
   motherName: "",
   role: "AUXILIAR",
+  functions: [] as string[],
+  preferredClassIds: [] as string[],
 };
 
 const emptyEditForm = {
@@ -143,21 +154,6 @@ export function VolunteersClient({
     setEditing(v);
   }
 
-  function toggleFunction(fn: string) {
-    setEditForm((f) => ({
-      ...f,
-      functions: f.functions.includes(fn) ? f.functions.filter((x) => x !== fn) : [...f.functions, fn],
-    }));
-  }
-
-  function toggleClass(id: string) {
-    setEditForm((f) => ({
-      ...f,
-      preferredClassIds: f.preferredClassIds.includes(id)
-        ? f.preferredClassIds.filter((x) => x !== id)
-        : [...f.preferredClassIds, id],
-    }));
-  }
 
   const editValid = editForm.name && editForm.username && editForm.role;
 
@@ -247,6 +243,26 @@ export function VolunteersClient({
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Funções</p>
+              <MultiSelect
+                options={FUNCTION_OPTIONS}
+                selected={addForm.functions}
+                onChange={(next) => setAddForm((f) => ({ ...f, functions: next }))}
+                placeholder="Selecione as funções"
+              />
+            </div>
+            {classes.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Turmas preferidas</p>
+                <MultiSelect
+                  options={classes.map((c) => ({ value: c.id, label: c.name }))}
+                  selected={addForm.preferredClassIds}
+                  onChange={(next) => setAddForm((f) => ({ ...f, preferredClassIds: next }))}
+                  placeholder="Selecione as turmas"
+                />
+              </div>
+            )}
             {addError && <p className="text-sm text-destructive">{addError}</p>}
             <Button className="w-full h-12" disabled={!addValid || addSaving} onClick={createVolunteer}>
               Cadastrar voluntário
@@ -391,34 +407,24 @@ export function VolunteersClient({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <p className="text-sm font-medium">Funções</p>
-                <div className="grid grid-cols-1 gap-2">
-                  {Object.entries(FUNCTION_LABELS).map(([value, label]) => (
-                    <label key={value} className="flex items-center gap-3 p-2 border rounded-lg cursor-pointer">
-                      <Checkbox
-                        checked={editForm.functions.includes(value)}
-                        onCheckedChange={() => toggleFunction(value)}
-                      />
-                      <span className="text-sm">{label}</span>
-                    </label>
-                  ))}
-                </div>
+                <MultiSelect
+                  options={FUNCTION_OPTIONS}
+                  selected={editForm.functions}
+                  onChange={(next) => setEditForm((f) => ({ ...f, functions: next }))}
+                  placeholder="Selecione as funções"
+                />
               </div>
               {classes.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <p className="text-sm font-medium">Turmas preferidas</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {classes.map((cls) => (
-                      <label key={cls.id} className="flex items-center gap-3 p-2 border rounded-lg cursor-pointer">
-                        <Checkbox
-                          checked={editForm.preferredClassIds.includes(cls.id)}
-                          onCheckedChange={() => toggleClass(cls.id)}
-                        />
-                        <span className="text-sm">{cls.name}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <MultiSelect
+                    options={classes.map((cls) => ({ value: cls.id, label: cls.name }))}
+                    selected={editForm.preferredClassIds}
+                    onChange={(next) => setEditForm((f) => ({ ...f, preferredClassIds: next }))}
+                    placeholder="Selecione as turmas"
+                  />
                 </div>
               )}
               <div className="flex gap-2">
