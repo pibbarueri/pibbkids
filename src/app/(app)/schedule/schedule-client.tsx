@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -118,6 +118,18 @@ export function ScheduleClient({
   const selectedSunday = sundays[sundayIdx];
   const daySlots = slots.filter((s) => s.date.startsWith(selectedSunday.slice(0, 10)));
 
+  // Bulk "Repetir em": always the next 4 sundays starting from the upcoming one.
+  const repeatSundays = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + ((7 - d.getDay()) % 7)); // nearest upcoming sunday (today if sunday)
+    return Array.from({ length: 4 }, (_, i) => {
+      const s = new Date(d);
+      s.setDate(d.getDate() + i * 7);
+      return s.toISOString();
+    });
+  }, []);
+
   const mySlots = canViewAll ? daySlots : daySlots.filter((s) => s.user.id === currentUserId);
 
   const isRealClass = !!form.turma && !(form.turma in PSEUDO_TURMAS);
@@ -131,7 +143,7 @@ export function ScheduleClient({
   function openAdd() {
     setEditingSlot(null);
     setForm(emptyForm);
-    setRepeatDates([selectedSunday]);
+    setRepeatDates([repeatSundays[0]]);
     setAddOpen(true);
   }
 
@@ -352,7 +364,7 @@ export function ScheduleClient({
               <div className="space-y-1">
                 <p className="text-sm font-medium">Repetir em</p>
                 <div className="grid grid-cols-2 gap-2">
-                  {sundays.map((s) => (
+                  {repeatSundays.map((s) => (
                     <label key={s} className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer text-sm">
                       <Checkbox
                         checked={repeatDates.includes(s)}
