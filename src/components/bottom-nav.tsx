@@ -39,7 +39,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR, Role.RECEPCAO],
   },
   {
-    href: "/curriculum",
+    href: "/curriculum/lessons",
     label: "Aulas",
     icon: <BookOpen className="h-5 w-5" />,
     roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR],
@@ -48,10 +48,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export function BottomNav({ role }: { role: Role }) {
   const pathname = usePathname();
-  const isManager = role === Role.LIDERANCA || role === Role.COORDENACAO;
-  const visible = NAV_ITEMS.filter((item) => item.roles.includes(role)).map((item) =>
-    item.href === "/curriculum" && !isManager ? { ...item, href: "/curriculum/lessons" } : item
-  );
+  const visible = NAV_ITEMS.filter((item) => item.roles.includes(role));
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 border-t bg-background z-50">

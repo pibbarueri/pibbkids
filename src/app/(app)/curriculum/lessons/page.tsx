@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
+import { Button } from "@/components/ui/button";
 import { LessonsClient } from "./lessons-client";
 
 function sundaysInMonth(year: number, month: number): Date[] {
@@ -56,7 +58,14 @@ export default async function LessonsPage() {
 
   return (
     <div className="p-4 space-y-4">
-      <h1 className="text-xl font-bold">Aulas</h1>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-xl font-bold">Aulas</h1>
+        {isManager && (
+          <Link href="/curriculum/overview">
+            <Button variant="outline" size="sm">Vista semestral</Button>
+          </Link>
+        )}
+      </div>
       <LessonsClient
         initialPlans={plans as any}
         classes={classes}

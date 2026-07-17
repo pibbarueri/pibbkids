@@ -2,7 +2,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
-import { ShoppingCart, PartyPopper, ClipboardCheck, Package } from "lucide-react";
+import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen } from "lucide-react";
 import { EventsCalendar } from "@/components/dashboard/events-calendar";
 import { NextSundaySchedule } from "@/components/dashboard/next-sunday-schedule";
 
@@ -31,6 +31,7 @@ export default async function DashboardPage() {
     { href: "/events", label: "Eventos", icon: PartyPopper, roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR, Role.RECEPCAO] },
     { href: "/attendance", label: "Presença", icon: ClipboardCheck, roles: [Role.LIDERANCA, Role.COORDENACAO, Role.RECEPCAO] },
     { href: "/materials", label: "Materiais", icon: Package, roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR] },
+    { href: "/curriculum", label: "Revistas", icon: BookOpen, roles: [Role.LIDERANCA] },
   ].filter((s) => s.roles.includes(role));
 
   const nextSunday = getNextSunday();
