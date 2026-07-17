@@ -31,15 +31,15 @@ const LESSON_TYPE_LABELS: Record<string, string> = {
 const TIPO_LABELS: Record<string, string> = { EBD: "EBD", CULTO: "Culto" };
 
 type ClassGroup = { id: string; name: string };
-type Curriculum = { id: string; title: string; seriesType: string; seriesNumber: number; classGroupId: string; uso: string };
+type Journal = { id: string; title: string; series: string; edition: number; classGroupId: string; usage: string };
 type Plan = {
   id: string;
   date: string;
   classGroupId: string;
   classGroup: ClassGroup;
   tipo: string;
-  curriculumId: string | null;
-  curriculum: { id: string; title: string; seriesType: string; seriesNumber: number } | null;
+  journalId: string | null;
+  journal: { id: string; title: string; series: string; edition: number } | null;
   licaoNumber: number | null;
   lessonType: string;
   specialTitle: string | null;
@@ -52,21 +52,21 @@ function formatDate(iso: string) {
 
 function planLabel(p: Plan) {
   if (p.lessonType !== "APOSTILA") return p.specialTitle || LESSON_TYPE_LABELS[p.lessonType];
-  if (p.curriculum) return `${p.curriculum.title} — lição ${p.licaoNumber ?? "?"}`;
+  if (p.journal) return `${p.journal.title} — lição ${p.licaoNumber ?? "?"}`;
   return "Sem plano";
 }
 
 export function LessonsClient({
   initialPlans,
   classes,
-  curricula,
+  journals,
   sundays,
   isManager,
   myClassIds,
 }: {
   initialPlans: Plan[];
   classes: ClassGroup[];
-  curricula: Curriculum[];
+  journals: Journal[];
   sundays: string[];
   isManager: boolean;
   myClassIds: string[];
@@ -76,7 +76,7 @@ export function LessonsClient({
   );
   const [sundayIdx, setSundayIdx] = useState(0);
   const [editing, setEditing] = useState<{ classGroupId: string; className: string; tipo: string } | null>(null);
-  const [form, setForm] = useState({ lessonType: "APOSTILA", curriculumId: "", licaoNumber: "", specialTitle: "" });
+  const [form, setForm] = useState({ lessonType: "APOSTILA", journalId: "", licaoNumber: "", specialTitle: "" });
   const [saving, setSaving] = useState(false);
 
   const selectedSunday = sundays[sundayIdx];
@@ -88,7 +88,7 @@ export function LessonsClient({
     const existing = dayPlans.find((p) => p.classGroupId === classGroupId && p.tipo === tipo);
     setForm({
       lessonType: existing?.lessonType ?? "APOSTILA",
-      curriculumId: existing?.curriculumId ?? "",
+      journalId: existing?.journalId ?? "",
       licaoNumber: existing?.licaoNumber ? String(existing.licaoNumber) : "",
       specialTitle: existing?.specialTitle ?? "",
     });
@@ -106,7 +106,7 @@ export function LessonsClient({
         classGroupId: editing.classGroupId,
         tipo: editing.tipo,
         lessonType: form.lessonType,
-        curriculumId: form.lessonType === "APOSTILA" ? form.curriculumId || null : null,
+        journalId: form.lessonType === "APOSTILA" ? form.journalId || null : null,
         licaoNumber: form.lessonType === "APOSTILA" ? Number(form.licaoNumber) || null : null,
         specialTitle: form.lessonType !== "APOSTILA" ? form.specialTitle || null : null,
       }),
@@ -146,7 +146,7 @@ export function LessonsClient({
     navigator.clipboard.writeText(lines.join("\n"));
   }
 
-  const availableCurricula = curricula.filter((c) => c.classGroupId === editing?.classGroupId);
+  const availableJournals = journals.filter((c) => c.classGroupId === editing?.classGroupId);
 
   return (
     <div className="space-y-4">
@@ -233,14 +233,14 @@ export function LessonsClient({
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Revista</p>
                   <Select
-                    value={form.curriculumId}
-                    onValueChange={(v) => setForm((f) => ({ ...f, curriculumId: v ?? "" }))}
-                    items={Object.fromEntries(availableCurricula.map((c) => [c.id, `${c.title} (${c.seriesNumber})`]))}
+                    value={form.journalId}
+                    onValueChange={(v) => setForm((f) => ({ ...f, journalId: v ?? "" }))}
+                    items={Object.fromEntries(availableJournals.map((c) => [c.id, `${c.title} (${c.edition})`]))}
                   >
                     <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                     <SelectContent>
-                      {availableCurricula.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.title} ({c.seriesNumber})</SelectItem>
+                      {availableJournals.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.title} ({c.edition})</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

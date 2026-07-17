@@ -17,7 +17,7 @@ type Plan = {
   date: string;
   classGroupId: string;
   tipo: string;
-  curriculum: { id: string; title: string; seriesNumber: number } | null;
+  journal: { id: string; title: string; edition: number } | null;
   licaoNumber: number | null;
   lessonType: string;
   specialTitle: string | null;
@@ -31,7 +31,7 @@ function formatDate(iso: string) {
 function planLabel(p: Plan | undefined) {
   if (!p) return "—";
   if (p.lessonType !== "APOSTILA") return p.specialTitle || LESSON_TYPE_LABELS[p.lessonType];
-  if (p.curriculum) return `L${p.licaoNumber ?? "?"} — ${p.curriculum.title}`;
+  if (p.journal) return `L${p.licaoNumber ?? "?"} — ${p.journal.title}`;
   return "Sem plano";
 }
 

@@ -118,7 +118,7 @@ model ClassGroup {
   name           String               @unique
   ageRange       String?              @map("age_range")
   children       Child[]
-  curricula      Curriculum[]
+  journals       Journal[]
   scheduleSlots  ScheduleSlot[]
   sundayPlans    SundayPlan[]
   preferredBy    UserPreferredClass[]
@@ -128,24 +128,22 @@ model ClassGroup {
 
 // ─── Currículos e Revistas ────────────────────────────────────────────────────
 
-model Curriculum {
-  id               String     @id @default(cuid())
-  classGroupId     String     @map("class_group_id")
-  classGroup       ClassGroup @relation(fields: [classGroupId], references: [id])
-  semester         Int
-  year             Int
-  seriesType       SeriesType @map("series_type")
-  seriesNumber     Int        @map("series_number")
-  title            String
-  totalWeeks       Int        @map("total_weeks")
-  uso              Frequencia
-  copiasProfessor  Int        @default(0) @map("copias_professor")
-  copiasAluno      Int        @default(0) @map("copias_aluno")
-  comprarProfessor Int        @default(0) @map("comprar_professor")
-  recursosVisuais  Boolean    @default(false) @map("recursos_visuais")
-  sundayPlans      SundayPlan[]
+// A revista: série + edição, adotada por uma turma para EBD, Culto ou ambos.
+model Journal {
+  id                 String       @id @default(cuid())
+  title              String
+  series             SeriesType
+  edition            Int
+  totalWeeks         Int          @map("total_weeks")
+  classGroupId       String       @map("class_group_id")
+  classGroup         ClassGroup   @relation(fields: [classGroupId], references: [id])
+  usage              Frequencia
+  teacherCopies      Int          @default(0) @map("teacher_copies")
+  studentCopies      Int          @default(0) @map("student_copies")
+  hasVisualResources Boolean      @default(false) @map("has_visual_resources")
+  sundayPlans        SundayPlan[]
 
-  @@map("curriculums")
+  @@map("journals")
 }
 
 enum SeriesType {
@@ -165,8 +163,8 @@ model SundayPlan {
   classGroupId  String      @map("class_group_id")
   classGroup    ClassGroup  @relation(fields: [classGroupId], references: [id])
   tipo          SundayTipo
-  curriculumId  String?     @map("curriculum_id")
-  curriculum    Curriculum? @relation(fields: [curriculumId], references: [id])
+  journalId     String?     @map("journal_id")
+  journal       Journal?    @relation(fields: [journalId], references: [id])
   licaoNumber   Int?        @map("licao_number")
   lessonType    LessonType  @default(APOSTILA) @map("lesson_type")
   specialTitle  String?     @map("special_title")

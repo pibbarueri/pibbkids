@@ -32,7 +32,7 @@ export default async function OverviewPage() {
       where: { date: { gte: start, lte: end } },
       include: {
         classGroup: { select: { id: true, name: true } },
-        curriculum: { select: { id: true, title: true, seriesNumber: true } },
+        journal: { select: { id: true, title: true, edition: true } },
       },
     }),
     prisma.classGroup.findMany({

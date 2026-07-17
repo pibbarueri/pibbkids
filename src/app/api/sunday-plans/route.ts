@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     where,
     include: {
       classGroup: { select: { id: true, name: true } },
-      curriculum: { select: { id: true, title: true, seriesType: true, seriesNumber: true } },
+      journal: { select: { id: true, title: true, series: true, edition: true } },
     },
     orderBy: [{ date: "asc" }, { tipo: "asc" }],
   });
@@ -38,12 +38,12 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { date, classGroupId, tipo, curriculumId, licaoNumber, lessonType, specialTitle } = body;
+  const { date, classGroupId, tipo, journalId, licaoNumber, lessonType, specialTitle } = body;
 
   const plan = await prisma.sundayPlan.upsert({
     where: { date_classGroupId_tipo: { date: new Date(date), classGroupId, tipo } },
     update: {
-      curriculumId: curriculumId ?? null,
+      journalId: journalId ?? null,
       licaoNumber: licaoNumber ?? null,
       lessonType: lessonType ?? "APOSTILA",
       specialTitle: specialTitle ?? null,
@@ -52,14 +52,14 @@ export async function POST(req: NextRequest) {
       date: new Date(date),
       classGroupId,
       tipo,
-      curriculumId: curriculumId ?? null,
+      journalId: journalId ?? null,
       licaoNumber: licaoNumber ?? null,
       lessonType: lessonType ?? "APOSTILA",
       specialTitle: specialTitle ?? null,
     },
     include: {
       classGroup: { select: { id: true, name: true } },
-      curriculum: { select: { id: true, title: true, seriesType: true, seriesNumber: true } },
+      journal: { select: { id: true, title: true, series: true, edition: true } },
     },
   });
 

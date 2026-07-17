@@ -12,23 +12,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json();
 
-  const curriculum = await prisma.curriculum.update({
+  const journal = await prisma.journal.update({
     where: { id },
     data: {
       ...(body.title !== undefined && { title: body.title }),
-      ...(body.seriesType !== undefined && { seriesType: body.seriesType }),
-      ...(body.seriesNumber !== undefined && { seriesNumber: body.seriesNumber }),
+      ...(body.series !== undefined && { series: body.series }),
+      ...(body.edition !== undefined && { edition: body.edition }),
       ...(body.totalWeeks !== undefined && { totalWeeks: body.totalWeeks }),
-      ...(body.uso !== undefined && { uso: body.uso }),
-      ...(body.copiasProfessor !== undefined && { copiasProfessor: body.copiasProfessor }),
-      ...(body.copiasAluno !== undefined && { copiasAluno: body.copiasAluno }),
-      ...(body.comprarProfessor !== undefined && { comprarProfessor: body.comprarProfessor }),
-      ...(body.recursosVisuais !== undefined && { recursosVisuais: body.recursosVisuais }),
+      ...(body.classGroupId !== undefined && { classGroupId: body.classGroupId }),
+      ...(body.usage !== undefined && { usage: body.usage }),
+      ...(body.teacherCopies !== undefined && { teacherCopies: body.teacherCopies }),
+      ...(body.studentCopies !== undefined && { studentCopies: body.studentCopies }),
+      ...(body.hasVisualResources !== undefined && { hasVisualResources: body.hasVisualResources }),
     },
     include: { classGroup: { select: { id: true, name: true } } },
   });
 
-  return NextResponse.json(curriculum);
+  return NextResponse.json(journal);
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -38,6 +38,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
 
   const { id } = await params;
-  await prisma.curriculum.delete({ where: { id } });
+  await prisma.journal.delete({ where: { id } });
   return new NextResponse(null, { status: 204 });
 }

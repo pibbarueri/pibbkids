@@ -30,56 +30,49 @@ const SERIES_LABELS: Record<string, string> = {
   DETETIVE: "Detetive",
 };
 
-const USO_LABELS: Record<string, string> = {
+const USAGE_LABELS: Record<string, string> = {
   EBD: "EBD",
   CULTO: "Culto",
   AMBOS: "Ambos",
 };
 
 type ClassGroup = { id: string; name: string };
-type Curriculum = {
+type Journal = {
   id: string;
+  title: string;
+  series: string;
+  edition: number;
+  totalWeeks: number;
   classGroupId: string;
   classGroup: ClassGroup;
-  semester: number;
-  year: number;
-  seriesType: string;
-  seriesNumber: number;
-  title: string;
-  totalWeeks: number;
-  uso: string;
-  copiasProfessor: number;
-  copiasAluno: number;
-  comprarProfessor: number;
-  recursosVisuais: boolean;
+  usage: string;
+  teacherCopies: number;
+  studentCopies: number;
+  hasVisualResources: boolean;
 };
 
 const emptyForm = {
   classGroupId: "",
-  semester: "1",
-  seriesType: "",
-  seriesNumber: "",
+  series: "",
+  edition: "",
   title: "",
   totalWeeks: "",
-  uso: "",
-  copiasProfessor: "0",
-  copiasAluno: "0",
-  comprarProfessor: "0",
-  recursosVisuais: false,
+  usage: "",
+  teacherCopies: "0",
+  studentCopies: "0",
+  hasVisualResources: false,
 };
 
-export function CurriculumClient({
-  initialCurricula,
+export function JournalsClient({
+  initialJournals,
   classes,
-  year,
 }: {
-  initialCurricula: Curriculum[];
+  initialJournals: Journal[];
   classes: ClassGroup[];
-  year: number;
 }) {
-  const [curricula, setCurricula] = useState(initialCurricula);
+  const [journals, setJournals] = useState(initialJournals);
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Curriculum | null>(null);
+  const [editing, setEditing] = useState<Journal | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
@@ -89,20 +82,18 @@ export function CurriculumClient({
     setOpen(true);
   }
 
-  function openEdit(c: Curriculum) {
-    setEditing(c);
+  function openEdit(j: Journal) {
+    setEditing(j);
     setForm({
-      classGroupId: c.classGroupId,
-      semester: String(c.semester),
-      seriesType: c.seriesType,
-      seriesNumber: String(c.seriesNumber),
-      title: c.title,
-      totalWeeks: String(c.totalWeeks),
-      uso: c.uso,
-      copiasProfessor: String(c.copiasProfessor),
-      copiasAluno: String(c.copiasAluno),
-      comprarProfessor: String(c.comprarProfessor),
-      recursosVisuais: c.recursosVisuais,
+      classGroupId: j.classGroupId,
+      series: j.series,
+      edition: String(j.edition),
+      title: j.title,
+      totalWeeks: String(j.totalWeeks),
+      usage: j.usage,
+      teacherCopies: String(j.teacherCopies),
+      studentCopies: String(j.studentCopies),
+      hasVisualResources: j.hasVisualResources,
     });
     setOpen(true);
   }
@@ -111,46 +102,43 @@ export function CurriculumClient({
     setSaving(true);
     const payload = {
       classGroupId: form.classGroupId,
-      semester: Number(form.semester),
-      year,
-      seriesType: form.seriesType,
-      seriesNumber: Number(form.seriesNumber),
+      series: form.series,
+      edition: Number(form.edition),
       title: form.title,
       totalWeeks: Number(form.totalWeeks),
-      uso: form.uso,
-      copiasProfessor: Number(form.copiasProfessor),
-      copiasAluno: Number(form.copiasAluno),
-      comprarProfessor: Number(form.comprarProfessor),
-      recursosVisuais: form.recursosVisuais,
+      usage: form.usage,
+      teacherCopies: Number(form.teacherCopies),
+      studentCopies: Number(form.studentCopies),
+      hasVisualResources: form.hasVisualResources,
     };
 
     const res = editing
-      ? await fetch(`/api/curriculum/${editing.id}`, {
+      ? await fetch(`/api/journals/${editing.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         })
-      : await fetch("/api/curriculum", {
+      : await fetch("/api/journals", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
 
     const saved = await res.json();
-    setCurricula((prev) =>
-      editing ? prev.map((c) => (c.id === saved.id ? saved : c)) : [...prev, saved]
+    setJournals((prev) =>
+      editing ? prev.map((j) => (j.id === saved.id ? saved : j)) : [...prev, saved]
     );
     setSaving(false);
     setOpen(false);
   }
 
   async function remove(id: string) {
-    await fetch(`/api/curriculum/${id}`, { method: "DELETE" });
-    setCurricula((prev) => prev.filter((c) => c.id !== id));
+    await fetch(`/api/journals/${id}`, { method: "DELETE" });
+    setJournals((prev) => prev.filter((j) => j.id !== id));
   }
 
   const valid =
-    form.classGroupId && form.seriesType && form.seriesNumber && form.title && form.totalWeeks && form.uso;
+    form.classGroupId && form.series && form.edition && form.title && form.totalWeeks && form.usage;
 
   return (
     <div className="space-y-3">
@@ -182,23 +170,8 @@ export function CurriculumClient({
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm font-medium">Semestre</p>
-              <Select
-                value={form.semester}
-                onValueChange={(v) => setForm((f) => ({ ...f, semester: v ?? "1" }))}
-                items={{ "1": "1º semestre", "2": "2º semestre" }}
-              >
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1º semestre</SelectItem>
-                  <SelectItem value="2">2º semestre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1">
               <p className="text-sm font-medium">Série</p>
-              <Select value={form.seriesType} onValueChange={(v) => setForm((f) => ({ ...f, seriesType: v ?? "" }))} items={SERIES_LABELS}>
+              <Select value={form.series} onValueChange={(v) => setForm((f) => ({ ...f, series: v ?? "" }))} items={SERIES_LABELS}>
                 <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(SERIES_LABELS).map(([value, label]) => (
@@ -210,12 +183,12 @@ export function CurriculumClient({
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <p className="text-sm font-medium">Nº na série</p>
+                <p className="text-sm font-medium">Edição</p>
                 <Input
                   type="number"
                   className="h-12"
-                  value={form.seriesNumber}
-                  onChange={(e) => setForm((f) => ({ ...f, seriesNumber: e.target.value }))}
+                  value={form.edition}
+                  onChange={(e) => setForm((f) => ({ ...f, edition: e.target.value }))}
                 />
               </div>
               <div className="space-y-1">
@@ -240,24 +213,24 @@ export function CurriculumClient({
 
             <div className="space-y-1">
               <p className="text-sm font-medium">Uso</p>
-              <Select value={form.uso} onValueChange={(v) => setForm((f) => ({ ...f, uso: v ?? "" }))} items={USO_LABELS}>
+              <Select value={form.usage} onValueChange={(v) => setForm((f) => ({ ...f, usage: v ?? "" }))} items={USAGE_LABELS}>
                 <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(USO_LABELS).map(([value, label]) => (
+                  {Object.entries(USAGE_LABELS).map(([value, label]) => (
                     <SelectItem key={value} value={value}>{label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <p className="text-xs font-medium">Cópias prof.</p>
                 <Input
                   type="number"
                   className="h-12"
-                  value={form.copiasProfessor}
-                  onChange={(e) => setForm((f) => ({ ...f, copiasProfessor: e.target.value }))}
+                  value={form.teacherCopies}
+                  onChange={(e) => setForm((f) => ({ ...f, teacherCopies: e.target.value }))}
                 />
               </div>
               <div className="space-y-1">
@@ -265,25 +238,16 @@ export function CurriculumClient({
                 <Input
                   type="number"
                   className="h-12"
-                  value={form.copiasAluno}
-                  onChange={(e) => setForm((f) => ({ ...f, copiasAluno: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-medium">A comprar</p>
-                <Input
-                  type="number"
-                  className="h-12"
-                  value={form.comprarProfessor}
-                  onChange={(e) => setForm((f) => ({ ...f, comprarProfessor: e.target.value }))}
+                  value={form.studentCopies}
+                  onChange={(e) => setForm((f) => ({ ...f, studentCopies: e.target.value }))}
                 />
               </div>
             </div>
 
             <label className="flex items-center gap-2">
               <Checkbox
-                checked={form.recursosVisuais}
-                onCheckedChange={(v) => setForm((f) => ({ ...f, recursosVisuais: !!v }))}
+                checked={form.hasVisualResources}
+                onCheckedChange={(v) => setForm((f) => ({ ...f, hasVisualResources: !!v }))}
               />
               <span className="text-sm">Tem recursos visuais</span>
             </label>
@@ -296,31 +260,31 @@ export function CurriculumClient({
       </Dialog>
 
       {classes.map((cls) => {
-        const clsCurricula = curricula.filter((c) => c.classGroupId === cls.id);
-        if (clsCurricula.length === 0) return null;
+        const clsJournals = journals.filter((j) => j.classGroupId === cls.id);
+        if (clsJournals.length === 0) return null;
         return (
           <div key={cls.id} className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{cls.name}</p>
-            {clsCurricula.map((c) => (
+            {clsJournals.map((j) => (
               <button
-                key={c.id}
-                onClick={() => openEdit(c)}
+                key={j.id}
+                onClick={() => openEdit(j)}
                 className="w-full text-left p-4 border rounded-lg bg-background hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-sm">
-                      {SERIES_LABELS[c.seriesType]} nº{c.seriesNumber} — {c.title}
+                      {SERIES_LABELS[j.series]} nº{j.edition} — {j.title}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {c.semester}º sem. · {USO_LABELS[c.uso]} · {c.totalWeeks} semanas
+                      {USAGE_LABELS[j.usage]} · {j.totalWeeks} semanas
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {c.copiasProfessor === 0 && <Badge variant="destructive">Sem estoque</Badge>}
+                    {j.teacherCopies === 0 && <Badge variant="destructive">Sem estoque</Badge>}
                     <Trash2
                       className="h-4 w-4 text-muted-foreground hover:text-destructive"
-                      onClick={(e) => { e.stopPropagation(); remove(c.id); }}
+                      onClick={(e) => { e.stopPropagation(); remove(j.id); }}
                     />
                   </div>
                 </div>
@@ -330,9 +294,9 @@ export function CurriculumClient({
         );
       })}
 
-      {curricula.length === 0 && (
+      {journals.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">
-          Nenhuma revista cadastrada para {year}.
+          Nenhuma revista cadastrada.
         </p>
       )}
     </div>

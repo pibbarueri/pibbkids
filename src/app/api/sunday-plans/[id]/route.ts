@@ -27,14 +27,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     where: { id },
     data: {
       ...(body.done !== undefined && { done: body.done }),
-      ...(body.curriculumId !== undefined && { curriculumId: body.curriculumId }),
+      ...(body.journalId !== undefined && { journalId: body.journalId }),
       ...(body.licaoNumber !== undefined && { licaoNumber: body.licaoNumber }),
       ...(body.lessonType !== undefined && { lessonType: body.lessonType }),
       ...(body.specialTitle !== undefined && { specialTitle: body.specialTitle }),
     },
     include: {
       classGroup: { select: { id: true, name: true } },
-      curriculum: { select: { id: true, title: true, seriesType: true, seriesNumber: true } },
+      journal: { select: { id: true, title: true, series: true, edition: true } },
     },
   });
 

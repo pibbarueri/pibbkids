@@ -26,12 +26,12 @@ export default async function LessonsPage() {
   const from = sundays[0];
   const to = sundays[sundays.length - 1];
 
-  const [plans, classes, curricula, myClasses] = await Promise.all([
+  const [plans, classes, journals, myClasses] = await Promise.all([
     prisma.sundayPlan.findMany({
       where: { date: { gte: from, lte: to } },
       include: {
         classGroup: { select: { id: true, name: true } },
-        curriculum: { select: { id: true, title: true, seriesType: true, seriesNumber: true } },
+        journal: { select: { id: true, title: true, series: true, edition: true } },
       },
       orderBy: [{ date: "asc" }, { tipo: "asc" }],
     }),
@@ -40,9 +40,8 @@ export default async function LessonsPage() {
       select: { id: true, name: true },
     }),
     isManager
-      ? prisma.curriculum.findMany({
-          where: { year },
-          select: { id: true, title: true, seriesType: true, seriesNumber: true, classGroupId: true, uso: true },
+      ? prisma.journal.findMany({
+          select: { id: true, title: true, series: true, edition: true, classGroupId: true, usage: true },
         })
       : Promise.resolve([]),
     isManager
@@ -61,7 +60,7 @@ export default async function LessonsPage() {
       <LessonsClient
         initialPlans={plans as any}
         classes={classes}
-        curricula={curricula}
+        journals={journals}
         sundays={sundays.map((d) => d.toISOString())}
         isManager={isManager}
         myClassIds={myClassIds}

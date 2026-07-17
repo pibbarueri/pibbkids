@@ -9,20 +9,16 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const classGroupId = searchParams.get("classGroupId");
-  const year = searchParams.get("year");
-  const semester = searchParams.get("semester");
 
-  const curricula = await prisma.curriculum.findMany({
+  const journals = await prisma.journal.findMany({
     where: {
       ...(classGroupId && { classGroupId }),
-      ...(year && { year: Number(year) }),
-      ...(semester && { semester: Number(semester) }),
     },
     include: { classGroup: { select: { id: true, name: true } } },
-    orderBy: [{ year: "desc" }, { semester: "asc" }, { seriesNumber: "asc" }],
+    orderBy: [{ series: "asc" }, { edition: "asc" }],
   });
 
-  return NextResponse.json(curricula);
+  return NextResponse.json(journals);
 }
 
 export async function POST(req: NextRequest) {
@@ -32,23 +28,20 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const curriculum = await prisma.curriculum.create({
+  const journal = await prisma.journal.create({
     data: {
-      classGroupId: body.classGroupId,
-      semester: body.semester,
-      year: body.year,
-      seriesType: body.seriesType,
-      seriesNumber: body.seriesNumber,
       title: body.title,
+      series: body.series,
+      edition: body.edition,
       totalWeeks: body.totalWeeks,
-      uso: body.uso,
-      copiasProfessor: body.copiasProfessor ?? 0,
-      copiasAluno: body.copiasAluno ?? 0,
-      comprarProfessor: body.comprarProfessor ?? 0,
-      recursosVisuais: body.recursosVisuais ?? false,
+      classGroupId: body.classGroupId,
+      usage: body.usage,
+      teacherCopies: body.teacherCopies ?? 0,
+      studentCopies: body.studentCopies ?? 0,
+      hasVisualResources: body.hasVisualResources ?? false,
     },
     include: { classGroup: { select: { id: true, name: true } } },
   });
 
-  return NextResponse.json(curriculum, { status: 201 });
+  return NextResponse.json(journal, { status: 201 });
 }
