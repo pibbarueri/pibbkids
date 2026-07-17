@@ -23,9 +23,9 @@ const schema = z.object({
   birthdate: z.string().min(1, "Data de nascimento obrigatória"),
   fatherName: z.string().optional(),
   motherName: z.string().optional(),
-  phoneDad: z.string().min(8, "Telefone obrigatório"),
-  phoneMom: z.string().optional(),
-  frequencia: z.nativeEnum(Frequencia),
+  fatherPhone: z.string().min(8, "Telefone obrigatório"),
+  motherPhone: z.string().optional(),
+  frequency: z.nativeEnum(Frequencia),
   allergies: z.string().optional(),
   restrictions: z.string().optional(),
 });
@@ -96,16 +96,16 @@ export default function RegisterChildPage() {
             <Input {...register("motherName")} className="h-12" />
           </Field>
 
-          <Field label="Telefone Pai *" error={errors.phoneDad?.message}>
-            <Input type="tel" {...register("phoneDad")} className="h-12" />
+          <Field label="Telefone Pai *" error={errors.fatherPhone?.message}>
+            <Input type="tel" {...register("fatherPhone")} className="h-12" />
           </Field>
 
-          <Field label="Telefone Mãe" error={errors.phoneMom?.message}>
-            <Input type="tel" {...register("phoneMom")} className="h-12" />
+          <Field label="Telefone Mãe" error={errors.motherPhone?.message}>
+            <Input type="tel" {...register("motherPhone")} className="h-12" />
           </Field>
 
-          <Field label="Frequência *" error={errors.frequencia?.message}>
-            <Select onValueChange={(v) => setValue("frequencia", v as Frequencia)}>
+          <Field label="Frequência *" error={errors.frequency?.message}>
+            <Select onValueChange={(v) => setValue("frequency", v as Frequencia)}>
               <SelectTrigger className="h-12">
                 <SelectValue placeholder="Selecione..." />
               </SelectTrigger>

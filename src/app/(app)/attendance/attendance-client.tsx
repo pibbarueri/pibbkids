@@ -9,7 +9,7 @@ type ClassGroup = { id: string; name: string };
 type Child = {
   id: string;
   name: string;
-  frequencia: string;
+  frequency: string;
   allergies: string | null;
   restrictions: string | null;
   classGroupId: string | null;
@@ -159,7 +159,7 @@ export function AttendanceClient({
 
       <div className="space-y-2">
         {filtered.map((child) => {
-          const types = child.frequencia === "AMBOS" ? ["EBD", "CULTO"] : [child.frequencia];
+          const types = child.frequency === "AMBOS" ? ["EBD", "CULTO"] : [child.frequency];
           return (
             <div key={child.id} className="flex items-center gap-2 p-3 border rounded-lg bg-background">
               <div className="min-w-0 flex-1">

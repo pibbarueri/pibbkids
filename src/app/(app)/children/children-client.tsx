@@ -35,9 +35,9 @@ const emptyChildForm = {
   birthdate: "",
   fatherName: "",
   motherName: "",
-  phoneDad: "",
-  phoneMom: "",
-  frequencia: "" as Frequencia | "",
+  fatherPhone: "",
+  motherPhone: "",
+  frequency: "" as Frequencia | "",
   allergies: "",
   restrictions: "",
   classGroupId: "",
@@ -48,11 +48,11 @@ type Child = {
   id: string;
   name: string;
   birthdate: string | Date;
-  frequencia: string;
+  frequency: string;
   fatherName: string | null;
   motherName: string | null;
-  phoneDad: string | null;
-  phoneMom: string | null;
+  fatherPhone: string | null;
+  motherPhone: string | null;
   allergies: string | null;
   restrictions: string | null;
   classGroup: { name: string } | null;
@@ -84,7 +84,7 @@ export function ChildrenClient({
   const pending = filtered.filter((c) => !c.classGroupId);
   const approved = filtered.filter((c) => !!c.classGroupId);
 
-  const addValid = addForm.name && addForm.birthdate && addForm.frequencia && addForm.classGroupId;
+  const addValid = addForm.name && addForm.birthdate && addForm.frequency && addForm.classGroupId;
 
   async function createChild() {
     if (!addValid) return;
@@ -109,9 +109,9 @@ export function ChildrenClient({
       birthdate: new Date(child.birthdate).toISOString().slice(0, 10),
       fatherName: child.fatherName ?? "",
       motherName: child.motherName ?? "",
-      phoneDad: child.phoneDad ?? "",
-      phoneMom: child.phoneMom ?? "",
-      frequencia: child.frequencia as Frequencia,
+      fatherPhone: child.fatherPhone ?? "",
+      motherPhone: child.motherPhone ?? "",
+      frequency: child.frequency as Frequencia,
       allergies: child.allergies ?? "",
       restrictions: child.restrictions ?? "",
       classGroupId: child.classGroupId ?? "",
@@ -119,7 +119,7 @@ export function ChildrenClient({
     setEditing(child);
   }
 
-  const editValid = editForm.name && editForm.birthdate && editForm.frequencia;
+  const editValid = editForm.name && editForm.birthdate && editForm.frequency;
 
   async function saveEdit() {
     if (!editing || !editValid) return;
@@ -168,17 +168,17 @@ export function ChildrenClient({
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Telefone Pai</p>
-                <Input type="tel" className="h-12" value={addForm.phoneDad} onChange={(e) => setAddForm((f) => ({ ...f, phoneDad: e.target.value }))} />
+                <Input type="tel" className="h-12" value={addForm.fatherPhone} onChange={(e) => setAddForm((f) => ({ ...f, fatherPhone: e.target.value }))} />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Telefone Mãe</p>
-                <Input type="tel" className="h-12" value={addForm.phoneMom} onChange={(e) => setAddForm((f) => ({ ...f, phoneMom: e.target.value }))} />
+                <Input type="tel" className="h-12" value={addForm.motherPhone} onChange={(e) => setAddForm((f) => ({ ...f, motherPhone: e.target.value }))} />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Frequência *</p>
                 <Select
-                  value={addForm.frequencia}
-                  onValueChange={(v) => setAddForm((f) => ({ ...f, frequencia: (v as Frequencia) ?? "" }))}
+                  value={addForm.frequency}
+                  onValueChange={(v) => setAddForm((f) => ({ ...f, frequency: (v as Frequencia) ?? "" }))}
                   items={FREQUENCIA_LABELS}
                 >
                   <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
@@ -288,11 +288,11 @@ export function ChildrenClient({
             <div className="space-y-3 text-sm">
               <Row label="Turma" value={selected.classGroup?.name ?? "Sem turma"} />
               <Row label="Data de nascimento" value={new Date(selected.birthdate).toLocaleDateString("pt-BR", { timeZone: "UTC" })} />
-              <Row label="Frequência" value={FREQUENCIA_LABELS[selected.frequencia] ?? selected.frequencia} />
+              <Row label="Frequência" value={FREQUENCIA_LABELS[selected.frequency] ?? selected.frequency} />
               <Row label="Pai" value={selected.fatherName} />
               <Row label="Mãe" value={selected.motherName} />
-              <Row label="Telefone Pai" value={selected.phoneDad} />
-              <Row label="Telefone Mãe" value={selected.phoneMom} />
+              <Row label="Telefone Pai" value={selected.fatherPhone} />
+              <Row label="Telefone Mãe" value={selected.motherPhone} />
               {selected.allergies && (
                 <div className="flex gap-2 p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
                   <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
@@ -340,17 +340,17 @@ export function ChildrenClient({
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Telefone Pai</p>
-              <Input type="tel" className="h-12" value={editForm.phoneDad} onChange={(e) => setEditForm((f) => ({ ...f, phoneDad: e.target.value }))} />
+              <Input type="tel" className="h-12" value={editForm.fatherPhone} onChange={(e) => setEditForm((f) => ({ ...f, fatherPhone: e.target.value }))} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Telefone Mãe</p>
-              <Input type="tel" className="h-12" value={editForm.phoneMom} onChange={(e) => setEditForm((f) => ({ ...f, phoneMom: e.target.value }))} />
+              <Input type="tel" className="h-12" value={editForm.motherPhone} onChange={(e) => setEditForm((f) => ({ ...f, motherPhone: e.target.value }))} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Frequência *</p>
               <Select
-                value={editForm.frequencia}
-                onValueChange={(v) => setEditForm((f) => ({ ...f, frequencia: (v as Frequencia) ?? "" }))}
+                value={editForm.frequency}
+                onValueChange={(v) => setEditForm((f) => ({ ...f, frequency: (v as Frequencia) ?? "" }))}
                 items={FREQUENCIA_LABELS}
               >
                 <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
@@ -414,7 +414,7 @@ function ChildCard({
         <div>
           <p className="font-medium">{child.name}</p>
           <p className="text-xs text-muted-foreground">
-            {child.classGroup?.name ?? "Sem turma"} · {child.frequencia}
+            {child.classGroup?.name ?? "Sem turma"} · {child.frequency}
           </p>
         </div>
         <div className="flex items-center gap-2">

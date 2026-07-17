@@ -88,11 +88,11 @@ model Child {
   birthdate    DateTime     @db.Date
   classGroupId String?      @map("class_group_id")
   classGroup   ClassGroup?  @relation(fields: [classGroupId], references: [id])
-  frequencia   Frequencia
+  frequency    Frequencia
   fatherName   String?      @map("father_name")
   motherName   String?      @map("mother_name")
-  phoneDad     String?      @map("phone_dad")
-  phoneMom     String?      @map("phone_mom")
+  fatherPhone  String?      @map("father_phone")
+  motherPhone  String?      @map("mother_phone")
   allergies    String?
   restrictions String?
   active       Boolean      @default(true)

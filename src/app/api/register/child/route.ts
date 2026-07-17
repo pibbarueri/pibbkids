@@ -8,9 +8,9 @@ const schema = z.object({
   birthdate: z.string(),
   fatherName: z.string().optional(),
   motherName: z.string().optional(),
-  phoneDad: z.string().min(8),
-  phoneMom: z.string().optional(),
-  frequencia: z.nativeEnum(Frequencia),
+  fatherPhone: z.string().min(8),
+  motherPhone: z.string().optional(),
+  frequency: z.nativeEnum(Frequencia),
   allergies: z.string().optional(),
   restrictions: z.string().optional(),
 });
