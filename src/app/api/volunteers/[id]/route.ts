@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(body.cpf !== undefined && { cpf: body.cpf }),
       ...(body.birthdate !== undefined && { birthdate: body.birthdate ? new Date(body.birthdate) : null }),
       ...(body.motherName !== undefined && { motherName: body.motherName }),
-      ...(body.volunteerStatus !== undefined && { volunteerStatus: body.volunteerStatus }),
+      ...(body.status !== undefined && { status: body.status }),
       ...(body.role !== undefined && { role: body.role }),
       ...(body.active !== undefined && { active: body.active }),
       ...(body.functions !== undefined && {
@@ -43,7 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       username: true,
       phone: true,
       role: true,
-      volunteerStatus: true,
+      status: true,
       active: true,
       cpf: true,
       birthdate: true,

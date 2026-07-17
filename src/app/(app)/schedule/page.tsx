@@ -43,7 +43,7 @@ export default async function SchedulePage() {
     }),
     canEdit
       ? prisma.user.findMany({
-          where: { active: true, volunteerStatus: "APROVADO" },
+          where: { active: true, status: "APPROVED" },
           orderBy: { name: "asc" },
           select: {
             id: true,

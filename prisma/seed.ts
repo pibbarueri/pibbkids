@@ -46,7 +46,7 @@ async function main() {
       username: "admin",
       password: await bcrypt.hash("admin", 12),
       role: Role.LIDERANCA,
-      volunteerStatus: "APROVADO",
+      status: "APPROVED",
       functions: {
         create: [{ function: FunctionType.PROFESSOR }],
       },

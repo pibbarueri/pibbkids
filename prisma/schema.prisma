@@ -21,7 +21,7 @@ model User {
   motherName        String?             @map("mother_name")
   phone             String?
   documentUrl       String?             @map("document_url")
-  volunteerStatus   VolunteerStatus     @default(APROVADO) @map("volunteer_status")
+  status            VolunteerStatus     @default(APPROVED) @map("status")
   active            Boolean             @default(true)
   createdAt         DateTime            @default(now()) @map("created_at")
   preferredClasses  UserPreferredClass[]
@@ -44,9 +44,9 @@ enum Role {
 }
 
 enum VolunteerStatus {
-  PENDENTE
-  APROVADO
-  REJEITADO
+  PENDING
+  APPROVED
+  REJECTED
 
   @@map("volunteer_status")
 }

@@ -1,0 +1,4 @@
+ALTER TABLE "users" RENAME COLUMN "volunteer_status" TO "status";
+ALTER TYPE "volunteer_status" RENAME VALUE 'PENDENTE' TO 'PENDING';
+ALTER TYPE "volunteer_status" RENAME VALUE 'APROVADO' TO 'APPROVED';
+ALTER TYPE "volunteer_status" RENAME VALUE 'REJEITADO' TO 'REJECTED';

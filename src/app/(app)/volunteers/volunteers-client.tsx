@@ -70,7 +70,7 @@ type Volunteer = {
   username: string;
   phone: string | null;
   role: string;
-  volunteerStatus: string;
+  status: string;
   active: boolean;
   cpf?: string | null;
   birthdate?: string | null;
@@ -102,8 +102,8 @@ export function VolunteersClient({
   const [deactivateTarget, setDeactivateTarget] = useState<Volunteer | null>(null);
 
   const filtered = volunteers.filter((v) => v.name.toLowerCase().includes(search.trim().toLowerCase()));
-  const pending = filtered.filter((v) => v.volunteerStatus === "PENDENTE");
-  const approved = filtered.filter((v) => v.volunteerStatus === "APROVADO");
+  const pending = filtered.filter((v) => v.status === "PENDING");
+  const approved = filtered.filter((v) => v.status === "APPROVED");
 
   const addValid = addForm.name && addForm.username && addForm.password.length >= 6 && addForm.role;
 
@@ -169,7 +169,7 @@ export function VolunteersClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...editForm,
-        ...(editing.volunteerStatus === "PENDENTE" ? { volunteerStatus: "APROVADO" } : {}),
+        ...(editing.status === "PENDING" ? { status: "APPROVED" } : {}),
       }),
     });
     const updated = await res.json();
@@ -423,7 +423,7 @@ export function VolunteersClient({
               )}
               <div className="flex gap-2">
                 <Button className="flex-1 h-12" disabled={!editValid || editSaving} onClick={saveEdit}>
-                  {editing.volunteerStatus === "PENDENTE" ? "Salvar e aprovar" : "Salvar alterações"}
+                  {editing.status === "PENDING" ? "Salvar e aprovar" : "Salvar alterações"}
                 </Button>
                 <Button
                   variant="outline"
@@ -488,7 +488,7 @@ function VolunteerCard({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {volunteer.volunteerStatus === "PENDENTE" && (
+          {volunteer.status === "PENDING" && (
             <Badge variant="secondary">Pendente</Badge>
           )}
           {!volunteer.active && (

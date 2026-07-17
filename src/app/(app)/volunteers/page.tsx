@@ -19,14 +19,14 @@ export default async function VolunteersPage() {
 
   const volunteers = await prisma.user.findMany({
     where: { active: true },
-    orderBy: [{ volunteerStatus: "asc" }, { name: "asc" }],
+    orderBy: [{ status: "asc" }, { name: "asc" }],
     select: {
       id: true,
       name: true,
       username: true,
       phone: true,
       role: true,
-      volunteerStatus: true,
+      status: true,
       active: true,
       cpf: showSensitive,
       birthdate: showSensitive,

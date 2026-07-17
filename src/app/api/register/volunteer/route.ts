@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       birthdate: birthdate ? new Date(birthdate) : undefined,
       password: await bcrypt.hash(password, 12),
       role: Role.AUXILIAR,
-      volunteerStatus: "PENDENTE",
+      status: "PENDING",
       functions: { create: functions.map((f) => ({ function: f })) },
       preferredClasses: preferredClassIds?.length
         ? { create: preferredClassIds.map((id) => ({ classGroupId: id })) }

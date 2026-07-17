@@ -29,14 +29,14 @@ export async function GET() {
 
   const volunteers = await prisma.user.findMany({
     where: { active: true },
-    orderBy: [{ volunteerStatus: "asc" }, { name: "asc" }],
+    orderBy: [{ status: "asc" }, { name: "asc" }],
     select: {
       id: true,
       name: true,
       username: true,
       phone: true,
       role: true,
-      volunteerStatus: true,
+      status: true,
       active: true,
       cpf: showSensitive,
       birthdate: showSensitive,
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       ...rest,
       birthdate: birthdate ? new Date(birthdate) : undefined,
       password: await bcrypt.hash(password, 12),
-      volunteerStatus: "APROVADO",
+      status: "APPROVED",
       functions: functions?.length ? { create: functions.map((f) => ({ function: f })) } : undefined,
       preferredClasses: preferredClassIds?.length
         ? { create: preferredClassIds.map((id) => ({ classGroupId: id })) }
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
       username: true,
       phone: true,
       role: true,
-      volunteerStatus: true,
+      status: true,
       active: true,
       cpf: true,
       birthdate: true,
