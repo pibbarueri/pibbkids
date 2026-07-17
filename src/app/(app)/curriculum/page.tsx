@@ -22,7 +22,6 @@ export default async function CurriculumPage() {
       orderBy: [{ semester: "asc" }, { seriesNumber: "asc" }],
     }),
     prisma.classGroup.findMany({
-      where: { active: true },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),

@@ -38,7 +38,6 @@ export default async function SchedulePage() {
       orderBy: [{ date: "asc" }, { slotType: "asc" }],
     }),
     prisma.classGroup.findMany({
-      where: { active: true },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),

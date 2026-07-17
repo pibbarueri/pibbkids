@@ -116,7 +116,6 @@ model ClassGroup {
   id             String               @id @default(cuid())
   name           String               @unique
   ageRange       String?              @map("age_range")
-  active         Boolean              @default(true)
   children       Child[]
   curricula      Curriculum[]
   scheduleSlots  ScheduleSlot[]

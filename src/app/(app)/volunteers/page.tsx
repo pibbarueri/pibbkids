@@ -13,7 +13,6 @@ export default async function VolunteersPage() {
   const showSensitive = isLeadership(role);
 
   const classes = await prisma.classGroup.findMany({
-    where: { active: true },
     orderBy: { name: "asc" },
     select: { id: true, name: true },
   });

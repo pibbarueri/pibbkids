@@ -15,7 +15,6 @@ export default async function EventsPage() {
       orderBy: { date: "asc" },
     }),
     prisma.classGroup.findMany({
-      where: { active: true },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),

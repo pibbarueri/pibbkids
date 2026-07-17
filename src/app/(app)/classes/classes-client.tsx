@@ -4,7 +4,6 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Pencil } from "lucide-react";
 
-type ClassGroup = { id: string; name: string; ageRange: string | null; active: boolean };
+type ClassGroup = { id: string; name: string; ageRange: string | null };
 
 export function ClassesClient({ initialClasses }: { initialClasses: ClassGroup[] }) {
   const [classes, setClasses] = useState(initialClasses);
@@ -53,16 +52,6 @@ export function ClassesClient({ initialClasses }: { initialClasses: ClassGroup[]
     }
     setSaving(false);
     setOpen(false);
-  }
-
-  async function toggleActive(cls: ClassGroup) {
-    const res = await fetch(`/api/classes/${cls.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !cls.active }),
-    });
-    const data = await res.json();
-    setClasses((prev) => prev.map((c) => (c.id === cls.id ? data : c)));
   }
 
   return (
@@ -111,14 +100,8 @@ export function ClassesClient({ initialClasses }: { initialClasses: ClassGroup[]
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={cls.active ? "default" : "secondary"}>
-              {cls.active ? "Ativa" : "Inativa"}
-            </Badge>
             <Button size="icon" variant="ghost" onClick={() => openEdit(cls)}>
               <Pencil className="h-4 w-4" />
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => toggleActive(cls)}>
-              {cls.active ? "Desativar" : "Ativar"}
             </Button>
           </div>
         </div>

@@ -5,7 +5,6 @@ import { isLeadership } from "@/lib/permissions";
 
 export async function GET() {
   const classes = await prisma.classGroup.findMany({
-    where: { active: true },
     orderBy: { name: "asc" },
     select: { id: true, name: true, ageRange: true },
   });

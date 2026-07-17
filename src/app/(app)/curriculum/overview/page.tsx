@@ -36,7 +36,6 @@ export default async function OverviewPage() {
       },
     }),
     prisma.classGroup.findMany({
-      where: { active: true },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),

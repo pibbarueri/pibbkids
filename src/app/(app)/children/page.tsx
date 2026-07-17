@@ -9,7 +9,6 @@ export default async function ChildrenPage() {
   const isManager = canManage(role);
 
   const classes = await prisma.classGroup.findMany({
-    where: { active: true },
     orderBy: { name: "asc" },
     select: { id: true, name: true },
   });
