@@ -17,7 +17,7 @@ export default async function AttendancePage() {
   const session = await auth();
   const role = session!.user.role;
 
-  if (role !== Role.RECEPCAO && !canManage(role)) redirect("/dashboard");
+  if (role !== Role.RECEPTIONIST && !canManage(role)) redirect("/dashboard");
 
   const sunday = currentSunday();
   const nextDay = new Date(sunday);

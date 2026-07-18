@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     data: {
       ...rest,
       birthdate: new Date(birthdate),
-      role: Role.AUXILIAR,
+      role: Role.ASSISTANT,
       status: "PENDING",
       functions: { create: functions.map((f) => ({ function: f })) },
       preferredClasses: preferredClassIds?.length

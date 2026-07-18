@@ -29,7 +29,7 @@ const FUNCTION_OPTIONS = [
   { value: "APOIO_GERAL", label: "Apoio Geral" },
   { value: "LOUVOR", label: "Louvor" },
   { value: "RECEPCAO", label: "Recepção" },
-  { value: "TEATRO", label: "Teatro" },
+  { value: "EVENTS", label: "Eventos" },
 ];
 
 const emptyVolunteerForm = {
@@ -39,7 +39,7 @@ const emptyVolunteerForm = {
   cpf: "",
   birthdate: "",
   motherName: "",
-  role: "AUXILIAR",
+  role: "ASSISTANT",
   functions: [] as string[],
   preferredClassIds: [] as string[],
 };
@@ -51,17 +51,17 @@ const emptyEditForm = {
   cpf: "",
   birthdate: "",
   motherName: "",
-  role: "AUXILIAR",
+  role: "ASSISTANT",
   functions: [] as string[],
   preferredClassIds: [] as string[],
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  LIDERANCA: "Liderança",
-  COORDENACAO: "Coordenação",
-  PROFESSOR: "Professor",
-  AUXILIAR: "Auxiliar",
-  RECEPCAO: "Recepção",
+  ADMIN: "Administrador",
+  COORDINATOR: "Coordenação",
+  TEACHER: "Professor",
+  ASSISTANT: "Auxiliar",
+  RECEPTIONIST: "Recepção",
 };
 
 const FUNCTION_LABELS: Record<string, string> = {
@@ -70,7 +70,7 @@ const FUNCTION_LABELS: Record<string, string> = {
   APOIO_GERAL: "Apoio Geral",
   LOUVOR: "Louvor",
   RECEPCAO: "Recepção",
-  TEATRO: "Teatro",
+  EVENTS: "Eventos",
 };
 
 type ClassGroup = { id: string; name: string };
@@ -111,7 +111,7 @@ export function VolunteersClient({
   const [editSaving, setEditSaving] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState<Volunteer | null>(null);
   const [approveTarget, setApproveTarget] = useState<Volunteer | null>(null);
-  const [approveForm, setApproveForm] = useState({ username: "", role: "AUXILIAR" });
+  const [approveForm, setApproveForm] = useState({ username: "", role: "ASSISTANT" });
   const [approveError, setApproveError] = useState<string | null>(null);
   const [tab, setTab] = useState(
     initialVolunteers.some((v) => v.active && v.status === "PENDING") ? "pending" : "approved"
@@ -278,7 +278,7 @@ export function VolunteersClient({
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Perfil de acesso *</p>
-              <Select value={addForm.role} onValueChange={(v) => setAddForm((f) => ({ ...f, role: v ?? "AUXILIAR" }))} items={ROLE_LABELS}>
+              <Select value={addForm.role} onValueChange={(v) => setAddForm((f) => ({ ...f, role: v ?? "ASSISTANT" }))} items={ROLE_LABELS}>
                 <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(ROLE_LABELS).map(([value, label]) => (
@@ -458,7 +458,7 @@ export function VolunteersClient({
               )}
               <div className="space-y-1">
                 <p className="text-sm font-medium">Perfil de acesso *</p>
-                <Select value={editForm.role} onValueChange={(v) => setEditForm((f) => ({ ...f, role: v ?? "AUXILIAR" }))} items={ROLE_LABELS}>
+                <Select value={editForm.role} onValueChange={(v) => setEditForm((f) => ({ ...f, role: v ?? "ASSISTANT" }))} items={ROLE_LABELS}>
                   <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(ROLE_LABELS).map(([value, label]) => (
@@ -521,7 +521,7 @@ export function VolunteersClient({
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Perfil de acesso *</p>
-              <Select value={approveForm.role} onValueChange={(v) => setApproveForm((f) => ({ ...f, role: v ?? "AUXILIAR" }))} items={ROLE_LABELS}>
+              <Select value={approveForm.role} onValueChange={(v) => setApproveForm((f) => ({ ...f, role: v ?? "ASSISTANT" }))} items={ROLE_LABELS}>
                 <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(ROLE_LABELS).map(([value, label]) => (

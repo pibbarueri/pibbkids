@@ -12,7 +12,7 @@ function currentSunday(): Date {
   return d;
 }
 
-const CAN_MARK: Role[] = [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR];
+const CAN_MARK: Role[] = [Role.ADMIN, Role.COORDINATOR, Role.TEACHER];
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();

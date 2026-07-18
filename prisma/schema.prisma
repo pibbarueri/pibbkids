@@ -47,11 +47,11 @@ model UserSession {
 }
 
 enum Role {
-  LIDERANCA
-  COORDENACAO
-  PROFESSOR
-  AUXILIAR
-  RECEPCAO
+  ADMIN
+  COORDINATOR
+  TEACHER
+  ASSISTANT
+  RECEPTIONIST
 
   @@map("role")
 }
@@ -79,7 +79,7 @@ enum FunctionType {
   APOIO_GERAL
   LOUVOR
   RECEPCAO
-  TEATRO
+  EVENTS
 
   @@map("function_type")
 }
@@ -197,7 +197,8 @@ enum SundayTipo {
 enum LessonType {
   APOSTILA
   AULA_EXTRA
-  CULTO_INFANTIL
+  REVIEW
+  QUIZ_GINCANA
   SEM_AULA
   TEMA_LIVRE
 

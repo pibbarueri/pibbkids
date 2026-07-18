@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session || !(session.user.role === Role.RECEPCAO || canManage(session.user.role))) {
+  if (!session || !(session.user.role === Role.RECEPTIONIST || canManage(session.user.role))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

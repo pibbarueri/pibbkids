@@ -18,31 +18,31 @@ const NAV_ITEMS: NavItem[] = [
     href: "/dashboard",
     label: "Início",
     icon: <Home className="h-5 w-5" />,
-    roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR, Role.RECEPCAO],
+    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST],
   },
   {
     href: "/children",
     label: "Crianças",
     icon: <Users className="h-5 w-5" />,
-    roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR, Role.RECEPCAO],
+    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST],
   },
   {
     href: "/volunteers",
     label: "Voluntários",
     icon: <Users className="h-5 w-5" />,
-    roles: [Role.LIDERANCA, Role.COORDENACAO],
+    roles: [Role.ADMIN, Role.COORDINATOR],
   },
   {
     href: "/schedule",
     label: "Escala",
     icon: <CalendarDays className="h-5 w-5" />,
-    roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR, Role.RECEPCAO],
+    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST],
   },
   {
     href: "/curriculum/lessons",
     label: "Aulas",
     icon: <BookOpen className="h-5 w-5" />,
-    roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR],
+    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT],
   },
 ];
 

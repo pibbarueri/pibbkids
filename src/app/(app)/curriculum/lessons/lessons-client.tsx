@@ -23,7 +23,8 @@ import { cn } from "@/lib/utils";
 const LESSON_TYPE_LABELS: Record<string, string> = {
   APOSTILA: "Apostila",
   AULA_EXTRA: "Aula Extra",
-  CULTO_INFANTIL: "Culto Infantil",
+  REVIEW: "Revisão",
+  QUIZ_GINCANA: "Quiz/Gincana",
   SEM_AULA: "Sem aula",
   TEMA_LIVRE: "Tema Livre",
 };

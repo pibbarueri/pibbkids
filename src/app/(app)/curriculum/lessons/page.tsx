@@ -6,7 +6,7 @@ import { Role } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { LessonsClient } from "./lessons-client";
 
-const CAN_MARK: Role[] = [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR];
+const CAN_MARK: Role[] = [Role.ADMIN, Role.COORDINATOR, Role.TEACHER];
 
 function sundaysInMonth(year: number, month: number): Date[] {
   const sundays: Date[] = [];

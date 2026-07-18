@@ -15,11 +15,11 @@ function getNextSunday() {
 }
 
 const ROLE_LABELS: Record<Role, string> = {
-  LIDERANCA: "Liderança",
-  COORDENACAO: "Coordenação",
-  PROFESSOR: "Professor",
-  AUXILIAR: "Auxiliar",
-  RECEPCAO: "Recepção",
+  ADMIN: "Administrador",
+  COORDINATOR: "Coordenação",
+  TEACHER: "Professor",
+  ASSISTANT: "Auxiliar",
+  RECEPTIONIST: "Recepção",
 };
 
 export default async function DashboardPage() {
@@ -27,11 +27,11 @@ export default async function DashboardPage() {
   const role = session!.user.role;
 
   const shortcuts = [
-    { href: "/purchase-requests", label: "Compras", icon: ShoppingCart, roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR] },
-    { href: "/events", label: "Eventos", icon: PartyPopper, roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR, Role.RECEPCAO] },
-    { href: "/attendance", label: "Presença", icon: ClipboardCheck, roles: [Role.LIDERANCA, Role.COORDENACAO, Role.RECEPCAO] },
-    { href: "/materials", label: "Materiais", icon: Package, roles: [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR] },
-    { href: "/curriculum", label: "Revistas", icon: BookOpen, roles: [Role.LIDERANCA] },
+    { href: "/purchase-requests", label: "Compras", icon: ShoppingCart, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER] },
+    { href: "/events", label: "Eventos", icon: PartyPopper, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] },
+    { href: "/attendance", label: "Presença", icon: ClipboardCheck, roles: [Role.ADMIN, Role.COORDINATOR, Role.RECEPTIONIST] },
+    { href: "/materials", label: "Materiais", icon: Package, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT] },
+    { href: "/curriculum", label: "Revistas", icon: BookOpen, roles: [Role.ADMIN] },
   ].filter((s) => s.roles.includes(role));
 
   const nextSunday = getNextSunday();

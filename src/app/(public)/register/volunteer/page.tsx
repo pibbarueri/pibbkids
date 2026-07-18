@@ -17,7 +17,7 @@ const FUNCTION_LABELS: Record<FunctionType, string> = {
   APOIO_GERAL: "Apoio geral",
   LOUVOR: "Louvor",
   RECEPCAO: "Recepção",
-  TEATRO: "Teatro e apresentações",
+  EVENTS: "Eventos",
 };
 
 const schema = z.object({

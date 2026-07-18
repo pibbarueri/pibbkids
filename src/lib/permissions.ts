@@ -1,14 +1,14 @@
 import { Role } from "@prisma/client";
 
-export const MANAGEMENT_ROLES: Role[] = [Role.LIDERANCA, Role.COORDENACAO];
-export const STAFF_ROLES: Role[] = [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR, Role.RECEPCAO];
+export const MANAGEMENT_ROLES: Role[] = [Role.ADMIN, Role.COORDINATOR];
+export const STAFF_ROLES: Role[] = [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST];
 
 export function canManage(role: Role) {
   return MANAGEMENT_ROLES.includes(role);
 }
 
 export function isLeadership(role: Role) {
-  return role === Role.LIDERANCA;
+  return role === Role.ADMIN;
 }
 
 export function canEditSchedule(role: Role) {
@@ -16,13 +16,13 @@ export function canEditSchedule(role: Role) {
 }
 
 export function canViewSensitiveData(role: Role) {
-  return role === Role.LIDERANCA;
+  return role === Role.ADMIN;
 }
 
 export function canRequestPurchase(role: Role) {
-  return ([Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR] as Role[]).includes(role);
+  return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER] as Role[]).includes(role);
 }
 
 export function canViewMaterials(role: Role) {
-  return ([Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR] as Role[]).includes(role);
+  return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT] as Role[]).includes(role);
 }
