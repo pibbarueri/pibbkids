@@ -113,6 +113,7 @@ export function ChildrenClient({
   const [editSaving, setEditSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Child | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [restoreTarget, setRestoreTarget] = useState<Child | null>(null);
   const [tab, setTab] = useState(
     isManager && initialChildren.some((c) => c.active && !c.classGroupId) ? "pending" : "approved"
   );
@@ -347,7 +348,7 @@ export function ChildrenClient({
                 onSelect={() => setSelected(child)}
                 onEdit={() => openEdit(child)}
                 canEdit={false}
-                onRestore={() => restore(child)}
+                onRestore={() => setRestoreTarget(child)}
               />
             ))}
           </TabsContent>
@@ -477,6 +478,32 @@ export function ChildrenClient({
             </Button>
             <Button variant="destructive" className="flex-1 h-12" disabled={deleting} onClick={confirmDelete}>
               Remover
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!restoreTarget} onOpenChange={(o) => !o && setRestoreTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Restaurar criança</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Restaurar <span className="font-medium text-foreground">{restoreTarget?.name}</span>?
+            Ela voltará para a lista de ativos.
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 h-12" onClick={() => setRestoreTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1 h-12"
+              onClick={async () => {
+                if (restoreTarget) await restore(restoreTarget);
+                setRestoreTarget(null);
+              }}
+            >
+              Restaurar
             </Button>
           </div>
         </DialogContent>
