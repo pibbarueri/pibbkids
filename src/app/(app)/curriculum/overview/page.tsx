@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
+import { sortClasses } from "@/lib/classes";
 import { OverviewClient } from "./overview-client";
 
 function sundaysInRange(start: Date, end: Date): Date[] {
@@ -46,7 +47,7 @@ export default async function OverviewPage() {
       <h1 className="text-xl font-bold">Vista semestral — {semester}º semestre {year}</h1>
       <OverviewClient
         plans={plans as any}
-        classes={classes}
+        classes={sortClasses(classes)}
         sundays={sundays.map((d) => d.toISOString())}
       />
     </div>

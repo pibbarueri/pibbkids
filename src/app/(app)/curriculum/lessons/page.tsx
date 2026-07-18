@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
+import { sortClasses } from "@/lib/classes";
 import { Role } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { LessonsClient } from "./lessons-client";
@@ -71,7 +72,7 @@ export default async function LessonsPage() {
       </div>
       <LessonsClient
         initialPlans={plans as any}
-        classes={classes}
+        classes={sortClasses(classes)}
         journals={journals}
         sundays={sundays.map((d) => d.toISOString())}
         isManager={isManager}

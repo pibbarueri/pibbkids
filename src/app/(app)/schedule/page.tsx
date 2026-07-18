@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
+import { sortClasses } from "@/lib/classes";
 import { ScheduleClient } from "./schedule-client";
 
 function sundaysInMonth(year: number, month: number): Date[] {
@@ -60,7 +61,7 @@ export default async function SchedulePage() {
       <h1 className="text-xl font-bold">Escala</h1>
       <ScheduleClient
         initialSlots={slots as any}
-        classes={classes}
+        classes={sortClasses(classes)}
         volunteers={volunteers}
         sundays={sundays.map((d) => d.toISOString())}
         currentUserId={session!.user.id}

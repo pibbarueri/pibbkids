@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Check, Search, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { sortClasses } from "@/lib/classes";
 
 type ClassGroup = { id: string; name: string };
 type Child = {
@@ -33,6 +34,18 @@ export function AttendanceClient({
   const [attendance, setAttendance] = useState(initialAttendance);
   const [saving, setSaving] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [classFilter, setClassFilter] = useState<string>("all");
+
+  // Distinct turmas present among the children, in canonical order.
+  const classOptions = sortClasses(
+    Array.from(
+      new Map(
+        children
+          .filter((c) => c.classGroup)
+          .map((c) => [c.classGroup!.id, c.classGroup!])
+      ).values()
+    )
+  );
 
   const selectedSunday = new Date(currentSunday);
   selectedSunday.setDate(selectedSunday.getDate() + weekOffset * 7);
@@ -76,8 +89,10 @@ export function AttendanceClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekOffset]);
 
-  const filtered = children.filter((c) =>
-    c.name.toLowerCase().includes(search.trim().toLowerCase())
+  const filtered = children.filter(
+    (c) =>
+      c.name.toLowerCase().includes(search.trim().toLowerCase()) &&
+      (classFilter === "all" || c.classGroupId === classFilter)
   );
 
   function statusFor(childId: string, type: string) {
@@ -144,6 +159,32 @@ export function AttendanceClient({
           {isFuture
             ? "Não é possível marcar presença para um domingo futuro."
             : "Somente administrador pode editar domingos passados."}
+        </div>
+      )}
+
+      {classOptions.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setClassFilter("all")}
+            className={cn(
+              "h-8 rounded-full border px-3 text-xs font-medium transition-colors",
+              classFilter === "all" ? "border-primary bg-primary text-primary-foreground" : "border-input"
+            )}
+          >
+            Todas
+          </button>
+          {classOptions.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setClassFilter(c.id)}
+              className={cn(
+                "h-8 rounded-full border px-3 text-xs font-medium transition-colors",
+                classFilter === c.id ? "border-primary bg-primary text-primary-foreground" : "border-input"
+              )}
+            >
+              {c.name}
+            </button>
+          ))}
         </div>
       )}
 

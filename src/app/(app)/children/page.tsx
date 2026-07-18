@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
+import { sortClasses } from "@/lib/classes";
 import { ChildrenClient } from "./children-client";
 
 export default async function ChildrenPage() {
@@ -8,10 +9,12 @@ export default async function ChildrenPage() {
   const role = session!.user.role;
   const isManager = canManage(role);
 
-  const classes = await prisma.classGroup.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
-  });
+  const classes = sortClasses(
+    await prisma.classGroup.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    })
+  );
 
   const children = isManager
     ? await prisma.child.findMany({
