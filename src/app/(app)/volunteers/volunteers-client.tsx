@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Check, Pencil, Plus, RotateCcw, Search, X } from "lucide-react";
+import { formatPhone, phoneDigits } from "@/lib/phone";
 
 const FUNCTION_OPTIONS = [
   { value: "PROFESSOR", label: "Professor" },
@@ -110,6 +111,7 @@ export function VolunteersClient({
   const [editForm, setEditForm] = useState(emptyEditForm);
   const [editSaving, setEditSaving] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState<Volunteer | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<Volunteer | null>(null);
   const [approveTarget, setApproveTarget] = useState<Volunteer | null>(null);
   const [approveForm, setApproveForm] = useState({ username: "", role: "ASSISTANT" });
   const [approveError, setApproveError] = useState<string | null>(null);
@@ -262,7 +264,7 @@ export function VolunteersClient({
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Telefone</p>
-              <Input type="tel" className="h-12" value={addForm.phone} onChange={(e) => setAddForm((f) => ({ ...f, phone: e.target.value }))} />
+              <Input type="tel" inputMode="numeric" className="h-12" value={formatPhone(addForm.phone)} onChange={(e) => setAddForm((f) => ({ ...f, phone: phoneDigits(e.target.value) }))} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">CPF *</p>
@@ -381,7 +383,7 @@ export function VolunteersClient({
               key={v.id}
               volunteer={v}
               onSelect={() => setSelected(v)}
-              onRestore={isLeadership ? () => restore(v) : undefined}
+              onRestore={isLeadership ? () => setRestoreTarget(v) : undefined}
             />
           ))}
         </TabsContent>
@@ -395,7 +397,7 @@ export function VolunteersClient({
           {selected && (
             <div className="space-y-3 text-sm">
               <Row label="Usuário" value={selected.username} />
-              <Row label="Telefone" value={selected.phone} />
+              <Row label="Telefone" value={formatPhone(selected.phone ?? "")} />
 
               {selected.functions.length > 0 && (
                 <div>
@@ -438,7 +440,7 @@ export function VolunteersClient({
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Telefone</p>
-                <Input type="tel" className="h-12" value={editForm.phone} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} />
+                <Input type="tel" inputMode="numeric" className="h-12" value={formatPhone(editForm.phone)} onChange={(e) => setEditForm((f) => ({ ...f, phone: phoneDigits(e.target.value) }))} />
               </div>
               {isLeadership && (
                 <>
@@ -563,6 +565,32 @@ export function VolunteersClient({
               onClick={() => deactivateTarget && deactivate(deactivateTarget)}
             >
               Desativar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!restoreTarget} onOpenChange={(o) => !o && setRestoreTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Restaurar voluntário</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Restaurar <span className="font-medium text-foreground">{restoreTarget?.name}</span>?
+            Ele voltará para a lista de ativos.
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 h-12" onClick={() => setRestoreTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1 h-12"
+              onClick={async () => {
+                if (restoreTarget) await restore(restoreTarget);
+                setRestoreTarget(null);
+              }}
+            >
+              Restaurar
             </Button>
           </div>
         </DialogContent>
