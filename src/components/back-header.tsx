@@ -7,6 +7,7 @@ import { ProfileMenu } from "@/components/profile-menu";
 
 type Profile = {
   name: string;
+  username: string | null;
   phone: string | null;
   cpf: string | null;
   birthdate: string | null;

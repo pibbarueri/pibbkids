@@ -15,12 +15,13 @@ export default async function AppLayout({
   // First access: force the password-change / identity flow before anything else.
   const me = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, phone: true, cpf: true, birthdate: true, motherName: true, requirePasswordChange: true },
+    select: { name: true, username: true, phone: true, cpf: true, birthdate: true, motherName: true, requirePasswordChange: true },
   });
   if (me?.requirePasswordChange) redirect("/first-access");
 
   const profile = {
     name: me!.name,
+    username: me!.username,
     phone: me!.phone,
     cpf: me!.cpf,
     birthdate: me!.birthdate ? me!.birthdate.toISOString() : null,

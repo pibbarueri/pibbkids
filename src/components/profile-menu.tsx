@@ -17,9 +17,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { logoutAction } from "@/lib/actions";
+import { formatPhone, phoneDigits } from "@/lib/phone";
 
 type Profile = {
   name: string;
+  username: string | null;
   phone: string | null;
   cpf: string | null;
   birthdate: string | null;
@@ -30,6 +32,7 @@ export function ProfileMenu({ profile }: { profile: Profile }) {
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState({
     name: profile.name,
+    username: profile.username ?? "",
     phone: profile.phone ?? "",
     cpf: profile.cpf ?? "",
     birthdate: profile.birthdate ? new Date(profile.birthdate).toISOString().slice(0, 10) : "",
@@ -41,7 +44,8 @@ export function ProfileMenu({ profile }: { profile: Profile }) {
   const [error, setError] = useState<string | null>(null);
 
   const passwordMismatch = !!form.newPassword && form.newPassword !== form.confirmPassword;
-  const valid = form.name.trim() && !passwordMismatch && (!form.newPassword || form.newPassword.length >= 6);
+  const passwordValid = !form.newPassword || (form.newPassword.length >= 6 && form.newPassword.length <= 70);
+  const valid = form.name.trim() && form.username.trim().length >= 3 && !passwordMismatch && passwordValid;
 
   async function save() {
     if (!valid) return;
@@ -52,6 +56,7 @@ export function ProfileMenu({ profile }: { profile: Profile }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: form.name,
+        username: form.username,
         phone: form.phone,
         cpf: form.cpf,
         birthdate: form.birthdate || null,
@@ -99,8 +104,12 @@ export function ProfileMenu({ profile }: { profile: Profile }) {
               <Input className="h-12" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
             </div>
             <div className="space-y-1">
+              <p className="text-sm font-medium">Usuário</p>
+              <Input className="h-12" value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
               <p className="text-sm font-medium">Telefone</p>
-              <Input type="tel" className="h-12" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+              <Input type="tel" inputMode="numeric" className="h-12" value={formatPhone(form.phone)} onChange={(e) => setForm((f) => ({ ...f, phone: phoneDigits(e.target.value) }))} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">CPF</p>
@@ -124,6 +133,7 @@ export function ProfileMenu({ profile }: { profile: Profile }) {
                 value={form.newPassword}
                 onChange={(e) => setForm((f) => ({ ...f, newPassword: e.target.value }))}
               />
+              <p className="text-xs text-muted-foreground">Entre 6 e 70 caracteres.</p>
               <Input
                 type="password"
                 className="h-12"
