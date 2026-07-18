@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { canManage } from "@/lib/permissions";
+import { isLeadership } from "@/lib/permissions";
 
+// Volunteer edit/approve is admin-only; coordinators are read-only.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session || !canManage(session.user.role)) {
+  if (!session || !isLeadership(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { id } = await params;
   const body = await req.json();
+
+  // Username must stay unique.
+  if (body.username) {
+    const clash = await prisma.user.findUnique({ where: { username: body.username } });
+    if (clash && clash.id !== id) {
+      return NextResponse.json({ error: "Usuário já cadastrado" }, { status: 409 });
+    }
+  }
 
   const user = await prisma.user.update({
     where: { id },
@@ -24,6 +33,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(body.status !== undefined && { status: body.status }),
       ...(body.role !== undefined && { role: body.role }),
       ...(body.active !== undefined && { active: body.active }),
+      ...(body.requirePasswordChange !== undefined && { requirePasswordChange: body.requirePasswordChange }),
       ...(body.functions !== undefined && {
         functions: {
           deleteMany: {},

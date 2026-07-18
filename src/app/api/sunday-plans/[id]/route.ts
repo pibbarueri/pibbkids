@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { canManage, isLeadership } from "@/lib/permissions";
+import { isLeadership } from "@/lib/permissions";
+import { Role } from "@prisma/client";
+
+// Sunday (local 00:00) of the week containing today — the "aula atual".
+function currentSunday(): Date {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
+
+const CAN_MARK: Role[] = [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR];
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -10,17 +21,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json();
 
-  // PROFESSOR/AUXILIAR can only toggle `done`, and only for their own class.
+  // Editing lesson content is admin-only.
   const onlyTogglingDone = Object.keys(body).every((k) => k === "done");
   if (!onlyTogglingDone && !isLeadership(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (onlyTogglingDone && !canManage(session.user.role)) {
+  // Marking done: Professor/Coord/Admin, and only for the current sunday's lesson.
+  if (onlyTogglingDone) {
+    if (!CAN_MARK.includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const existing = await prisma.sundayPlan.findUnique({ where: { id } });
-    const preferred = await prisma.userPreferredClass.findFirst({
-      where: { userId: session.user.id, classGroupId: existing?.classGroupId },
-    });
-    if (!preferred) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const planDay = existing ? new Date(existing.date) : null;
+    const planMidnight = planDay
+      ? new Date(planDay.getFullYear(), planDay.getMonth(), planDay.getDate()).getTime()
+      : null;
+    if (planMidnight !== currentSunday().getTime()) {
+      return NextResponse.json({ error: "Só é possível marcar a aula do domingo atual." }, { status: 403 });
+    }
   }
 
   const plan = await prisma.sundayPlan.update({

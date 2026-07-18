@@ -2,8 +2,11 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
+import { Role } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { LessonsClient } from "./lessons-client";
+
+const CAN_MARK: Role[] = [Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR];
 
 function sundaysInMonth(year: number, month: number): Date[] {
   const sundays: Date[] = [];
@@ -72,6 +75,7 @@ export default async function LessonsPage() {
         journals={journals}
         sundays={sundays.map((d) => d.toISOString())}
         isManager={isManager}
+        canMark={CAN_MARK.includes(role)}
         myClassIds={myClassIds}
       />
     </div>

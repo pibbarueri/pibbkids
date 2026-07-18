@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canManage, isLeadership } from "@/lib/permissions";
 import { FunctionType, Role } from "@prisma/client";
 
+// Admin-created volunteer: username assigned, no password (set on first access),
+// CPF + birthdate required so first-access identity check can work.
 const createSchema = z.object({
   name: z.string().min(2),
   username: z.string().min(3),
-  password: z.string().min(6),
   phone: z.string().optional(),
-  cpf: z.string().optional(),
-  birthdate: z.string().optional(),
+  cpf: z.string().min(11),
+  birthdate: z.string().min(1),
   motherName: z.string().optional(),
   role: z.nativeEnum(Role),
   functions: z.array(z.nativeEnum(FunctionType)).optional(),
@@ -50,7 +50,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session || !canManage(session.user.role)) {
+  if (!session || !isLeadership(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -65,14 +65,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Usuário já cadastrado" }, { status: 409 });
   }
 
-  const { password, functions, preferredClassIds, birthdate, ...rest } = parsed.data;
+  const { functions, preferredClassIds, birthdate, ...rest } = parsed.data;
 
   const user = await prisma.user.create({
     data: {
       ...rest,
-      birthdate: birthdate ? new Date(birthdate) : undefined,
-      password: await bcrypt.hash(password, 12),
+      birthdate: new Date(birthdate),
       status: "APPROVED",
+      requirePasswordChange: true,
       functions: functions?.length ? { create: functions.map((f) => ({ function: f })) } : undefined,
       preferredClasses: preferredClassIds?.length
         ? { create: preferredClassIds.map((id) => ({ classGroupId: id })) }

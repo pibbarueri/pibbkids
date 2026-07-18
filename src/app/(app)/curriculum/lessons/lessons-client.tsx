@@ -62,6 +62,7 @@ export function LessonsClient({
   journals,
   sundays,
   isManager,
+  canMark,
   myClassIds,
 }: {
   initialPlans: Plan[];
@@ -69,6 +70,7 @@ export function LessonsClient({
   journals: Journal[];
   sundays: string[];
   isManager: boolean;
+  canMark: boolean;
   myClassIds: string[];
 }) {
   const [plans, setPlans] = useState(() =>
@@ -81,6 +83,15 @@ export function LessonsClient({
 
   const selectedSunday = sundays[sundayIdx];
   const dayPlans = plans.filter((p) => p.date.startsWith(selectedSunday.slice(0, 10)));
+
+  // "Marcar dada" only for the current week's sunday.
+  const currentSundayKey = (() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - d.getDay());
+    return d.toISOString().slice(0, 10);
+  })();
+  const canToggleDone = canMark && selectedSunday.slice(0, 10) === currentSundayKey;
 
   const visibleClasses = isManager ? classes : classes.filter((c) => myClassIds.includes(c.id));
 
@@ -188,10 +199,11 @@ export function LessonsClient({
                       <p className="text-xs text-muted-foreground">{TIPO_LABELS[tipo]}</p>
                       <p className="text-sm">{plan ? planLabel(plan) : "Sem plano"}</p>
                     </div>
-                    {plan && (
+                    {plan && (canToggleDone || plan.done) && (
                       <Button
                         variant={plan.done ? "default" : "outline"}
                         size="icon"
+                        disabled={!canToggleDone}
                         className="h-8 w-8"
                         onClick={(e) => { e.stopPropagation(); toggleDone(plan); }}
                       >

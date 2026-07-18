@@ -35,7 +35,6 @@ const FUNCTION_OPTIONS = [
 const emptyVolunteerForm = {
   name: "",
   username: "",
-  password: "",
   phone: "",
   cpf: "",
   birthdate: "",
@@ -78,7 +77,7 @@ type ClassGroup = { id: string; name: string };
 type Volunteer = {
   id: string;
   name: string;
-  username: string;
+  username: string | null;
   phone: string | null;
   role: string;
   status: string;
@@ -111,6 +110,9 @@ export function VolunteersClient({
   const [editForm, setEditForm] = useState(emptyEditForm);
   const [editSaving, setEditSaving] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState<Volunteer | null>(null);
+  const [approveTarget, setApproveTarget] = useState<Volunteer | null>(null);
+  const [approveForm, setApproveForm] = useState({ username: "", role: "AUXILIAR" });
+  const [approveError, setApproveError] = useState<string | null>(null);
   const [tab, setTab] = useState(
     initialVolunteers.some((v) => v.active && v.status === "PENDING") ? "pending" : "approved"
   );
@@ -120,7 +122,8 @@ export function VolunteersClient({
   const approved = filtered.filter((v) => v.active && v.status === "APPROVED");
   const inactive = filtered.filter((v) => !v.active);
 
-  const addValid = addForm.name && addForm.username && addForm.password.length >= 6 && addForm.role;
+  const addValid =
+    addForm.name && addForm.username.length >= 3 && addForm.cpf.length >= 11 && addForm.birthdate && addForm.role;
 
   async function createVolunteer() {
     if (!addValid) return;
@@ -146,7 +149,7 @@ export function VolunteersClient({
   function openEdit(v: Volunteer) {
     setEditForm({
       name: v.name,
-      username: v.username,
+      username: v.username ?? "",
       phone: v.phone ?? "",
       cpf: v.cpf ?? "",
       birthdate: v.birthdate ? new Date(v.birthdate).toISOString().slice(0, 10) : "",
@@ -194,8 +197,35 @@ export function VolunteersClient({
     setEditing(null);
   }
 
-  async function approve(v: Volunteer) {
-    await patchVolunteer(v.id, { status: "APPROVED" });
+  function openApprove(v: Volunteer) {
+    setApproveForm({ username: v.username ?? "", role: v.role });
+    setApproveError(null);
+    setApproveTarget(v);
+  }
+
+  async function confirmApprove() {
+    if (!approveTarget || approveForm.username.length < 3) return;
+    setSaving(true);
+    setApproveError(null);
+    const res = await fetch(`/api/volunteers/${approveTarget.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: approveForm.username,
+        role: approveForm.role,
+        status: "APPROVED",
+        requirePasswordChange: true,
+      }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setVolunteers((prev) => prev.map((x) => (x.id === approveTarget.id ? updated : x)));
+      setApproveTarget(null);
+    } else {
+      const body = await res.json();
+      setApproveError(body.error ?? "Erro ao aprovar.");
+    }
+    setSaving(false);
   }
 
   async function reject(v: Volunteer) {
@@ -209,6 +239,7 @@ export function VolunteersClient({
 
   return (
     <>
+      {isLeadership && (
       <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setAddForm(emptyVolunteerForm); setAddError(null); } }}>
         <DialogTrigger
           className={cn(buttonVariants({ size: "icon" }), "fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40")}
@@ -230,29 +261,21 @@ export function VolunteersClient({
               <Input type="text" className="h-12" value={addForm.username} onChange={(e) => setAddForm((f) => ({ ...f, username: e.target.value }))} />
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium">Senha *</p>
-              <Input type="password" className="h-12" value={addForm.password} onChange={(e) => setAddForm((f) => ({ ...f, password: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
               <p className="text-sm font-medium">Telefone</p>
               <Input type="tel" className="h-12" value={addForm.phone} onChange={(e) => setAddForm((f) => ({ ...f, phone: e.target.value }))} />
             </div>
-            {isLeadership && (
-              <>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">CPF</p>
-                  <Input className="h-12" value={addForm.cpf} onChange={(e) => setAddForm((f) => ({ ...f, cpf: e.target.value }))} />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Data de nascimento</p>
-                  <Input type="date" className="h-12" value={addForm.birthdate} onChange={(e) => setAddForm((f) => ({ ...f, birthdate: e.target.value }))} />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Nome da mãe</p>
-                  <Input className="h-12" value={addForm.motherName} onChange={(e) => setAddForm((f) => ({ ...f, motherName: e.target.value }))} />
-                </div>
-              </>
-            )}
+            <div className="space-y-1">
+              <p className="text-sm font-medium">CPF *</p>
+              <Input className="h-12" value={addForm.cpf} onChange={(e) => setAddForm((f) => ({ ...f, cpf: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Data de nascimento *</p>
+              <Input type="date" className="h-12" value={addForm.birthdate} onChange={(e) => setAddForm((f) => ({ ...f, birthdate: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Nome da mãe</p>
+              <Input className="h-12" value={addForm.motherName} onChange={(e) => setAddForm((f) => ({ ...f, motherName: e.target.value }))} />
+            </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Perfil de acesso *</p>
               <Select value={addForm.role} onValueChange={(v) => setAddForm((f) => ({ ...f, role: v ?? "AUXILIAR" }))} items={ROLE_LABELS}>
@@ -284,6 +307,9 @@ export function VolunteersClient({
                 />
               </div>
             )}
+            <p className="text-xs text-muted-foreground">
+              O voluntário definirá a senha no primeiro acesso (usuário + CPF + nascimento).
+            </p>
             {addError && <p className="text-sm text-destructive">{addError}</p>}
             <Button className="w-full h-12" disabled={!addValid || addSaving} onClick={createVolunteer}>
               Cadastrar voluntário
@@ -291,6 +317,7 @@ export function VolunteersClient({
           </div>
         </DialogContent>
       </Dialog>
+      )}
 
       <div className="relative mb-3">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -326,9 +353,8 @@ export function VolunteersClient({
               key={v.id}
               volunteer={v}
               onSelect={() => setSelected(v)}
-              onEdit={() => openEdit(v)}
-              onApprove={() => approve(v)}
-              onReject={() => reject(v)}
+              onApprove={isLeadership ? () => openApprove(v) : undefined}
+              onReject={isLeadership ? () => reject(v) : undefined}
             />
           ))}
         </TabsContent>
@@ -340,7 +366,7 @@ export function VolunteersClient({
             </p>
           )}
           {approved.map((v) => (
-            <VolunteerCard key={v.id} volunteer={v} onSelect={() => setSelected(v)} onEdit={() => openEdit(v)} />
+            <VolunteerCard key={v.id} volunteer={v} onSelect={() => setSelected(v)} onEdit={isLeadership ? () => openEdit(v) : undefined} />
           ))}
         </TabsContent>
 
@@ -355,8 +381,7 @@ export function VolunteersClient({
               key={v.id}
               volunteer={v}
               onSelect={() => setSelected(v)}
-              onEdit={() => openEdit(v)}
-              onRestore={() => restore(v)}
+              onRestore={isLeadership ? () => restore(v) : undefined}
             />
           ))}
         </TabsContent>
@@ -371,16 +396,6 @@ export function VolunteersClient({
             <div className="space-y-3 text-sm">
               <Row label="Usuário" value={selected.username} />
               <Row label="Telefone" value={selected.phone} />
-
-              {isLeadership && (
-                <>
-                  <Row label="CPF" value={selected.cpf} />
-                  <Row label="Nome da mãe" value={selected.motherName} />
-                  {selected.birthdate && (
-                    <Row label="Data de nascimento" value={new Date(selected.birthdate).toLocaleDateString("pt-BR", { timeZone: "UTC" })} />
-                  )}
-                </>
-              )}
 
               {selected.functions.length > 0 && (
                 <div>
@@ -397,13 +412,10 @@ export function VolunteersClient({
 
               {selected.preferredClasses.length > 0 && (
                 <div>
-                  <p className="text-muted-foreground text-xs">Turmas preferidas</p>
+                  <p className="text-muted-foreground text-xs">Turmas</p>
                   <p>{selected.preferredClasses.map((c) => c.classGroup.name).join(", ")}</p>
                 </div>
               )}
-
-              <Row label="Perfil de acesso" value={ROLE_LABELS[selected.role] ?? selected.role} />
-              <Row label="Status" value={selected.active ? "Ativo" : "Inativo"} />
             </div>
           )}
         </DialogContent>
@@ -492,6 +504,46 @@ export function VolunteersClient({
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!approveTarget} onOpenChange={(o) => !o && setApproveTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aprovar {approveTarget?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Usuário *</p>
+              <Input
+                className="h-12"
+                value={approveForm.username}
+                onChange={(e) => setApproveForm((f) => ({ ...f, username: e.target.value }))}
+                placeholder="Ex: maria.silva"
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Perfil de acesso *</p>
+              <Select value={approveForm.role} onValueChange={(v) => setApproveForm((f) => ({ ...f, role: v ?? "AUXILIAR" }))} items={ROLE_LABELS}>
+                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              O voluntário criará a senha no primeiro acesso com CPF + data de nascimento.
+            </p>
+            {approveError && <p className="text-sm text-destructive">{approveError}</p>}
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 h-12" onClick={() => setApproveTarget(null)}>Cancelar</Button>
+              <Button className="flex-1 h-12" disabled={approveForm.username.length < 3 || saving} onClick={confirmApprove}>
+                Aprovar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!deactivateTarget} onOpenChange={(o) => !o && setDeactivateTarget(null)}>
         <DialogContent>
           <DialogHeader>
@@ -529,7 +581,7 @@ function VolunteerCard({
 }: {
   volunteer: Volunteer;
   onSelect: () => void;
-  onEdit: () => void;
+  onEdit?: () => void;
   onApprove?: () => void;
   onReject?: () => void;
   onRestore?: () => void;
@@ -578,7 +630,7 @@ function VolunteerCard({
               <RotateCcw className="h-4 w-4 text-muted-foreground" />
             </span>
           )}
-          {!onApprove && !onRestore && (
+          {onEdit && !onApprove && !onRestore && (
             <span
               role="button"
               aria-label="Editar"

@@ -22,11 +22,9 @@ const FUNCTION_LABELS: Record<FunctionType, string> = {
 
 const schema = z.object({
   name: z.string().min(2, "Nome obrigatório"),
-  username: z.string().min(3, "Usuário obrigatório"),
-  password: z.string().min(6, "Senha mínima 6 caracteres"),
   phone: z.string().min(8, "Telefone obrigatório"),
-  cpf: z.string().optional(),
-  birthdate: z.string().optional(),
+  cpf: z.string().min(11, "CPF obrigatório"),
+  birthdate: z.string().min(1, "Data de nascimento obrigatória"),
   motherName: z.string().optional(),
   functions: z.array(z.nativeEnum(FunctionType)).min(1, "Selecione ao menos uma função"),
   preferredClassIds: z.array(z.string()).optional(),
@@ -113,23 +111,15 @@ export default function RegisterVolunteerPage() {
             <Input {...register("name")} className="h-12" />
           </Field>
 
-          <Field label="Usuário *" error={errors.username?.message}>
-            <Input type="text" {...register("username")} className="h-12" />
-          </Field>
-
-          <Field label="Senha *" error={errors.password?.message}>
-            <Input type="password" {...register("password")} className="h-12" />
-          </Field>
-
           <Field label="Telefone *" error={errors.phone?.message}>
             <Input type="tel" {...register("phone")} className="h-12" />
           </Field>
 
-          <Field label="CPF" error={errors.cpf?.message}>
+          <Field label="CPF *" error={errors.cpf?.message}>
             <Input {...register("cpf")} placeholder="000.000.000-00" className="h-12" />
           </Field>
 
-          <Field label="Data de nascimento" error={errors.birthdate?.message}>
+          <Field label="Data de nascimento *" error={errors.birthdate?.message}>
             <Input type="date" {...register("birthdate")} className="h-12" />
           </Field>
 

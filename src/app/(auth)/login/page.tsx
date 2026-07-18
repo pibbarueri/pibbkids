@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,11 @@ export default function LoginPage() {
             <Button type="submit" className="w-full h-12" disabled={loading}>
               {loading ? "Entrando..." : "Entrar"}
             </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              <Link href="/first-access" className="text-primary hover:underline">
+                Primeiro acesso?
+              </Link>
+            </p>
           </form>
         </CardContent>
       </Card>
