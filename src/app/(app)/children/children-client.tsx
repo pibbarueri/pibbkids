@@ -23,12 +23,43 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AlertCircle, Check, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
+import { formatPhone, phoneDigits } from "@/lib/phone";
 
 const FREQUENCIA_LABELS: Record<string, string> = {
   EBD: "Escola Dominical (EBD)",
   CULTO: "Culto Infantil",
   AMBOS: "EBD e Culto",
 };
+
+const FREQ_OPTIONS: { value: Frequencia; label: string }[] = [
+  { value: "EBD", label: "EBD" },
+  { value: "CULTO", label: "Culto" },
+  { value: "AMBOS", label: "Ambos" },
+];
+
+function FrequencyRadio({ value, onChange }: { value: string; onChange: (v: Frequencia) => void }) {
+  return (
+    <div className="grid grid-cols-3 gap-2" role="radiogroup">
+      {FREQ_OPTIONS.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="radio"
+          aria-checked={value === o.value}
+          onClick={() => onChange(o.value)}
+          className={cn(
+            "h-12 rounded-lg border text-sm font-medium transition-colors",
+            value === o.value
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-input bg-transparent"
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 const emptyChildForm = {
   name: "",
@@ -200,26 +231,15 @@ export function ChildrenClient({
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Telefone Pai</p>
-                <Input type="tel" className="h-12" value={addForm.fatherPhone} onChange={(e) => setAddForm((f) => ({ ...f, fatherPhone: e.target.value }))} />
+                <Input type="tel" inputMode="numeric" className="h-12" value={formatPhone(addForm.fatherPhone)} onChange={(e) => setAddForm((f) => ({ ...f, fatherPhone: phoneDigits(e.target.value) }))} />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Telefone Mãe</p>
-                <Input type="tel" className="h-12" value={addForm.motherPhone} onChange={(e) => setAddForm((f) => ({ ...f, motherPhone: e.target.value }))} />
+                <Input type="tel" inputMode="numeric" className="h-12" value={formatPhone(addForm.motherPhone)} onChange={(e) => setAddForm((f) => ({ ...f, motherPhone: phoneDigits(e.target.value) }))} />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Frequência *</p>
-                <Select
-                  value={addForm.frequency}
-                  onValueChange={(v) => setAddForm((f) => ({ ...f, frequency: (v as Frequencia) ?? "" }))}
-                  items={FREQUENCIA_LABELS}
-                >
-                  <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(FREQUENCIA_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FrequencyRadio value={addForm.frequency} onChange={(v) => setAddForm((f) => ({ ...f, frequency: v }))} />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Turma *</p>
@@ -346,8 +366,8 @@ export function ChildrenClient({
               <Row label="Frequência" value={FREQUENCIA_LABELS[selected.frequency] ?? selected.frequency} />
               <Row label="Pai" value={selected.fatherName} />
               <Row label="Mãe" value={selected.motherName} />
-              <Row label="Telefone Pai" value={selected.fatherPhone} />
-              <Row label="Telefone Mãe" value={selected.motherPhone} />
+              <Row label="Telefone Pai" value={formatPhone(selected.fatherPhone ?? "")} />
+              <Row label="Telefone Mãe" value={formatPhone(selected.motherPhone ?? "")} />
               {selected.allergies && (
                 <div className="flex gap-2 p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
                   <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
@@ -395,26 +415,15 @@ export function ChildrenClient({
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Telefone Pai</p>
-              <Input type="tel" className="h-12" value={editForm.fatherPhone} onChange={(e) => setEditForm((f) => ({ ...f, fatherPhone: e.target.value }))} />
+              <Input type="tel" inputMode="numeric" className="h-12" value={formatPhone(editForm.fatherPhone)} onChange={(e) => setEditForm((f) => ({ ...f, fatherPhone: phoneDigits(e.target.value) }))} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Telefone Mãe</p>
-              <Input type="tel" className="h-12" value={editForm.motherPhone} onChange={(e) => setEditForm((f) => ({ ...f, motherPhone: e.target.value }))} />
+              <Input type="tel" inputMode="numeric" className="h-12" value={formatPhone(editForm.motherPhone)} onChange={(e) => setEditForm((f) => ({ ...f, motherPhone: phoneDigits(e.target.value) }))} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Frequência *</p>
-              <Select
-                value={editForm.frequency}
-                onValueChange={(v) => setEditForm((f) => ({ ...f, frequency: (v as Frequencia) ?? "" }))}
-                items={FREQUENCIA_LABELS}
-              >
-                <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(FREQUENCIA_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FrequencyRadio value={editForm.frequency} onChange={(v) => setEditForm((f) => ({ ...f, frequency: v }))} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Turma</p>
