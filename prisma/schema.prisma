@@ -181,6 +181,7 @@ model SundayPlan {
   licaoNumber   Int?        @map("licao_number")
   lessonType    LessonType  @default(APOSTILA) @map("lesson_type")
   specialTitle  String?     @map("special_title")
+  observations  String?
   done          Boolean     @default(false)
 
   @@unique([date, classGroupId, tipo])

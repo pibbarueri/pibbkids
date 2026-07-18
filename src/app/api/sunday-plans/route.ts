@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { date, classGroupId, tipo, journalId, licaoNumber, lessonType, specialTitle } = body;
+  const { date, classGroupId, tipo, journalId, licaoNumber, lessonType, specialTitle, observations } = body;
 
   const plan = await prisma.sundayPlan.upsert({
     where: { date_classGroupId_tipo: { date: new Date(date), classGroupId, tipo } },
@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
       licaoNumber: licaoNumber ?? null,
       lessonType: lessonType ?? "APOSTILA",
       specialTitle: specialTitle ?? null,
+      observations: observations ?? null,
     },
     create: {
       date: new Date(date),
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
       licaoNumber: licaoNumber ?? null,
       lessonType: lessonType ?? "APOSTILA",
       specialTitle: specialTitle ?? null,
+      observations: observations ?? null,
     },
     include: {
       classGroup: { select: { id: true, name: true } },

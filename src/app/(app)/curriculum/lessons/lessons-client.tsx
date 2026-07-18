@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,7 @@ type Plan = {
   licaoNumber: number | null;
   lessonType: string;
   specialTitle: string | null;
+  observations: string | null;
   done: boolean;
 };
 
@@ -79,7 +81,7 @@ export function LessonsClient({
   );
   const [sundayIdx, setSundayIdx] = useState(0);
   const [editing, setEditing] = useState<{ classGroupId: string; className: string; tipo: string } | null>(null);
-  const [form, setForm] = useState({ lessonType: "APOSTILA", journalId: "", licaoNumber: "", specialTitle: "" });
+  const [form, setForm] = useState({ lessonType: "APOSTILA", journalId: "", licaoNumber: "", specialTitle: "", observations: "" });
   const [saving, setSaving] = useState(false);
 
   const selectedSunday = sundays[sundayIdx];
@@ -103,6 +105,7 @@ export function LessonsClient({
       journalId: existing?.journalId ?? "",
       licaoNumber: existing?.licaoNumber ? String(existing.licaoNumber) : "",
       specialTitle: existing?.specialTitle ?? "",
+      observations: existing?.observations ?? "",
     });
     setEditing({ classGroupId, className, tipo });
   }
@@ -121,6 +124,7 @@ export function LessonsClient({
         journalId: form.lessonType === "APOSTILA" ? form.journalId || null : null,
         licaoNumber: form.lessonType === "APOSTILA" ? Number(form.licaoNumber) || null : null,
         specialTitle: form.lessonType !== "APOSTILA" ? form.specialTitle || null : null,
+        observations: form.observations || null,
       }),
     });
     const saved = await res.json();
@@ -199,6 +203,9 @@ export function LessonsClient({
                     <div>
                       <p className="text-xs text-muted-foreground">{TIPO_LABELS[tipo]}</p>
                       <p className="text-sm">{plan ? planLabel(plan) : "Sem plano"}</p>
+                      {plan?.observations && (
+                        <p className="text-xs text-muted-foreground italic mt-0.5">{plan.observations}</p>
+                      )}
                     </div>
                     {plan && (canToggleDone || plan.done) && (
                       <Button
@@ -270,7 +277,7 @@ export function LessonsClient({
               </>
             ) : (
               <div className="space-y-1">
-                <p className="text-sm font-medium">Título / observação</p>
+                <p className="text-sm font-medium">Título</p>
                 <Input
                   className="h-12"
                   value={form.specialTitle}
@@ -279,6 +286,16 @@ export function LessonsClient({
                 />
               </div>
             )}
+
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Observações</p>
+              <Textarea
+                rows={2}
+                value={form.observations}
+                onChange={(e) => setForm((f) => ({ ...f, observations: e.target.value }))}
+                placeholder="Anotações para esta aula (opcional)"
+              />
+            </div>
 
             <Button className="w-full h-12" disabled={saving} onClick={save}>
               Salvar
