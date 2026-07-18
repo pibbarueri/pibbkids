@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManage, isLeadership } from "@/lib/permissions";
+import { canManage } from "@/lib/permissions";
 import { ScheduleClient } from "./schedule-client";
 
 function sundaysInMonth(year: number, month: number): Date[] {
@@ -18,7 +18,7 @@ export default async function SchedulePage() {
   const session = await auth();
   const role = session!.user.role;
   const canViewAll = canManage(role);
-  const canEdit = isLeadership(role);
+  const canEdit = canManage(role);
 
   const now = new Date();
   const year = now.getFullYear();

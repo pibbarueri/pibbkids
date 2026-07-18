@@ -20,9 +20,9 @@ export function canViewSensitiveData(role: Role) {
 }
 
 export function canRequestPurchase(role: Role) {
-  return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER] as Role[]).includes(role);
+  return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.RECEPTIONIST] as Role[]).includes(role);
 }
 
 export function canViewMaterials(role: Role) {
-  return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT] as Role[]).includes(role);
+  return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] as Role[]).includes(role);
 }

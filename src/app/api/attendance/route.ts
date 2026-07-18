@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { Role } from "@prisma/client";
-import { canManage, isLeadership } from "@/lib/permissions";
+import { canManage } from "@/lib/permissions";
 
 // Today at local 00:00.
 function todayMidnight(): Date {
@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
   if (targetMidnight > today) {
     return NextResponse.json({ error: "Domingo futuro" }, { status: 403 });
   }
-  if (targetMidnight < today && !isLeadership(session.user.role)) {
-    return NextResponse.json({ error: "Somente admin edita domingos passados" }, { status: 403 });
+  if (targetMidnight < today && !canManage(session.user.role)) {
+    return NextResponse.json({ error: "Somente liderança edita domingos passados" }, { status: 403 });
   }
 
   const attendance = await prisma.attendance.upsert({

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { isLeadership } from "@/lib/permissions";
+import { canManage } from "@/lib/permissions";
 import { Role } from "@prisma/client";
 
 // Sunday (local 00:00) of the week containing today — the "aula atual".
@@ -23,7 +23,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // Editing lesson content is admin-only.
   const onlyTogglingDone = Object.keys(body).every((k) => k === "done");
-  if (!onlyTogglingDone && !isLeadership(session.user.role)) {
+  if (!onlyTogglingDone && !canManage(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   // Marking done: Professor/Coord/Admin, and only for the current sunday's lesson.

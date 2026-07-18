@@ -1,12 +1,12 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { isLeadership } from "@/lib/permissions";
+import { canManage } from "@/lib/permissions";
 import { ClassesClient } from "./classes-client";
 
 export default async function ClassesPage() {
   const session = await auth();
-  if (!isLeadership(session!.user.role)) redirect("/dashboard");
+  if (!canManage(session!.user.role)) redirect("/dashboard");
 
   const classes = await prisma.classGroup.findMany({ orderBy: { name: "asc" } });
 

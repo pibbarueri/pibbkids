@@ -20,11 +20,11 @@ export default async function DashboardPage() {
   const role = session!.user.role;
 
   const shortcuts = [
-    { href: "/purchase-requests", label: "Compras", icon: ShoppingCart, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER] },
+    { href: "/purchase-requests", label: "Compras", icon: ShoppingCart, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.RECEPTIONIST] },
     { href: "/events", label: "Eventos", icon: PartyPopper, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] },
     { href: "/attendance", label: "Presença", icon: ClipboardCheck, roles: [Role.ADMIN, Role.COORDINATOR, Role.RECEPTIONIST] },
-    { href: "/materials", label: "Materiais", icon: Package, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT] },
-    { href: "/curriculum", label: "Revistas", icon: BookOpen, roles: [Role.ADMIN] },
+    { href: "/materials", label: "Materiais", icon: Package, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] },
+    { href: "/curriculum", label: "Revistas", icon: BookOpen, roles: [Role.ADMIN, Role.COORDINATOR] },
   ].filter((s) => s.roles.includes(role));
 
   const nextSunday = getNextSunday();

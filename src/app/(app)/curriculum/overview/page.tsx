@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isLeadership } from "@/lib/permissions";
+import { canManage } from "@/lib/permissions";
 import { OverviewClient } from "./overview-client";
 
 function sundaysInRange(start: Date, end: Date): Date[] {
@@ -18,7 +18,7 @@ function sundaysInRange(start: Date, end: Date): Date[] {
 export default async function OverviewPage() {
   const session = await auth();
   const role = session!.user.role;
-  if (!isLeadership(role)) redirect("/dashboard");
+  if (!canManage(role)) redirect("/dashboard");
 
   const now = new Date();
   const year = now.getFullYear();

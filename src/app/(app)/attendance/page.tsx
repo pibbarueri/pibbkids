@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManage, isLeadership } from "@/lib/permissions";
+import { canManage } from "@/lib/permissions";
 import { Role } from "@prisma/client";
 import { AttendanceClient } from "./attendance-client";
 
@@ -41,7 +41,7 @@ export default async function AttendancePage() {
         children={children as any}
         initialAttendance={attendance as any}
         currentSunday={sunday.toISOString()}
-        isAdmin={isLeadership(role)}
+        isAdmin={canManage(role)}
       />
     </div>
   );

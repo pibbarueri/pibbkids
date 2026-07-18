@@ -1,12 +1,12 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isLeadership } from "@/lib/permissions";
+import { canManage } from "@/lib/permissions";
 import { EventsClient } from "./events-client";
 
 export default async function EventsPage() {
   const session = await auth();
   const role = session!.user.role;
-  const isManager = isLeadership(role);
+  const isManager = canManage(role);
 
   const events = await prisma.event.findMany({
     where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },

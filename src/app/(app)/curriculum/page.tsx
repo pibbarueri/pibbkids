@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isLeadership } from "@/lib/permissions";
+import { canManage } from "@/lib/permissions";
 import { JournalsClient } from "./journals-client";
 
 export default async function CurriculumPage() {
   const session = await auth();
   const role = session!.user.role;
 
-  if (!isLeadership(role)) redirect("/dashboard");
+  if (!canManage(role)) redirect("/dashboard");
 
   const [journals, classes] = await Promise.all([
     prisma.journal.findMany({
