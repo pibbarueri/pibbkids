@@ -16,7 +16,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, Copy, Pencil, Plus, Trash2 } from "lucide-react";
+
+// General support slots show in both horário tabs; the rest are EBD- or CULTO-specific.
+const GENERAL_SLOTS = ["SALA_PLUS", "LANCHE"];
+function inHorario(slotType: string, tab: "EBD" | "CULTO") {
+  if (GENERAL_SLOTS.includes(slotType)) return true;
+  return tab === "EBD"
+    ? slotType === "EBD" || slotType === "APOIO_EBD"
+    : slotType === "CULTO" || slotType === "APOIO_CULTO";
+}
 
 const SLOT_LABELS: Record<string, string> = {
   SALA_PLUS: "Coordenação",
@@ -107,6 +117,7 @@ export function ScheduleClient({
     initialSlots.map((s) => ({ ...s, date: new Date(s.date).toISOString() }))
   );
   const [sundayIdx, setSundayIdx] = useState(0);
+  const [horarioTab, setHorarioTab] = useState<"EBD" | "CULTO">("EBD");
   const [addOpen, setAddOpen] = useState(false);
   const [editingSlot, setEditingSlot] = useState<Slot | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Slot | null>(null);
@@ -130,7 +141,7 @@ export function ScheduleClient({
     });
   }, []);
 
-  const mySlots = canViewAll ? daySlots : daySlots.filter((s) => s.user.id === currentUserId);
+  const tabSlots = daySlots.filter((s) => inHorario(s.slotType, horarioTab));
 
   const isRealClass = !!form.turma && !(form.turma in PSEUDO_TURMAS);
 
@@ -226,8 +237,9 @@ export function ScheduleClient({
   }
 
   const specialTypes = ["SALA_PLUS", "APOIO_EBD", "APOIO_CULTO", "LANCHE"];
-  const specialSlots = daySlots.filter((s) => specialTypes.includes(s.slotType));
-  const classSlots = daySlots.filter((s) => !specialTypes.includes(s.slotType));
+  const shownSlots = canViewAll ? tabSlots : tabSlots.filter((s) => s.user.id === currentUserId);
+  const specialSlots = tabSlots.filter((s) => specialTypes.includes(s.slotType));
+  const classSlots = tabSlots.filter((s) => !specialTypes.includes(s.slotType));
 
   return (
     <div className="space-y-4">
@@ -259,10 +271,18 @@ export function ScheduleClient({
         </Button>
       )}
 
+      {/* EBD / Culto tabs */}
+      <Tabs value={horarioTab} onValueChange={(v) => setHorarioTab(v as "EBD" | "CULTO")}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="EBD">EBD</TabsTrigger>
+          <TabsTrigger value="CULTO">Culto</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Slots display */}
-      {(canViewAll ? daySlots : mySlots).length === 0 ? (
+      {shownSlots.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">
-          {canViewAll ? "Nenhum slot neste domingo." : "Você não está na escala deste domingo."}
+          {canViewAll ? "Nenhum slot neste horário." : "Você não está na escala deste horário."}
         </p>
       ) : (
         <div className="space-y-4">
