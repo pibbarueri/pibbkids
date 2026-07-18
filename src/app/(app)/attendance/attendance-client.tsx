@@ -71,12 +71,9 @@ export function AttendanceClient({
     return null;
   })();
 
-  // Refetch attendance whenever the selected sunday changes (skip initial current sunday).
+  // Always refetch the selected sunday from the API so local edits (and edits on
+  // other sundays) aren't clobbered by the stale server snapshot on return.
   useEffect(() => {
-    if (weekOffset === 0) {
-      setAttendance(initialAttendance);
-      return;
-    }
     let cancelled = false;
     fetch(`/api/attendance?date=${encodeURIComponent(selectedISO)}`)
       .then((r) => r.json())
@@ -86,8 +83,7 @@ export function AttendanceClient({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekOffset]);
+  }, [selectedISO]);
 
   const filtered = children.filter(
     (c) =>
