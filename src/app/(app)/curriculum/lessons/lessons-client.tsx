@@ -123,7 +123,7 @@ export function LessonsClient({
         lessonType: form.lessonType,
         journalId: form.lessonType === "APOSTILA" ? form.journalId || null : null,
         licaoNumber: form.lessonType === "APOSTILA" ? Number(form.licaoNumber) || null : null,
-        specialTitle: form.lessonType !== "APOSTILA" ? form.specialTitle || null : null,
+        specialTitle: ["AULA_EXTRA", "REVIEW", "QUIZ_GINCANA"].includes(form.lessonType) ? form.specialTitle || null : null,
         observations: form.observations || null,
       }),
     });
@@ -275,7 +275,7 @@ export function LessonsClient({
                   />
                 </div>
               </>
-            ) : (
+            ) : ["SEM_AULA", "TEMA_LIVRE"].includes(form.lessonType) ? null : (
               <div className="space-y-1">
                 <p className="text-sm font-medium">Título</p>
                 <Input
