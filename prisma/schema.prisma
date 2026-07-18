@@ -12,8 +12,8 @@ datasource db {
 model User {
   id                String              @id @default(cuid())
   name              String
-  username          String              @unique
-  password          String
+  username          String?             @unique
+  password          String?
   requirePasswordChange Boolean         @default(false) @map("require_password_change")
   role              Role
   cpf               String?
@@ -29,8 +29,21 @@ model User {
   scheduleSlots     ScheduleSlot[]
   purchaseRequests  PurchaseRequest[]
   attendance        Attendance[]
+  sessions          UserSession[]
 
   @@map("users")
+}
+
+model UserSession {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  @@map("user_sessions")
 }
 
 enum Role {

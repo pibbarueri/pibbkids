@@ -6,6 +6,8 @@ const { auth } = NextAuth(authConfig);
 
 const PUBLIC_PATHS = [
   "/login",
+  "/first-access",
+  "/api/first-access",
   "/register/child",
   "/register/volunteer",
   "/api/auth",

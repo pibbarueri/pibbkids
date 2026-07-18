@@ -3,8 +3,14 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
+import { createSession, isSessionValid } from "@/lib/session";
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+const {
+  handlers,
+  signIn,
+  signOut,
+  auth: nextAuth,
+} = NextAuth({
   ...authConfig,
   providers: [
     Credentials({
@@ -19,16 +25,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { username: credentials.username as string },
         });
 
-        if (!user || !user.active) return null;
+        // No password/username yet means the volunteer hasn't done first access — block.
+        if (!user || !user.active || !user.password || !user.username) return null;
 
-        const valid = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
+        const valid = await bcrypt.compare(credentials.password as string, user.password);
         if (!valid) return null;
 
-        return { id: user.id, name: user.name, username: user.username, role: user.role };
+        const sessionToken = await createSession(user.id);
+        return { id: user.id, name: user.name, username: user.username, role: user.role, sessionToken };
       },
     }),
   ],
 });
+
+// Wrap auth() so every server component / route re-validates the DB session row.
+// This is what makes logout (and expiry) actually revoke access, since the JWT
+// itself is self-contained. Middleware stays on the plain JWT check (edge-safe).
+async function auth() {
+  const session = await nextAuth();
+  if (!session) return null;
+  if (!session.sessionToken || !(await isSessionValid(session.sessionToken))) return null;
+  return session;
+}
+
+export { handlers, signIn, signOut, auth };
