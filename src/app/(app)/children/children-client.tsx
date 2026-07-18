@@ -288,7 +288,7 @@ export function ChildrenClient({
               Pendentes {pending.length > 0 && <Badge className="ml-1">{pending.length}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="approved" className="flex-1">
-              Aprovadas
+              Frequentes
             </TabsTrigger>
             <TabsTrigger value="inactive" className="flex-1">
               Inativos
