@@ -2,9 +2,10 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
-import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen } from "lucide-react";
+import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen, Cake } from "lucide-react";
 import { EventsCalendar } from "@/components/dashboard/events-calendar";
 import { NextSundaySchedule } from "@/components/dashboard/next-sunday-schedule";
+import { computeUpcomingBirthdays } from "@/lib/birthdays";
 
 function getNextSunday() {
   const now = new Date();
@@ -13,14 +14,6 @@ function getNextSunday() {
   utc.setUTCDate(utc.getUTCDate() + diff);
   return utc;
 }
-
-const ROLE_LABELS: Record<Role, string> = {
-  ADMIN: "Administrador",
-  COORDINATOR: "Coordenação",
-  TEACHER: "Professor",
-  ASSISTANT: "Auxiliar",
-  RECEPTIONIST: "Recepção",
-};
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -36,7 +29,7 @@ export default async function DashboardPage() {
 
   const nextSunday = getNextSunday();
 
-  const [events, scheduleSlots] = await Promise.all([
+  const [events, scheduleSlots, birthdayChildren, birthdayVolunteers] = await Promise.all([
     prisma.event.findMany({
       where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
       orderBy: { date: "asc" },
@@ -49,13 +42,24 @@ export default async function DashboardPage() {
         classGroup: { select: { name: true } },
       },
     }),
+    prisma.child.findMany({ where: { active: true }, select: { name: true, birthdate: true } }),
+    prisma.user.findMany({
+      where: { active: true, birthdate: { not: null } },
+      select: { name: true, birthdate: true },
+    }),
+  ]);
+
+  const birthdays = computeUpcomingBirthdays([
+    ...birthdayChildren.map((c) => ({ name: c.name, birthdate: c.birthdate, kind: "child" as const })),
+    ...birthdayVolunteers
+      .filter((v) => v.birthdate)
+      .map((v) => ({ name: v.name, birthdate: v.birthdate as Date, kind: "volunteer" as const })),
   ]);
 
   return (
     <div className="p-4 space-y-4">
       <div>
         <h1 className="text-2xl font-bold">Olá, {session!.user.name.split(" ")[0]}!</h1>
-        <p className="text-sm text-muted-foreground">{ROLE_LABELS[role]}</p>
       </div>
 
       {shortcuts.length > 0 && (
@@ -70,6 +74,22 @@ export default async function DashboardPage() {
               <span className="text-xs text-center">{s.label}</span>
             </Link>
           ))}
+        </div>
+      )}
+
+      {birthdays.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <Cake className="h-4 w-4" /> Próximos aniversários
+          </h2>
+          <div className="divide-y rounded-lg border">
+            {birthdays.map((b, i) => (
+              <div key={i} className="flex items-center justify-between gap-2 p-3 text-sm">
+                <span className="truncate">{b.name}</span>
+                <span className="shrink-0 text-muted-foreground">{b.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
