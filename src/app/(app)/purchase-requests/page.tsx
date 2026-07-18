@@ -1,11 +1,14 @@
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isLeadership } from "@/lib/permissions";
+import { isLeadership, canRequestPurchase } from "@/lib/permissions";
 import { PurchaseRequestsClient } from "./purchase-requests-client";
 
 export default async function PurchaseRequestsPage() {
   const session = await auth();
-  const isManager = isLeadership(session!.user.role);
+  const role = session!.user.role;
+  if (!canRequestPurchase(role)) redirect("/dashboard");
+  const isManager = isLeadership(role);
 
   const requests = await prisma.purchaseRequest.findMany({
     include: {

@@ -1,11 +1,13 @@
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManage } from "@/lib/permissions";
+import { canManage, canViewMaterials } from "@/lib/permissions";
 import { MaterialsClient } from "./materials-client";
 
 export default async function MaterialsPage() {
   const session = await auth();
   const role = session!.user.role;
+  if (!canViewMaterials(role)) redirect("/dashboard");
   const isManager = canManage(role);
 
   const materials = await prisma.material.findMany({ orderBy: { name: "asc" } });

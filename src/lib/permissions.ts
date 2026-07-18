@@ -18,3 +18,11 @@ export function canEditSchedule(role: Role) {
 export function canViewSensitiveData(role: Role) {
   return role === Role.LIDERANCA;
 }
+
+export function canRequestPurchase(role: Role) {
+  return ([Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR] as Role[]).includes(role);
+}
+
+export function canViewMaterials(role: Role) {
+  return ([Role.LIDERANCA, Role.COORDENACAO, Role.PROFESSOR, Role.AUXILIAR] as Role[]).includes(role);
+}
