@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -73,9 +74,7 @@ export default function RegisterChildPage() {
   return (
     <Card>
       <CardHeader>
-        <p className="text-2xl font-heading font-extrabold text-primary tracking-tight">
-          PIBB<span className="text-secondary italic ml-1">Kids</span>
-        </p>
+        <Image src="/logo.png" alt="PIBB Kids" priority width={64} height={61} className="mb-1" />
         <CardTitle className="font-heading">Cadastro de Criança</CardTitle>
       </CardHeader>
       <CardContent>

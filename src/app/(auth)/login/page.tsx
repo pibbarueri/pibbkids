@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -38,8 +39,8 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center p-4 bg-muted/40">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-4xl font-heading font-extrabold text-primary tracking-tight">
-            PIBB<span className="text-secondary italic ml-1">Kids</span>
+          <CardTitle className="flex justify-center">
+            <Image src="/logo.png" alt="PIBB Kids" priority width={112} height={107} />
           </CardTitle>
           <p className="text-sm text-muted-foreground">
             Entre com seu usuário e senha
