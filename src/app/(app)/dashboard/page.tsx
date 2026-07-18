@@ -77,21 +77,25 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {birthdays.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="flex items-center gap-2 text-sm font-semibold">
-            <Cake className="h-4 w-4" /> Próximos aniversários
-          </h2>
-          <div className="divide-y rounded-lg border">
-            {birthdays.map((b, i) => (
+      <div className="space-y-2">
+        <h2 className="flex items-center gap-2 text-sm font-semibold">
+          <Cake className="h-4 w-4" /> Próximos aniversários
+        </h2>
+        <div className="divide-y rounded-lg border">
+          {birthdays.length === 0 ? (
+            <p className="p-6 text-center text-sm text-muted-foreground">
+              Sem aniversários próximos 🎈
+            </p>
+          ) : (
+            birthdays.map((b, i) => (
               <div key={i} className="flex items-center justify-between gap-2 p-3 text-sm">
                 <span className="truncate">{b.name}</span>
                 <span className="shrink-0 text-muted-foreground">{b.label}</span>
               </div>
-            ))}
-          </div>
+            ))
+          )}
         </div>
-      )}
+      </div>
 
       <EventsCalendar events={events.map((e) => ({ ...e, date: e.date.toISOString() }))} />
       <NextSundaySchedule date={nextSunday.toISOString()} slots={scheduleSlots} />
