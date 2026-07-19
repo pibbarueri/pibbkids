@@ -36,6 +36,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# data imports (PII: CPF, minors) + db dumps — never commit
+/data
+*.dump
+dump*.sql
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
