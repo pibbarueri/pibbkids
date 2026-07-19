@@ -36,6 +36,10 @@ function normNo(v: string): string | null {
   return t;
 }
 
+function normName(s: string): string {
+  return (s ?? "").trim().replace(/[.,\s]+$/, "").trim().toLowerCase();
+}
+
 function slug(name: string): string {
   const first = (name ?? "").trim().split(/\s+/)[0] ?? "";
   return first
@@ -88,6 +92,26 @@ async function main() {
   const classes = await prisma.classGroup.findMany();
   const classByName = new Map(classes.map((c) => [c.name, c.id]));
 
+  // CPF/birthdate/motherName enrichment from a Google Form export (matched by name).
+  type CpfInfo = { cpf: string | null; birthdate: Date | null; motherName: string | null };
+  const cpfByName = new Map<string, CpfInfo>();
+  const cpfRows: Record<string, string>[] = parse(readFileSync("data/voluntarios_cpf.csv"), {
+    columns: true,
+    bom: true,
+    trim: true,
+    skip_empty_lines: true,
+  });
+  for (const r of cpfRows) {
+    const nm = normName(r["Qual seu nome completo? (não abrevie)"]);
+    if (!nm) continue;
+    cpfByName.set(nm, {
+      cpf: (r["CPF"] ?? "").replace(/\D/g, "") || null,
+      birthdate: parseBrDate(r["Data de Nascimento"]),
+      motherName: (r["Nome da Mãe"] ?? "").trim() || null,
+    });
+  }
+  const cpfMatched = new Set<string>();
+
   let volunteersCreated = 0;
   let childrenCreated = 0;
 
@@ -117,18 +141,21 @@ async function main() {
       else warnings.push(`Volunteer "${name}": unknown Turma "${turma}"`);
     }
 
+    const cpfInfo = cpfByName.get(normName(name));
+    if (cpfInfo) cpfMatched.add(normName(name));
+
     await prisma.user.create({
       data: {
         name,
         active: row.Ativo === "Sim",
-        birthdate: parseEnDate(row["Data Nasc."]),
+        birthdate: cpfInfo?.birthdate ?? parseEnDate(row["Data Nasc."]),
         role,
         status: "APPROVED",
         requirePasswordChange: true,
         password: null,
-        cpf: null,
+        cpf: cpfInfo?.cpf ?? null,
         phone: null,
-        motherName: null,
+        motherName: cpfInfo?.motherName ?? null,
         documentUrl: null,
         username: uniqueUsername(name),
         functions: { create: fns.map((f) => ({ function: f as FunctionType })) },
@@ -188,6 +215,10 @@ async function main() {
       },
     });
     childrenCreated++;
+  }
+
+  for (const nm of cpfByName.keys()) {
+    if (!cpfMatched.has(nm)) warnings.push(`CPF row "${nm}" did not match any volunteer`);
   }
 
   console.log(`✓ ${volunteersCreated} volunteers created`);
