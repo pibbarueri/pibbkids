@@ -6,6 +6,9 @@ import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen, Cake } fr
 import { EventsCalendar } from "@/components/dashboard/events-calendar";
 import { NextSundaySchedule } from "@/components/dashboard/next-sunday-schedule";
 import { computeUpcomingBirthdays } from "@/lib/birthdays";
+import { isLeadership } from "@/lib/permissions";
+import { getBoolSetting, SETTING_FIRST_ACCESS_BYPASS_CPF } from "@/lib/settings";
+import { FirstAccessToggle } from "@/components/dashboard/first-access-toggle";
 
 function getNextSunday() {
   const now = new Date();
@@ -56,11 +59,16 @@ export default async function DashboardPage() {
       .map((v) => ({ name: v.name, birthdate: v.birthdate as Date, kind: "volunteer" as const })),
   ]);
 
+  const admin = isLeadership(role);
+  const bypassCpf = admin ? await getBoolSetting(SETTING_FIRST_ACCESS_BYPASS_CPF) : false;
+
   return (
     <div className="p-4 space-y-4">
       <div>
         <h1 className="text-2xl font-bold">Olá, {session!.user.name.split(" ")[0]}!</h1>
       </div>
+
+      {admin && <FirstAccessToggle initial={bypassCpf} />}
 
       {shortcuts.length > 0 && (
         <div className="grid grid-cols-3 gap-2">

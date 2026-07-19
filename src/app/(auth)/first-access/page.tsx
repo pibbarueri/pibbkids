@@ -18,6 +18,7 @@ export default function FirstAccessPage() {
     username: "",
     cpf: "",
     birthdate: "",
+    motherName: "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -39,6 +40,7 @@ export default function FirstAccessPage() {
         username: form.username,
         cpf: form.cpf,
         birthdate: form.birthdate,
+        motherName: form.motherName,
         newPassword: form.newPassword,
       }),
     });
@@ -89,6 +91,10 @@ export default function FirstAccessPage() {
             <div className="space-y-2">
               <Label htmlFor="birthdate">Data de nascimento</Label>
               <Input id="birthdate" type="date" className="h-12" value={form.birthdate} onChange={(e) => setForm((f) => ({ ...f, birthdate: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="motherName">Nome da mãe</Label>
+              <Input id="motherName" className="h-12" value={form.motherName} onChange={(e) => setForm((f) => ({ ...f, motherName: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="newPassword">Nova senha</Label>
