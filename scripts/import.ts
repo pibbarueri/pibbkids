@@ -67,6 +67,8 @@ const FUNCTION_MAP: Record<string, FunctionType> = {
   Recepção: FunctionType.RECEPCAO,
   Recepcão: FunctionType.RECEPCAO,
   Eventos: FunctionType.EVENTS,
+  "Ide Kids": FunctionType.IDE_KIDS,
+  "Mídias e Design": FunctionType.MIDIAS_DESIGN,
 };
 
 function parseFunctions(raw: string, name: string): FunctionType[] {

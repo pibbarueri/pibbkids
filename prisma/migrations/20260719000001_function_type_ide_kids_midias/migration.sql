@@ -1,0 +1,2 @@
+ALTER TYPE "function_type" ADD VALUE 'IDE_KIDS';
+ALTER TYPE "function_type" ADD VALUE 'MIDIAS_DESIGN';

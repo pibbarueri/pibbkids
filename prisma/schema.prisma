@@ -80,6 +80,8 @@ enum FunctionType {
   LOUVOR
   RECEPCAO
   EVENTS
+  IDE_KIDS
+  MIDIAS_DESIGN
 
   @@map("function_type")
 }

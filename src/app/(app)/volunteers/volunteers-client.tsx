@@ -31,6 +31,8 @@ const FUNCTION_OPTIONS = [
   { value: "LOUVOR", label: "Louvor" },
   { value: "RECEPCAO", label: "Recepção" },
   { value: "EVENTS", label: "Eventos" },
+  { value: "IDE_KIDS", label: "Ide Kids" },
+  { value: "MIDIAS_DESIGN", label: "Mídias e Design" },
 ];
 
 const emptyVolunteerForm = {
@@ -72,6 +74,8 @@ const FUNCTION_LABELS: Record<string, string> = {
   LOUVOR: "Louvor",
   RECEPCAO: "Recepção",
   EVENTS: "Eventos",
+  IDE_KIDS: "Ide Kids",
+  MIDIAS_DESIGN: "Mídias e Design",
 };
 
 type ClassGroup = { id: string; name: string };
