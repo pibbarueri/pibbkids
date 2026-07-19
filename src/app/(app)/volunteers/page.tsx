@@ -29,6 +29,7 @@ export default async function VolunteersPage() {
       status: true,
       active: true,
       cpf: showSensitive,
+      documentUrl: showSensitive,
       birthdate: showSensitive,
       motherName: showSensitive,
       functions: { select: { function: true } },

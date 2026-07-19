@@ -6,11 +6,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { FunctionType } from "@prisma/client";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import { ANTECEDENTES_LINKS, whatsappLink } from "@/lib/contact";
 
 const FUNCTION_LABELS: Record<FunctionType, string> = {
   PROFESSOR: "Professor(a)",
@@ -168,6 +171,57 @@ export default function RegisterVolunteerPage() {
               </div>
             </div>
           )}
+
+          <div className="space-y-2 rounded-lg border border-dashed p-3">
+            <Label>Antecedentes Criminais</Label>
+            <p className="text-xs text-muted-foreground">
+              Para a proteção das crianças, pedimos os atestados de antecedentes criminais.
+            </p>
+            <Dialog>
+              <DialogTrigger
+                type="button"
+                className={cn(buttonVariants({ variant: "outline" }), "w-full h-11")}
+              >
+                Como enviar meus antecedentes
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Antecedentes Criminais</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 text-sm">
+                  <p>
+                    Pedimos os atestados de antecedentes criminais (federal e estadual) para a
+                    segurança das crianças do ministério.
+                  </p>
+                  <div className="space-y-1">
+                    <p className="font-medium">1. Gere os documentos:</p>
+                    {ANTECEDENTES_LINKS.map((l) => (
+                      <a
+                        key={l.url}
+                        href={l.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-primary underline"
+                      >
+                        {l.label}
+                      </a>
+                    ))}
+                  </div>
+                  <p className="font-medium">2. Envie os PDFs pelo WhatsApp:</p>
+                  <a
+                    href={whatsappLink(
+                      "Olá! Sou voluntário(a) do PIBB Kids e vou enviar meus antecedentes criminais."
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(buttonVariants(), "w-full h-11")}
+                  >
+                    Enviar pelo WhatsApp
+                  </a>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
 
           {serverError && <p className="text-sm text-destructive">{serverError}</p>}
 

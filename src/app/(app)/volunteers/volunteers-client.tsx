@@ -42,6 +42,7 @@ const emptyVolunteerForm = {
   cpf: "",
   birthdate: "",
   motherName: "",
+  documentUrl: "",
   role: "ASSISTANT",
   functions: [] as string[],
   preferredClassIds: [] as string[],
@@ -54,6 +55,7 @@ const emptyEditForm = {
   cpf: "",
   birthdate: "",
   motherName: "",
+  documentUrl: "",
   role: "ASSISTANT",
   functions: [] as string[],
   preferredClassIds: [] as string[],
@@ -88,6 +90,7 @@ type Volunteer = {
   status: string;
   active: boolean;
   cpf?: string | null;
+  documentUrl?: string | null;
   birthdate?: string | null;
   motherName?: string | null;
   functions: { function: string }[];
@@ -160,6 +163,7 @@ export function VolunteersClient({
       cpf: v.cpf ?? "",
       birthdate: v.birthdate ? new Date(v.birthdate).toISOString().slice(0, 10) : "",
       motherName: v.motherName ?? "",
+      documentUrl: v.documentUrl ?? "",
       role: v.role,
       functions: v.functions.map((f) => f.function),
       preferredClassIds: v.preferredClasses.map((c) => c.classGroupId),
@@ -422,6 +426,17 @@ export function VolunteersClient({
                   <p>{selected.preferredClasses.map((c) => c.classGroup.name).join(", ")}</p>
                 </div>
               )}
+
+              <div>
+                <p className="text-muted-foreground text-xs">Documentos</p>
+                {selected.documentUrl ? (
+                  <a href={selected.documentUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                    Abrir pasta no Drive
+                  </a>
+                ) : (
+                  <p className="text-muted-foreground">—</p>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
@@ -445,6 +460,10 @@ export function VolunteersClient({
               <div className="space-y-1">
                 <p className="text-sm font-medium">Telefone</p>
                 <Input type="tel" inputMode="numeric" className="h-12" value={formatPhone(editForm.phone)} onChange={(e) => setEditForm((f) => ({ ...f, phone: phoneDigits(e.target.value) }))} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Documentos (link da pasta do Drive)</p>
+                <Input type="url" className="h-12" placeholder="https://drive.google.com/..." value={editForm.documentUrl} onChange={(e) => setEditForm((f) => ({ ...f, documentUrl: e.target.value }))} />
               </div>
               {isLeadership && (
                 <>
