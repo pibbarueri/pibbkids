@@ -214,23 +214,23 @@ model ScheduleSlot {
   id           String      @id @default(cuid())
   date         DateTime
   slotType     SlotType    @map("slot_type")
+  horario      Frequencia?
   classGroupId String?     @map("class_group_id")
   classGroup   ClassGroup? @relation(fields: [classGroupId], references: [id])
-  role         SlotRole
+  role         SlotRole?
   userId       String      @map("user_id")
   user         User        @relation(fields: [userId], references: [id])
 
-  @@unique([date, slotType, classGroupId, role, userId])
+  @@unique([date, slotType, horario, classGroupId, role, userId])
   @@map("schedule_slots")
 }
 
 enum SlotType {
+  COORDENACAO
   SALA_PLUS
-  APOIO_EBD
-  APOIO_CULTO
+  RECEPCAO
   LANCHE
-  EBD
-  CULTO
+  TURMA
 
   @@map("slot_type")
 }

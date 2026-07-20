@@ -19,36 +19,38 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, Copy, Pencil, Plus, Trash2 } from "lucide-react";
 
-// General support slots show in both horário tabs; the rest are EBD- or CULTO-specific.
-const GENERAL_SLOTS = ["SALA_PLUS", "LANCHE"];
-function inHorario(slotType: string, tab: "EBD" | "CULTO") {
-  if (GENERAL_SLOTS.includes(slotType)) return true;
-  return tab === "EBD"
-    ? slotType === "EBD" || slotType === "APOIO_EBD"
-    : slotType === "CULTO" || slotType === "APOIO_CULTO";
+// Sala Plus has no horário (17h-18h, before EBD/Culto) — always shows in both tabs.
+function inHorario(slot: { slotType: string; horario: string | null }, tab: "EBD" | "CULTO") {
+  if (slot.slotType === "SALA_PLUS") return true;
+  return slot.horario === tab;
 }
 
 const SLOT_LABELS: Record<string, string> = {
-  SALA_PLUS: "Coordenação",
-  APOIO_EBD: "Recepção",
-  APOIO_CULTO: "Recepção",
+  COORDENACAO: "Coordenação",
+  SALA_PLUS: "Sala Plus",
+  RECEPCAO: "Recepção",
   LANCHE: "Lanche",
-  EBD: "EBD",
-  CULTO: "Culto",
 };
 
-// Pseudo "turma" options that aren't real ClassGroups — Coordenação/Recepção/Lanche support slots.
+// Pseudo "turma" options that aren't real ClassGroups — support slots not tied to a class.
 const PSEUDO_TURMAS: Record<string, string> = {
-  SALA_PLUS: "Coordenação",
-  APOIO: "Recepção",
+  COORDENACAO: "Coordenação",
+  SALA_PLUS: "Sala Plus",
+  RECEPCAO: "Recepção",
   LANCHE: "Lanche",
 };
+
+function slotLabel(slot: Pick<Slot, "slotType" | "role">) {
+  if (slot.slotType === "TURMA") return slot.role === "AUXILIAR" ? "Auxiliar" : "Professor";
+  return SLOT_LABELS[slot.slotType] ?? slot.slotType;
+}
 
 type Slot = {
   id: string;
   date: string;
   slotType: string;
-  role: string;
+  horario: string | null;
+  role: string | null;
   classGroupId: string | null;
   user: { id: string; name: string };
   classGroup: { id: string; name: string } | null;
@@ -78,9 +80,9 @@ function formatWhatsApp(sundays: string[], slots: Slot[], classes: ClassGroup[])
     if (daySlots.length === 0) continue;
     lines.push(`*${date}*`);
 
-    const special = daySlots.filter((s) => ["SALA_PLUS", "APOIO_EBD", "APOIO_CULTO", "LANCHE"].includes(s.slotType));
+    const special = daySlots.filter((s) => s.slotType !== "TURMA");
     for (const s of special) {
-      lines.push(`  ${SLOT_LABELS[s.slotType]}: ${s.user.name}`);
+      lines.push(`  ${slotLabel(s)}: ${s.user.name}`);
     }
 
     for (const cls of classes) {
@@ -88,7 +90,7 @@ function formatWhatsApp(sundays: string[], slots: Slot[], classes: ClassGroup[])
       if (classSlots.length === 0) continue;
       lines.push(`  *${cls.name}*`);
       for (const s of classSlots) {
-        lines.push(`    ${SLOT_LABELS[s.slotType]}: ${s.user.name}`);
+        lines.push(`    ${slotLabel(s)} (${s.horario}): ${s.user.name}`);
       }
     }
     lines.push("");
@@ -141,7 +143,7 @@ export function ScheduleClient({
     });
   }, []);
 
-  const tabSlots = daySlots.filter((s) => inHorario(s.slotType, horarioTab));
+  const tabSlots = daySlots.filter((s) => inHorario(s, horarioTab));
 
   const isRealClass = !!form.turma && !(form.turma in PSEUDO_TURMAS);
 
@@ -160,30 +162,27 @@ export function ScheduleClient({
 
   function openEdit(slot: Slot) {
     setEditingSlot(slot);
-    const turma =
-      slot.classGroupId ??
-      (slot.slotType === "SALA_PLUS" ? "SALA_PLUS" : slot.slotType === "LANCHE" ? "LANCHE" : "APOIO");
+    const turma = slot.classGroupId ?? slot.slotType;
     setForm({
-      horario: slot.slotType === "CULTO" || slot.slotType === "APOIO_CULTO" ? "CULTO" : "EBD",
+      horario: (slot.horario as "EBD" | "CULTO" | null) ?? "",
       turma,
       userId: slot.user.id,
     });
     setAddOpen(true);
   }
 
-  function slotTypeFor(turma: string, horario: "EBD" | "CULTO" | "") {
-    if (turma === "SALA_PLUS") return "SALA_PLUS";
-    if (turma === "LANCHE") return "LANCHE";
-    if (turma === "APOIO") return horario === "CULTO" ? "APOIO_CULTO" : "APOIO_EBD";
-    return horario; // real class: slotType mirrors horário (EBD/CULTO)
+  function slotTypeFor(turma: string) {
+    if (turma in PSEUDO_TURMAS) return turma;
+    return "TURMA"; // real class
   }
 
   async function saveSlot() {
     setSaving(true);
     const payload = {
-      slotType: slotTypeFor(form.turma, form.horario),
+      slotType: slotTypeFor(form.turma),
+      horario: form.turma === "SALA_PLUS" ? null : form.horario,
       classGroupId: isRealClass ? form.turma : null,
-      role: "PROFESSOR",
+      role: isRealClass ? "PROFESSOR" : null,
       userId: form.userId,
     };
 
@@ -236,10 +235,9 @@ export function ScheduleClient({
     navigator.clipboard.writeText(text);
   }
 
-  const specialTypes = ["SALA_PLUS", "APOIO_EBD", "APOIO_CULTO", "LANCHE"];
   const shownSlots = canViewAll ? tabSlots : tabSlots.filter((s) => s.user.id === currentUserId);
-  const specialSlots = tabSlots.filter((s) => specialTypes.includes(s.slotType));
-  const classSlots = tabSlots.filter((s) => !specialTypes.includes(s.slotType));
+  const specialSlots = tabSlots.filter((s) => s.slotType !== "TURMA");
+  const classSlots = tabSlots.filter((s) => s.slotType === "TURMA");
 
   return (
     <div className="space-y-4">
@@ -320,34 +318,16 @@ export function ScheduleClient({
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
-              <p className="text-sm font-medium">Horário</p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant={form.horario === "EBD" ? "default" : "outline"}
-                  className="h-12"
-                  onClick={() => setForm((f) => ({ ...f, horario: "EBD", userId: "" }))}
-                >
-                  EBD
-                </Button>
-                <Button
-                  type="button"
-                  variant={form.horario === "CULTO" ? "default" : "outline"}
-                  className="h-12"
-                  onClick={() => setForm((f) => ({ ...f, horario: "CULTO", userId: "" }))}
-                >
-                  Culto
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-1">
               <p className="text-sm font-medium">Turma</p>
               <Select
                 value={form.turma}
-                onValueChange={(v) => setForm((f) => ({ ...f, turma: v ?? "", userId: "" }))}
+                onValueChange={(v) => setForm((f) => ({
+                  ...f,
+                  turma: v ?? "",
+                  userId: "",
+                  horario: v === "SALA_PLUS" ? "" : v === "LANCHE" ? "CULTO" : f.horario,
+                }))}
                 items={{ ...Object.fromEntries(classes.map((c) => [c.id, c.name])), ...PSEUDO_TURMAS }}
-                disabled={!form.horario}
               >
                 <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
@@ -359,13 +339,37 @@ export function ScheduleClient({
               </Select>
             </div>
 
+            {form.turma && form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Horário</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={form.horario === "EBD" ? "default" : "outline"}
+                    className="h-12"
+                    onClick={() => setForm((f) => ({ ...f, horario: "EBD", userId: "" }))}
+                  >
+                    EBD
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={form.horario === "CULTO" ? "default" : "outline"}
+                    className="h-12"
+                    onClick={() => setForm((f) => ({ ...f, horario: "CULTO", userId: "" }))}
+                  >
+                    Culto
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-1">
               <p className="text-sm font-medium">Voluntário</p>
               <Select
                 value={form.userId}
                 onValueChange={(v) => setForm((f) => ({ ...f, userId: v ?? "" }))}
                 items={Object.fromEntries(eligibleVolunteers.map((v) => [v.id, v.name]))}
-                disabled={!form.turma}
+                disabled={!form.turma || (form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && !form.horario)}
               >
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder={form.turma ? "Selecione..." : "Selecione a turma primeiro"} />
@@ -399,7 +403,13 @@ export function ScheduleClient({
 
             <Button
               className="w-full h-12"
-              disabled={!form.horario || !form.turma || !form.userId || (!editingSlot && repeatDates.length === 0) || saving}
+              disabled={
+                !form.turma ||
+                !form.userId ||
+                (form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && !form.horario) ||
+                (!editingSlot && repeatDates.length === 0) ||
+                saving
+              }
               onClick={saveSlot}
             >
               Salvar{!editingSlot && repeatDates.length > 1 ? ` (${repeatDates.length} domingos)` : ""}
@@ -415,7 +425,7 @@ export function ScheduleClient({
             <DialogTitle>Remover da escala?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            {deleteTarget && `${deleteTarget.user.name} — ${SLOT_LABELS[deleteTarget.slotType]}`} será removido desta escala.
+            {deleteTarget && `${deleteTarget.user.name} — ${slotLabel(deleteTarget)}`} será removido desta escala.
           </p>
           <div className="flex gap-2 pt-2">
             <Button variant="outline" className="flex-1 h-11" onClick={() => setDeleteTarget(null)}>
@@ -447,7 +457,7 @@ function SlotRow({
       <div>
         <p className="font-medium text-sm">{slot.user.name}</p>
         <p className="text-xs text-muted-foreground">
-          {SLOT_LABELS[slot.slotType]}
+          {slotLabel(slot)}
         </p>
       </div>
       {canEdit && (

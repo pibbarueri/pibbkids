@@ -1,10 +1,8 @@
 const SLOT_LABELS: Record<string, string> = {
+  COORDENACAO: "Coordenação",
   SALA_PLUS: "Sala Plus",
-  APOIO_EBD: "Apoio EBD",
-  APOIO_CULTO: "Apoio Culto",
+  RECEPCAO: "Recepção",
   LANCHE: "Lanche",
-  EBD: "EBD",
-  CULTO: "Culto",
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -15,7 +13,8 @@ const ROLE_LABELS: Record<string, string> = {
 type Slot = {
   id: string;
   slotType: string;
-  role: string;
+  horario: string | null;
+  role: string | null;
   user: { name: string };
   classGroup: { name: string } | null;
 };
@@ -29,7 +28,7 @@ export function NextSundaySchedule({ date, slots }: { date: string; slots: Slot[
 
   const byGroup = new Map<string, Slot[]>();
   for (const slot of slots) {
-    const key = slot.classGroup?.name ?? SLOT_LABELS[slot.slotType];
+    const key = slot.classGroup?.name ?? SLOT_LABELS[slot.slotType] ?? slot.slotType;
     if (!byGroup.has(key)) byGroup.set(key, []);
     byGroup.get(key)!.push(slot);
   }
@@ -45,7 +44,9 @@ export function NextSundaySchedule({ date, slots }: { date: string; slots: Slot[
           <p className="text-xs text-muted-foreground uppercase tracking-wide">{group}</p>
           {groupSlots.map((slot) => (
             <p key={slot.id}>
-              {slot.classGroup ? `${SLOT_LABELS[slot.slotType]} ${ROLE_LABELS[slot.role]}` : ROLE_LABELS[slot.role] ?? SLOT_LABELS[slot.slotType]}: {slot.user.name}
+              {slot.classGroup
+                ? `${slot.horario ?? ""} ${slot.role ? ROLE_LABELS[slot.role] : ""}`.trim()
+                : (slot.role ? ROLE_LABELS[slot.role] : undefined) ?? SLOT_LABELS[slot.slotType] ?? slot.slotType}: {slot.user.name}
             </p>
           ))}
         </div>
