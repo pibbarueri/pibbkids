@@ -17,7 +17,7 @@ model User {
   requirePasswordChange Boolean         @default(false) @map("require_password_change")
   role              Role
   cpf               String?
-  birthdate         DateTime?
+  birthdate         DateTime? @db.Date
   motherName        String?             @map("mother_name")
   phone             String?
   documentUrl       String?             @map("document_url")
