@@ -58,23 +58,18 @@ function DialogContent({
         )}
         {...props}
       >
-        {children}
         {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            render={
-              <Button
-                variant="ghost"
-                className="absolute top-2 right-2 z-20"
-                size="icon-sm"
-              />
-            }
-          >
-            <XIcon
-            />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
+          <div className="pointer-events-none sticky top-0 z-30 -mb-4 flex h-0 justify-end">
+            <DialogPrimitive.Close
+              data-slot="dialog-close"
+              render={<Button variant="ghost" size="icon-sm" className="pointer-events-auto" />}
+            >
+              <XIcon />
+              <span className="sr-only">Close</span>
+            </DialogPrimitive.Close>
+          </div>
         )}
+        {children}
       </DialogPrimitive.Popup>
     </DialogPortal>
   )

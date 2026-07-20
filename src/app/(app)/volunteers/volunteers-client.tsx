@@ -646,7 +646,9 @@ function VolunteerCard({
         <div>
           <p className="font-medium">{volunteer.name}</p>
           <p className="text-xs text-muted-foreground">
-            {ROLE_LABELS[volunteer.role] ?? volunteer.role}
+            {volunteer.functions.length > 0
+              ? volunteer.functions.map((f) => FUNCTION_LABELS[f.function] ?? f.function).join(", ")
+              : "—"}
             {!volunteer.active && " · Inativo"}
           </p>
         </div>

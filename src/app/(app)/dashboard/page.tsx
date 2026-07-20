@@ -29,7 +29,8 @@ export default async function DashboardPage() {
 
   const nextSunday = getNextSunday();
 
-  const [events, scheduleSlots, birthdayChildren, birthdayVolunteers] = await Promise.all([
+  const [me, events, scheduleSlots, birthdayChildren, birthdayVolunteers] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session!.user.id }, select: { name: true } }),
     prisma.event.findMany({
       where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
       orderBy: { date: "asc" },
@@ -59,7 +60,7 @@ export default async function DashboardPage() {
   return (
     <div className="p-4 space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Olá, {session!.user.name.split(" ")[0]}!</h1>
+        <h1 className="text-2xl font-bold">Olá, {(me?.name ?? session!.user.name).split(" ")[0]}!</h1>
       </div>
 
       {shortcuts.length > 0 && (
@@ -76,6 +77,17 @@ export default async function DashboardPage() {
           ))}
         </div>
       )}
+
+      <EventsCalendar
+        events={events.map((e) => ({ ...e, date: e.date.toISOString() }))}
+        birthdays={[...birthdayChildren, ...birthdayVolunteers]
+          .filter((p) => p.birthdate)
+          .map((p) => ({
+            name: p.name,
+            day: (p.birthdate as Date).getUTCDate(),
+            month: (p.birthdate as Date).getUTCMonth() + 1,
+          }))}
+      />
 
       <div className="space-y-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
@@ -97,7 +109,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <EventsCalendar events={events.map((e) => ({ ...e, date: e.date.toISOString() }))} />
       <NextSundaySchedule date={nextSunday.toISOString()} slots={scheduleSlots} />
     </div>
   );
