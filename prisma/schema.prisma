@@ -46,13 +46,6 @@ model UserSession {
   @@map("user_sessions")
 }
 
-model AppSetting {
-  key   String @id
-  value String
-
-  @@map("app_settings")
-}
-
 enum Role {
   ADMIN
   COORDINATOR

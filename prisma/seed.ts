@@ -54,14 +54,6 @@ async function main() {
   });
 
   console.log(`✓ Admin user: ${admin.username}`);
-
-  // Feature flags (default off).
-  await prisma.appSetting.upsert({
-    where: { key: "first_access_bypass_cpf" },
-    update: {},
-    create: { key: "first_access_bypass_cpf", value: "false" },
-  });
-  console.log("✓ App settings");
 }
 
 main()
