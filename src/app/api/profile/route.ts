@@ -33,6 +33,9 @@ export async function PATCH(req: NextRequest) {
     if (username.length < 3) {
       return NextResponse.json({ error: "Usuário mínimo de 3 caracteres." }, { status: 422 });
     }
+    if (!/^[a-z0-9._-]+$/.test(username)) {
+      return NextResponse.json({ error: "Usuário deve ter só letras minúsculas sem acento, números, ponto, hífen ou underline." }, { status: 422 });
+    }
     const clash = await prisma.user.findFirst({
       where: { username, id: { not: session.user.id } },
       select: { id: true },

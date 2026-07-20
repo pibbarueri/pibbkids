@@ -9,7 +9,7 @@ import { FunctionType, Role } from "@prisma/client";
 // CPF + birthdate required so first-access identity check can work.
 const createSchema = z.object({
   name: z.string().min(2),
-  username: z.string().min(3),
+  username: z.string().min(3).regex(/^[a-z0-9._-]+$/, "Usuário deve ter só letras minúsculas sem acento, números, ponto, hífen ou underline"),
   phone: z.string().optional(),
   cpf: z.string().min(11),
   birthdate: z.string().min(1),

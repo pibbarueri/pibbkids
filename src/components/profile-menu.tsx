@@ -4,6 +4,7 @@ import { useState } from "react";
 import { User, LogOut, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { normalizeUsername } from "@/lib/text";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -105,7 +106,7 @@ export function ProfileMenu({ profile }: { profile: Profile }) {
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Usuário</p>
-              <Input className="h-12" value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} />
+              <Input className="h-12" value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: normalizeUsername(e.target.value) }))} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Telefone</p>

@@ -23,6 +23,7 @@ import {
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Check, Pencil, Plus, RotateCcw, Search, X } from "lucide-react";
 import { formatPhone, phoneDigits } from "@/lib/phone";
+import { normalizeUsername } from "@/lib/text";
 
 const FUNCTION_OPTIONS = [
   { value: "PROFESSOR", label: "Professor" },
@@ -268,7 +269,7 @@ export function VolunteersClient({
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Usuário *</p>
-              <Input type="text" className="h-12" value={addForm.username} onChange={(e) => setAddForm((f) => ({ ...f, username: e.target.value }))} />
+              <Input type="text" className="h-12" value={addForm.username} onChange={(e) => setAddForm((f) => ({ ...f, username: normalizeUsername(e.target.value) }))} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Telefone</p>
@@ -455,7 +456,7 @@ export function VolunteersClient({
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Usuário *</p>
-                <Input type="text" className="h-12" value={editForm.username} onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))} />
+                <Input type="text" className="h-12" value={editForm.username} onChange={(e) => setEditForm((f) => ({ ...f, username: normalizeUsername(e.target.value) }))} />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Telefone</p>
@@ -540,7 +541,7 @@ export function VolunteersClient({
               <Input
                 className="h-12"
                 value={approveForm.username}
-                onChange={(e) => setApproveForm((f) => ({ ...f, username: e.target.value }))}
+                onChange={(e) => setApproveForm((f) => ({ ...f, username: normalizeUsername(e.target.value) }))}
                 placeholder="Ex: maria.silva"
               />
             </div>

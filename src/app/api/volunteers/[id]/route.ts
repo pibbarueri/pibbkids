@@ -13,8 +13,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json();
 
-  // Username must stay unique.
   if (body.username) {
+    if (!/^[a-z0-9._-]+$/.test(body.username)) {
+      return NextResponse.json({ error: "Usuário deve ter só letras minúsculas sem acento, números, ponto, hífen ou underline" }, { status: 422 });
+    }
     const clash = await prisma.user.findUnique({ where: { username: body.username } });
     if (clash && clash.id !== id) {
       return NextResponse.json({ error: "Usuário já cadastrado" }, { status: 409 });
