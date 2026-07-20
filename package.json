@@ -9,6 +9,7 @@
     "lint": "eslint",
     "seed": "dotenv -e .env -- tsx prisma/seed.ts",
     "import": "dotenv -e .env -- tsx scripts/import.ts",
+    "import:journals": "dotenv -e .env -- tsx scripts/import-journals.ts",
     "migrate:deploy": "prisma migrate deploy",
     "postinstall": "prisma generate"
   },

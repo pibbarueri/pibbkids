@@ -42,7 +42,7 @@ type Journal = {
   title: string;
   series: string;
   edition: number;
-  totalWeeks: number;
+  totalWeeks: number | null;
   classGroupId: string;
   classGroup: ClassGroup;
   usage: string;
@@ -89,7 +89,7 @@ export function JournalsClient({
       series: j.series,
       edition: String(j.edition),
       title: j.title,
-      totalWeeks: String(j.totalWeeks),
+      totalWeeks: j.totalWeeks === null ? "" : String(j.totalWeeks),
       usage: j.usage,
       teacherCopies: String(j.teacherCopies),
       studentCopies: String(j.studentCopies),
@@ -105,7 +105,7 @@ export function JournalsClient({
       series: form.series,
       edition: Number(form.edition),
       title: form.title,
-      totalWeeks: Number(form.totalWeeks),
+      totalWeeks: form.totalWeeks.trim() ? Number(form.totalWeeks) : null,
       usage: form.usage,
       teacherCopies: Number(form.teacherCopies),
       studentCopies: Number(form.studentCopies),
@@ -138,7 +138,7 @@ export function JournalsClient({
   }
 
   const valid =
-    form.classGroupId && form.series && form.edition && form.title && form.totalWeeks && form.usage;
+    form.classGroupId && form.series && form.edition && form.title && form.usage;
 
   return (
     <div className="space-y-3">
@@ -192,7 +192,7 @@ export function JournalsClient({
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium">Semanas</p>
+                <p className="text-sm font-medium">Semanas (opcional)</p>
                 <Input
                   type="number"
                   className="h-12"
@@ -277,7 +277,8 @@ export function JournalsClient({
                       {SERIES_LABELS[j.series]} nº{j.edition} — {j.title}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {USAGE_LABELS[j.usage]} · {j.totalWeeks} semanas
+                      {USAGE_LABELS[j.usage]}
+                      {j.totalWeeks !== null ? ` · ${j.totalWeeks} semanas` : " · semanas a definir"}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

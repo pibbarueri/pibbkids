@@ -149,7 +149,7 @@ model Journal {
   title              String
   series             SeriesType
   edition            Int
-  totalWeeks         Int          @map("total_weeks")
+  totalWeeks         Int?         @map("total_weeks")
   classGroupId       String       @map("class_group_id")
   classGroup         ClassGroup   @relation(fields: [classGroupId], references: [id])
   usage              Frequencia
