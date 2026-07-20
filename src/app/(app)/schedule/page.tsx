@@ -4,11 +4,14 @@ import { canManage } from "@/lib/permissions";
 import { sortClasses } from "@/lib/classes";
 import { ScheduleClient } from "./schedule-client";
 
-function sundaysInMonth(year: number, month: number): Date[] {
+// All sundays from the current week through Dec 31 of this year — the schedule
+// is rebuilt fresh each January, so there's no need to look further ahead.
+function sundaysThroughYearEnd(now: Date): Date[] {
   const sundays: Date[] = [];
-  const date = new Date(year, month, 1);
-  while (date.getDay() !== 0) date.setDate(date.getDate() + 1);
-  while (date.getMonth() === month) {
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  date.setDate(date.getDate() - date.getDay());
+  const yearEnd = new Date(now.getFullYear(), 11, 31);
+  while (date <= yearEnd) {
     sundays.push(new Date(date));
     date.setDate(date.getDate() + 7);
   }
@@ -21,10 +24,7 @@ export default async function SchedulePage() {
   const canViewAll = canManage(role);
   const canEdit = canManage(role);
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const sundays = sundaysInMonth(year, month);
+  const sundays = sundaysThroughYearEnd(new Date());
 
   const from = sundays[0];
   const to = sundays[sundays.length - 1];
