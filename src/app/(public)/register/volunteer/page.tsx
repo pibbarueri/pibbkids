@@ -66,6 +66,11 @@ export default function RegisterVolunteerPage() {
     setSelectedFunctions((prev) => {
       const next = prev.includes(fn) ? prev.filter((f) => f !== fn) : [...prev, fn];
       setValue("functions", next);
+      // Turma selection only makes sense for Professor/Auxiliar — clear it otherwise.
+      if (!next.includes("PROFESSOR") && !next.includes("AUXILIAR")) {
+        setSelectedClasses([]);
+        setValue("preferredClassIds", []);
+      }
       return next;
     });
   }
@@ -162,9 +167,9 @@ export default function RegisterVolunteerPage() {
             )}
           </div>
 
-          {classes.length > 0 && (
+          {classes.length > 0 && (selectedFunctions.includes("PROFESSOR") || selectedFunctions.includes("AUXILIAR")) && (
             <div className="space-y-2">
-              <Label>Turma(s) de preferência</Label>
+              <Label>Turma(s) desejada(s)</Label>
               <div className="grid grid-cols-1 gap-2">
                 {classes.map((cls) => (
                   <div key={cls.id} className="flex items-center gap-3 p-3 border rounded-lg">
