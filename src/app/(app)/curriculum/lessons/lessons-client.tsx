@@ -64,6 +64,7 @@ export function LessonsClient({
   classes,
   journals,
   sundays,
+  initialSundayIdx,
   isManager,
   canMark,
   myClassIds,
@@ -72,6 +73,7 @@ export function LessonsClient({
   classes: ClassGroup[];
   journals: Journal[];
   sundays: string[];
+  initialSundayIdx: number;
   isManager: boolean;
   canMark: boolean;
   myClassIds: string[];
@@ -79,7 +81,7 @@ export function LessonsClient({
   const [plans, setPlans] = useState(() =>
     initialPlans.map((p) => ({ ...p, date: new Date(p.date).toISOString() }))
   );
-  const [sundayIdx, setSundayIdx] = useState(0);
+  const [sundayIdx, setSundayIdx] = useState(initialSundayIdx);
   const [editing, setEditing] = useState<{ classGroupId: string; className: string; tipo: string } | null>(null);
   const [form, setForm] = useState({ lessonType: "APOSTILA", journalId: "", licaoNumber: "", specialTitle: "", observations: "" });
   const [saving, setSaving] = useState(false);
