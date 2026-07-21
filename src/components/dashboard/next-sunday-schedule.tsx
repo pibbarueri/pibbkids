@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { eventTimeRange } from "@/lib/event-time";
+import { eventTimeRange, eventDateShort } from "@/lib/event-time";
 
 const SLOT_LABELS: Record<string, string> = {
   COORDENACAO: "Coordenação",
@@ -76,11 +76,14 @@ export function NextSundaySchedule({ date, slots, events }: { date: string; slot
       ))}
       {events.length > 0 && (
         <div className="text-sm">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">Eventos</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">Eventos (próximos 30 dias)</p>
           {events.map((e) => (
             <div key={e.id} className="flex items-center justify-between gap-2">
               <p className="truncate">
-                {e.title} <span className="text-muted-foreground">· {eventTimeRange(e.date, e.endDate)}</span>
+                {e.title}{" "}
+                <span className="text-muted-foreground">
+                  · {eventDateShort(e.date)} · {eventTimeRange(e.date, e.endDate)}
+                </span>
               </p>
               <Link href={`/events?eventId=${e.id}`} className="text-xs text-primary shrink-0">
                 Ver detalhes
