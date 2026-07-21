@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
-import { Users, CalendarDays, BookOpen, Home } from "lucide-react";
+import { Users, CalendarDays, BookOpen, Home, Cookie } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -46,9 +46,17 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-export function BottomNav({ role }: { role: Role }) {
+export function BottomNav({ role, canAccessSnacks }: { role: Role; canAccessSnacks: boolean }) {
   const pathname = usePathname();
   const visible = NAV_ITEMS.filter((item) => item.roles.includes(role));
+  if (canAccessSnacks) {
+    visible.push({
+      href: "/snacks",
+      label: "Lanches",
+      icon: <Cookie className="h-5 w-5" />,
+      roles: [],
+    });
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 border-t bg-background z-50">

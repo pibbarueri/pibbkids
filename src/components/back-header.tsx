@@ -25,6 +25,7 @@ const PAGE_TITLES: [string, string][] = [
   ["/events", "Eventos"],
   ["/purchase-requests", "Solicitações de compra"],
   ["/curriculum", "Revistas"],
+  ["/snacks", "Lanches"],
 ];
 
 export function BackHeader({ profile }: { profile: Profile }) {

@@ -2,10 +2,11 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
-import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen, Cake } from "lucide-react";
+import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen, Cake, AlertTriangle } from "lucide-react";
 import { EventsCalendar } from "@/components/dashboard/events-calendar";
 import { NextSundaySchedule } from "@/components/dashboard/next-sunday-schedule";
 import { computeUpcomingBirthdays } from "@/lib/birthdays";
+import { canManage } from "@/lib/permissions";
 
 // Local-midnight construction, matching how schedule/page.tsx builds slot dates —
 // building this in UTC instead causes a timezone offset that never matches stored slots.
@@ -30,8 +31,9 @@ export default async function DashboardPage() {
   ].filter((s) => s.roles.includes(role));
 
   const nextSunday = getNextSunday();
+  const isManager = canManage(role);
 
-  const [events, scheduleSlots, myEvents, birthdayChildren, birthdayVolunteers] = await Promise.all([
+  const [events, scheduleSlots, myEvents, birthdayChildren, birthdayVolunteers, lowSnacks] = await Promise.all([
     prisma.event.findMany({
       where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
       orderBy: { date: "asc" },
@@ -53,7 +55,14 @@ export default async function DashboardPage() {
       where: { active: true, birthdate: { not: null } },
       select: { name: true, birthdate: true },
     }),
+    isManager
+      ? prisma.snack.findMany({ where: { quantity: { lte: 5 } }, select: { description: true, quantity: true, unit: true } })
+      : Promise.resolve([]),
   ]);
+
+  const lowSnacksMessage = lowSnacks.length > 0
+    ? lowSnacks.map((s) => `há apenas ${s.quantity} ${s.unit} de ${s.description}`).join(" e ")
+    : null;
 
   const birthdays = computeUpcomingBirthdays([
     ...birthdayChildren.map((c) => ({ name: c.name, birthdate: c.birthdate, kind: "child" as const })),
@@ -76,6 +85,16 @@ export default async function DashboardPage() {
               <span className="text-xs text-center">{s.label}</span>
             </Link>
           ))}
+        </div>
+      )}
+
+      {lowSnacksMessage && (
+        <div className="flex gap-2 p-3 bg-orange-50 dark:bg-orange-950 rounded-lg border border-orange-200 dark:border-orange-800">
+          <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium text-orange-800 dark:text-orange-200">Atenção: o lanche tá acabando!</p>
+            <p className="text-sm text-orange-700 dark:text-orange-300">{lowSnacksMessage}</p>
+          </div>
         </div>
       )}
 

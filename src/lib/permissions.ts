@@ -26,3 +26,9 @@ export function canRequestPurchase(role: Role) {
 export function canViewMaterials(role: Role) {
   return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] as Role[]).includes(role);
 }
+
+// Snacks stock: management edits everything; Apoio Geral volunteers can also
+// stock/adjust it, even though that's a FunctionType, not a Role.
+export function canManageSnacks(role: Role, hasApoioGeral: boolean) {
+  return canManage(role) || hasApoioGeral;
+}
