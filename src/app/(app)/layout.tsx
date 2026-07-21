@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { canManageSnacks } from "@/lib/permissions";
 import { BottomNav } from "@/components/bottom-nav";
 import { BackHeader } from "@/components/back-header";
 
@@ -16,16 +15,9 @@ export default async function AppLayout({
   // First access: force the password-change / identity flow before anything else.
   const me = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: {
-      name: true, username: true, phone: true, cpf: true, birthdate: true, motherName: true,
-      requirePasswordChange: true,
-      functions: { select: { function: true } },
-    },
+    select: { name: true, username: true, phone: true, cpf: true, birthdate: true, motherName: true, requirePasswordChange: true },
   });
   if (me?.requirePasswordChange) redirect("/first-access");
-
-  const hasApoioGeral = me!.functions.some((f) => f.function === "APOIO_GERAL");
-  const canAccessSnacks = canManageSnacks(session.user.role, hasApoioGeral);
 
   const profile = {
     name: me!.name,
@@ -40,7 +32,7 @@ export default async function AppLayout({
     <div className="min-h-screen flex flex-col">
       <BackHeader profile={profile} />
       <main className="flex-1 pb-20">{children}</main>
-      <BottomNav role={session.user.role} canAccessSnacks={canAccessSnacks} />
+      <BottomNav role={session.user.role} />
     </div>
   );
 }

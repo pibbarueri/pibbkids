@@ -2,11 +2,11 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
-import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen, Cake, AlertTriangle } from "lucide-react";
+import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen, Cake, AlertTriangle, Cookie } from "lucide-react";
 import { EventsCalendar } from "@/components/dashboard/events-calendar";
 import { NextSundaySchedule } from "@/components/dashboard/next-sunday-schedule";
 import { computeUpcomingBirthdays } from "@/lib/birthdays";
-import { canManage } from "@/lib/permissions";
+import { canManage, canManageSnacks } from "@/lib/permissions";
 
 // Local-midnight construction, matching how schedule/page.tsx builds slot dates —
 // building this in UTC instead causes a timezone offset that never matches stored slots.
@@ -22,16 +22,23 @@ export default async function DashboardPage() {
   const session = await auth();
   const role = session!.user.role;
 
+  const nextSunday = getNextSunday();
+  const isManager = canManage(role);
+
+  const hasApoioGeral = await prisma.volunteerFunction.findFirst({
+    where: { userId: session!.user.id, function: "APOIO_GERAL" },
+  });
+  const canAccessSnacks = canManageSnacks(role, !!hasApoioGeral);
+
   const shortcuts = [
     { href: "/purchase-requests", label: "Compras", icon: ShoppingCart, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.RECEPTIONIST] },
     { href: "/events", label: "Eventos", icon: PartyPopper, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] },
     { href: "/attendance", label: "Presença", icon: ClipboardCheck, roles: [Role.ADMIN, Role.COORDINATOR, Role.RECEPTIONIST] },
     { href: "/materials", label: "Materiais", icon: Package, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] },
     { href: "/curriculum", label: "Revistas", icon: BookOpen, roles: [Role.ADMIN, Role.COORDINATOR] },
-  ].filter((s) => s.roles.includes(role));
-
-  const nextSunday = getNextSunday();
-  const isManager = canManage(role);
+  ]
+    .filter((s) => s.roles.includes(role))
+    .concat(canAccessSnacks ? [{ href: "/snacks", label: "Lanches", icon: Cookie, roles: [] }] : []);
 
   const [events, scheduleSlots, myEvents, birthdayChildren, birthdayVolunteers, lowSnacks] = await Promise.all([
     prisma.event.findMany({
