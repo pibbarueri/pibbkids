@@ -374,7 +374,7 @@ export function ChildrenClient({
                   <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
                   <div>
                     <p className="font-medium text-yellow-800 dark:text-yellow-200">Alergias</p>
-                    <p className="text-yellow-700 dark:text-yellow-300">{selected.allergies}</p>
+                    <p className="text-yellow-700 dark:text-yellow-300 whitespace-pre-wrap">{selected.allergies}</p>
                   </div>
                 </div>
               )}
@@ -383,7 +383,7 @@ export function ChildrenClient({
                   <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
                   <div>
                     <p className="font-medium text-blue-800 dark:text-blue-200">Cuidados especiais</p>
-                    <p className="text-blue-700 dark:text-blue-300">{selected.restrictions}</p>
+                    <p className="text-blue-700 dark:text-blue-300 whitespace-pre-wrap">{selected.restrictions}</p>
                   </div>
                 </div>
               )}
@@ -543,6 +543,7 @@ function ChildCard({
         </div>
         <div className="flex items-center gap-2">
           {child.allergies && <AlertCircle className="h-4 w-4 text-yellow-500" />}
+          {child.restrictions && <AlertCircle className="h-4 w-4 text-blue-500" />}
           {onApprove && (
             <span
               role="button"
