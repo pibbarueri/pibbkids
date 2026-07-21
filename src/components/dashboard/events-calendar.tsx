@@ -1,22 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 type CalendarEvent = { id: string; title: string; date: string; description: string | null };
 type Birthday = { name: string; day: number; month: number };
-
-function formatFullDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
-}
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 const MONTH_LABELS = [
@@ -38,7 +29,6 @@ export function EventsCalendar({
   const today = new Date();
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [detail, setDetail] = useState<CalendarEvent | null>(null);
 
   const viewDate = new Date(Date.UTC(today.getFullYear(), today.getMonth() + monthOffset, 1));
   const year = viewDate.getUTCFullYear();
@@ -131,35 +121,20 @@ export function EventsCalendar({
             <p key={`b-${i}`} className="text-sm px-1 py-0.5">🎂 {name}</p>
           ))}
           {selectedEvents.map((ev) => (
-            <button
+            <Link
               key={ev.id}
-              onClick={() => setDetail(ev)}
-              className="block w-full text-left text-sm rounded-md px-1 py-0.5 hover:bg-muted"
+              href={`/events?eventId=${ev.id}`}
+              className="flex items-center justify-between gap-2 rounded-md px-1 py-0.5 hover:bg-muted"
             >
-              🎉 {ev.title}
-            </button>
+              <span className="text-sm truncate">🎉 {ev.title}</span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </Link>
           ))}
           {selectedEvents.length === 0 && selectedBirthdays.length === 0 && (
             <p className="text-xs text-muted-foreground">Nada nesse dia.</p>
           )}
         </div>
       )}
-
-      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
-        <DialogContent>
-          {detail && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{detail.title}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">📅 {formatFullDate(detail.date)}</p>
-                {detail.description && <p className="text-sm">{detail.description}</p>}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
