@@ -34,7 +34,6 @@ export default async function ChildrenPage() {
         initialChildren={children}
         classes={classes}
         isManager={isManager}
-        role={role}
       />
     </div>
   );

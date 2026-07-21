@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Role, Frequencia } from "@prisma/client";
+import { Frequencia } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,12 +95,10 @@ export function ChildrenClient({
   initialChildren,
   classes,
   isManager,
-  role,
 }: {
   initialChildren: Child[];
   classes: ClassGroup[];
   isManager: boolean;
-  role: Role;
 }) {
   const [children, setChildren] = useState(initialChildren);
   const [selected, setSelected] = useState<Child | null>(null);
