@@ -3,6 +3,20 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canManage } from "@/lib/permissions";
 
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const event = await prisma.event.findUnique({
+    where: { id },
+    include: { volunteers: { select: { userId: true, user: { select: { name: true, username: true } } } } },
+  });
+  if (!event) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  return NextResponse.json(event);
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session || !canManage(session.user.role)) {

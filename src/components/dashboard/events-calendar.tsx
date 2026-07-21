@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { eventDateKey, eventTimeRange } from "@/lib/event-time";
+import { EventDetailDialog } from "@/components/events/event-detail-dialog";
 
 type CalendarEvent = { id: string; title: string; date: string; endDate: string | null; description: string | null };
 type Birthday = { name: string; day: number; month: number };
@@ -30,6 +30,7 @@ export function EventsCalendar({
   const today = new Date();
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const viewDate = new Date(Date.UTC(today.getFullYear(), today.getMonth() + monthOffset, 1));
   const year = viewDate.getUTCFullYear();
@@ -122,22 +123,23 @@ export function EventsCalendar({
             <p key={`b-${i}`} className="text-sm px-1 py-0.5">🎂 {name}</p>
           ))}
           {selectedEvents.map((ev) => (
-            <Link
+            <button
               key={ev.id}
-              href={`/events?eventId=${ev.id}`}
-              className="flex items-center justify-between gap-2 rounded-md px-1 py-0.5 hover:bg-muted"
+              onClick={() => setDetailId(ev.id)}
+              className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-0.5 hover:bg-muted text-left"
             >
               <span className="text-sm truncate">
                 🎉 {ev.title} <span className="text-muted-foreground">· {eventTimeRange(ev.date, ev.endDate)}</span>
               </span>
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </Link>
+            </button>
           ))}
           {selectedEvents.length === 0 && selectedBirthdays.length === 0 && (
             <p className="text-xs text-muted-foreground">Nada nesse dia.</p>
           )}
         </div>
       )}
+      <EventDetailDialog eventId={detailId} onOpenChange={(o) => !o && setDetailId(null)} />
     </div>
   );
 }

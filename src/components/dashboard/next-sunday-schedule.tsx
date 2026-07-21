@@ -1,6 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { eventTimeRange, eventDateShort } from "@/lib/event-time";
+import { EventDetailDialog } from "@/components/events/event-detail-dialog";
 
 const SLOT_LABELS: Record<string, string> = {
   COORDENACAO: "Coordenação",
@@ -37,6 +41,7 @@ function slotDescription(slot: Slot) {
 }
 
 export function NextSundaySchedule({ date, slots, events }: { date: string; slots: Slot[]; events: EventItem[] }) {
+  const [detailId, setDetailId] = useState<string | null>(null);
   const label = new Date(date).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "long",
@@ -56,18 +61,18 @@ export function NextSundaySchedule({ date, slots, events }: { date: string; slot
   );
 
   return (
-    <div className="border rounded-lg p-3 space-y-2 bg-background">
+    <div className="border rounded-lg p-4 space-y-3 bg-background">
       <div className="flex items-center justify-between">
         <p className="font-medium text-sm">Próxima escala: {label}</p>
         <Link href={`/schedule?date=${date}`} aria-label="Ver escala" className="text-muted-foreground hover:text-foreground">
           <ChevronRight className="h-4 w-4" />
         </Link>
       </div>
-      {groups.length === 0 && events.length === 0 && (
+      {groups.length === 0 && (
         <p className="text-xs text-muted-foreground text-center py-2">Você não está na escala deste domingo.</p>
       )}
       {groups.map(([group, groupSlots]) => (
-        <div key={group} className="text-sm">
+        <div key={group} className="text-sm space-y-1">
           <p className="text-xs text-muted-foreground uppercase tracking-wide">{group}</p>
           {groupSlots.map((slot) => (
             <p key={slot.id}>{slotDescription(slot)}</p>
@@ -75,23 +80,30 @@ export function NextSundaySchedule({ date, slots, events }: { date: string; slot
         </div>
       ))}
       {events.length > 0 && (
-        <div className="text-sm">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">Eventos (próximos 30 dias)</p>
-          {events.map((e) => (
-            <div key={e.id} className="flex items-center justify-between gap-2">
-              <p className="truncate">
-                {e.title}{" "}
-                <span className="text-muted-foreground">
-                  · {eventDateShort(e.date)} · {eventTimeRange(e.date, e.endDate)}
-                </span>
-              </p>
-              <Link href={`/events?eventId=${e.id}`} className="text-xs text-primary shrink-0">
-                Ver detalhes
-              </Link>
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="border-t" />
+          <div className="text-sm space-y-2">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Eventos (próximos 30 dias)</p>
+            {events.map((e) => (
+              <div key={e.id} className="flex items-center justify-between gap-2">
+                <p className="truncate">
+                  {e.title}{" "}
+                  <span className="text-muted-foreground">
+                    · {eventDateShort(e.date)} · {eventTimeRange(e.date, e.endDate)}
+                  </span>
+                </p>
+                <button
+                  onClick={() => setDetailId(e.id)}
+                  className="text-xs text-primary shrink-0"
+                >
+                  Ver detalhes
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
       )}
+      <EventDetailDialog eventId={detailId} onOpenChange={(o) => !o && setDetailId(null)} />
     </div>
   );
 }

@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,6 +13,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Copy, Trash2, Pencil } from "lucide-react";
 import { eventTimeRange, toDateInput, toTimeInput, fromDateTimeInputs } from "@/lib/event-time";
+import { EventDetailDialog } from "@/components/events/event-detail-dialog";
 
 type Volunteer = { id: string; name: string; username: string | null };
 type Event = {
@@ -50,19 +50,19 @@ export function EventsClient({
   );
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [manualDetailId, setManualDetailId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const searchParams = useSearchParams();
+  const router = useRouter();
 
-  // Deep link support: /events?eventId=<id> opens that event's detail dialog.
-  useEffect(() => {
-    const eventId = searchParams.get("eventId");
-    if (!eventId) return;
-    const ev = events.find((e) => e.id === eventId);
-    if (ev) openDetail(ev);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  // Deep link support: /events?eventId=<id> opens that event's read-only detail dialog.
+  const detailId = manualDetailId ?? searchParams.get("eventId");
+  function closeDetail() {
+    setManualDetailId(null);
+    if (searchParams.get("eventId")) router.replace("/events");
+  }
 
   function openCreate() {
     setEditingId(null);
@@ -70,7 +70,7 @@ export function EventsClient({
     setOpen(true);
   }
 
-  function openDetail(event: Event) {
+  function openEdit(event: Event) {
     setEditingId(event.id);
     setForm({
       title: event.title,
@@ -146,11 +146,8 @@ export function EventsClient({
       {events.map((e) => (
         <button
           key={e.id}
-          onClick={() => (isManager ? openDetail(e) : undefined)}
-          className={cn(
-            "w-full text-left p-4 border rounded-lg bg-background space-y-2",
-            isManager && "hover:bg-muted/50 transition-colors"
-          )}
+          onClick={() => setManualDetailId(e.id)}
+          className="w-full text-left p-4 border rounded-lg bg-background space-y-2 hover:bg-muted/50 transition-colors"
         >
           <div className="flex items-start justify-between">
             <div>
@@ -163,7 +160,7 @@ export function EventsClient({
                 const hidden = e.volunteers.length - shown.length;
                 return (
                   <p className="text-xs text-muted-foreground mt-1">
-                    {shown.map((v) => volunteerLabel(v.user)).join(", ")}
+                    Voluntários: {shown.map((v) => volunteerLabel(v.user)).join(", ")}
                     {hidden > 0 && (
                       <span
                         role="button"
@@ -209,7 +206,7 @@ export function EventsClient({
                 <span
                   role="button"
                   aria-label="Editar"
-                  onClick={(ev) => { ev.stopPropagation(); openDetail(e); }}
+                  onClick={(ev) => { ev.stopPropagation(); openEdit(e); }}
                   className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted text-muted-foreground"
                 >
                   <Pencil className="h-4 w-4" />
@@ -235,17 +232,17 @@ export function EventsClient({
                 disabled={!isManager}
               />
             </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Data</p>
-              <Input
-                type="date"
-                className="h-12"
-                value={form.date}
-                onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                disabled={!isManager}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Data</p>
+                <Input
+                  type="date"
+                  className="h-12"
+                  value={form.date}
+                  onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                  disabled={!isManager}
+                />
+              </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Início</p>
                 <Input
@@ -317,6 +314,7 @@ export function EventsClient({
           </div>
         </DialogContent>
       </Dialog>
+      <EventDetailDialog eventId={detailId} onOpenChange={(o) => !o && closeDetail()} />
     </div>
   );
 }
