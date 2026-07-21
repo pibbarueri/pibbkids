@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { eventTimeRange } from "@/lib/event-time";
 
 const SLOT_LABELS: Record<string, string> = {
   COORDENACAO: "Coordenação",
@@ -25,7 +26,7 @@ type Slot = {
   classGroup: { name: string } | null;
 };
 
-type EventItem = { id: string; title: string };
+type EventItem = { id: string; title: string; date: string; endDate: string | null };
 
 function slotDescription(slot: Slot) {
   if (slot.classGroup) {
@@ -78,7 +79,9 @@ export function NextSundaySchedule({ date, slots, events }: { date: string; slot
           <p className="text-xs text-muted-foreground uppercase tracking-wide">Eventos</p>
           {events.map((e) => (
             <div key={e.id} className="flex items-center justify-between gap-2">
-              <p className="truncate">{e.title}</p>
+              <p className="truncate">
+                {e.title} <span className="text-muted-foreground">· {eventTimeRange(e.date, e.endDate)}</span>
+              </p>
               <Link href={`/events?eventId=${e.id}`} className="text-xs text-primary shrink-0">
                 Ver detalhes
               </Link>

@@ -23,12 +23,13 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { title, date, description, volunteerIds } = body;
+  const { title, date, endDate, description, volunteerIds } = body;
 
   const event = await prisma.event.create({
     data: {
       title,
       date: new Date(date),
+      endDate: endDate ? new Date(endDate) : null,
       description: description || null,
       volunteers: volunteerIds?.length
         ? { create: volunteerIds.map((userId: string) => ({ userId })) }

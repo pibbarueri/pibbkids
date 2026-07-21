@@ -303,9 +303,10 @@ enum RequestStatus {
 // ─── Eventos ──────────────────────────────────────────────────────────────────
 
 model Event {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
   date        DateTime
+  endDate     DateTime? @map("end_date")
   description String?
   volunteers  EventVolunteer[]
 

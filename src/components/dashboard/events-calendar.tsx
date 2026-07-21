@@ -5,8 +5,9 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { eventDateKey, eventTimeRange } from "@/lib/event-time";
 
-type CalendarEvent = { id: string; title: string; date: string; description: string | null };
+type CalendarEvent = { id: string; title: string; date: string; endDate: string | null; description: string | null };
 type Birthday = { name: string; day: number; month: number };
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -36,7 +37,7 @@ export function EventsCalendar({
 
   const eventsByDay = new Map<string, CalendarEvent[]>();
   for (const ev of events) {
-    const key = toDateKey(new Date(ev.date));
+    const key = eventDateKey(ev.date);
     if (!eventsByDay.has(key)) eventsByDay.set(key, []);
     eventsByDay.get(key)!.push(ev);
   }
@@ -126,7 +127,9 @@ export function EventsCalendar({
               href={`/events?eventId=${ev.id}`}
               className="flex items-center justify-between gap-2 rounded-md px-1 py-0.5 hover:bg-muted"
             >
-              <span className="text-sm truncate">🎉 {ev.title}</span>
+              <span className="text-sm truncate">
+                🎉 {ev.title} <span className="text-muted-foreground">· {eventTimeRange(ev.date, ev.endDate)}</span>
+              </span>
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
             </Link>
           ))}

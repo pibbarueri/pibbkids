@@ -23,6 +23,8 @@ export default async function DashboardPage() {
   const role = session!.user.role;
 
   const nextSunday = getNextSunday();
+  const nextSundayEnd = new Date(nextSunday);
+  nextSundayEnd.setDate(nextSundayEnd.getDate() + 1);
   const isManager = canManage(role);
 
   const hasApoioGeral = await prisma.volunteerFunction.findFirst({
@@ -44,7 +46,7 @@ export default async function DashboardPage() {
     prisma.event.findMany({
       where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
       orderBy: { date: "asc" },
-      select: { id: true, title: true, date: true, description: true },
+      select: { id: true, title: true, date: true, endDate: true, description: true },
     }),
     prisma.scheduleSlot.findMany({
       where: { date: nextSunday, userId: session!.user.id },
@@ -54,8 +56,11 @@ export default async function DashboardPage() {
       },
     }),
     prisma.event.findMany({
-      where: { date: nextSunday, volunteers: { some: { userId: session!.user.id } } },
-      select: { id: true, title: true },
+      where: {
+        date: { gte: nextSunday, lt: nextSundayEnd },
+        volunteers: { some: { userId: session!.user.id } },
+      },
+      select: { id: true, title: true, date: true, endDate: true },
     }),
     prisma.child.findMany({ where: { active: true }, select: { name: true, birthdate: true } }),
     prisma.user.findMany({
@@ -105,10 +110,14 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <NextSundaySchedule date={nextSunday.toISOString()} slots={scheduleSlots} events={myEvents} />
+      <NextSundaySchedule
+        date={nextSunday.toISOString()}
+        slots={scheduleSlots}
+        events={myEvents.map((e) => ({ ...e, date: e.date.toISOString(), endDate: e.endDate?.toISOString() ?? null }))}
+      />
 
       <EventsCalendar
-        events={events.map((e) => ({ ...e, date: e.date.toISOString() }))}
+        events={events.map((e) => ({ ...e, date: e.date.toISOString(), endDate: e.endDate?.toISOString() ?? null }))}
         birthdays={[...birthdayChildren, ...birthdayVolunteers]
           .filter((p) => p.birthdate)
           .map((p) => ({

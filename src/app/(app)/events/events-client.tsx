@@ -13,20 +13,22 @@ import {
 } from "@/components/ui/dialog";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Plus, Copy, Trash2, Pencil } from "lucide-react";
+import { eventTimeRange, toDateInput, toTimeInput, fromDateTimeInputs } from "@/lib/event-time";
 
 type Volunteer = { id: string; name: string };
 type Event = {
   id: string;
   title: string;
   date: string;
+  endDate: string | null;
   description: string | null;
   volunteers: { userId: string; user: { name: string } }[];
 };
 
-const emptyForm = { title: "", date: "", description: "", volunteerIds: [] as string[] };
+const emptyForm = { title: "", date: "", startTime: "", endTime: "", description: "", volunteerIds: [] as string[] };
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
+  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", timeZone: "America/Sao_Paulo" });
 }
 
 export function EventsClient({
@@ -66,7 +68,9 @@ export function EventsClient({
     setEditingId(event.id);
     setForm({
       title: event.title,
-      date: event.date.slice(0, 10),
+      date: toDateInput(event.date),
+      startTime: toTimeInput(event.date),
+      endTime: event.endDate ? toTimeInput(event.endDate) : "",
       description: event.description ?? "",
       volunteerIds: event.volunteers.map((v) => v.userId),
     });
@@ -75,11 +79,18 @@ export function EventsClient({
 
   async function save() {
     setSaving(true);
+    const payload = {
+      title: form.title,
+      date: fromDateTimeInputs(form.date, form.startTime),
+      endDate: form.endTime ? fromDateTimeInputs(form.date, form.endTime) : null,
+      description: form.description,
+      volunteerIds: form.volunteerIds,
+    };
     if (editingId) {
       const res = await fetch(`/api/events/${editingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const updated = await res.json();
       setEvents((prev) => prev.map((e) => (e.id === editingId ? updated : e)).sort((a, b) => a.date.localeCompare(b.date)));
@@ -87,7 +98,7 @@ export function EventsClient({
       const res = await fetch("/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const saved = await res.json();
       setEvents((prev) => [...prev, saved].sort((a, b) => a.date.localeCompare(b.date)));
@@ -107,7 +118,7 @@ export function EventsClient({
   function copyWhatsApp(event: Event) {
     const lines = [
       `📅 *${event.title}*`,
-      formatDate(event.date),
+      `${formatDate(event.date)} · ${eventTimeRange(event.date, event.endDate)}`,
       event.description ?? "",
     ].filter(Boolean);
     navigator.clipboard.writeText(lines.join("\n"));
@@ -138,7 +149,7 @@ export function EventsClient({
           <div className="flex items-start justify-between">
             <div>
               <p className="font-medium text-sm">{e.title}</p>
-              <p className="text-xs text-muted-foreground">{formatDate(e.date)}</p>
+              <p className="text-xs text-muted-foreground">{formatDate(e.date)} · {eventTimeRange(e.date, e.endDate)}</p>
               {e.description && <p className="text-xs mt-1">{e.description}</p>}
               {e.volunteers.length > 0 && (
                 <p className="text-xs text-muted-foreground mt-1">
@@ -195,6 +206,28 @@ export function EventsClient({
                 disabled={!isManager}
               />
             </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Início</p>
+                <Input
+                  type="time"
+                  className="h-12"
+                  value={form.startTime}
+                  onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
+                  disabled={!isManager}
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Fim</p>
+                <Input
+                  type="time"
+                  className="h-12"
+                  value={form.endTime}
+                  onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
+                  disabled={!isManager}
+                />
+              </div>
+            </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Descrição</p>
               <Input
@@ -217,7 +250,7 @@ export function EventsClient({
             )}
             {isManager && (
               <div className="flex gap-2">
-                <Button className="flex-1 h-12" disabled={!form.title || !form.date || saving} onClick={save}>
+                <Button className="flex-1 h-12" disabled={!form.title || !form.date || !form.startTime || saving} onClick={save}>
                   Salvar
                 </Button>
                 {editingId && (

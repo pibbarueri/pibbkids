@@ -17,6 +17,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data: {
       ...(body.title !== undefined && { title: body.title }),
       ...(body.date !== undefined && { date: new Date(body.date) }),
+      ...(body.endDate !== undefined && { endDate: body.endDate ? new Date(body.endDate) : null }),
       ...(body.description !== undefined && { description: body.description || null }),
       ...(body.volunteerIds !== undefined && {
         volunteers: {
