@@ -23,6 +23,7 @@ model User {
   documentUrl       String?             @map("document_url")
   status            VolunteerStatus     @default(APPROVED) @map("status")
   active            Boolean             @default(true)
+  inclusionEnabled  Boolean             @default(false) @map("inclusion_enabled")
   createdAt         DateTime            @default(now()) @map("created_at")
   preferredClasses  UserPreferredClass[]
   functions         VolunteerFunction[]
@@ -30,6 +31,7 @@ model User {
   purchaseRequests  PurchaseRequest[]
   attendance        Attendance[]
   sessions          UserSession[]
+  events            EventVolunteer[]
 
   @@map("users")
 }
@@ -230,6 +232,7 @@ enum SlotType {
   SALA_PLUS
   RECEPCAO
   LANCHE
+  INCLUSAO
   TURMA
 
   @@map("slot_type")
@@ -304,6 +307,40 @@ model Event {
   title       String
   date        DateTime
   description String?
+  volunteers  EventVolunteer[]
 
   @@map("events")
+}
+
+// Volunteers serving an event — no assigned role, just "I'll be there".
+model EventVolunteer {
+  eventId String @map("event_id")
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  String @map("user_id")
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@map("event_volunteers")
+}
+
+// ─── Lanches ──────────────────────────────────────────────────────────────────
+
+model Snack {
+  id          String        @id @default(cuid())
+  category    SnackCategory
+  description String
+  quantity    Int           @default(0)
+  unit        String
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@map("snacks")
+}
+
+enum SnackCategory {
+  COMIDA
+  BEBIDA
+  OUTROS
+
+  @@map("snack_category")
 }
