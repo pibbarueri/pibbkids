@@ -32,3 +32,7 @@ export function canViewMaterials(role: Role) {
 export function canManageSnacks(role: Role, hasApoioGeral: boolean) {
   return canManage(role) || hasApoioGeral;
 }
+
+export function canViewAttendanceOverview(role: Role) {
+  return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER] as Role[]).includes(role);
+}

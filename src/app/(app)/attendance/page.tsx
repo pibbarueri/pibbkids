@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
 import { Role } from "@prisma/client";
+import { Button } from "@/components/ui/button";
 import { AttendanceClient } from "./attendance-client";
 
 function currentSunday(): Date {
@@ -36,6 +38,13 @@ export default async function AttendancePage() {
 
   return (
     <div className="p-4 space-y-4">
+      {canManage(role) && (
+        <div className="flex justify-end">
+          <Link href="/attendance/overview">
+            <Button variant="outline" size="sm">Visão semestral</Button>
+          </Link>
+        </div>
+      )}
       <AttendanceClient
         children={children as any}
         initialAttendance={attendance as any}

@@ -69,11 +69,18 @@ export default async function LessonsPage() {
 
   return (
     <div className="p-4 space-y-4">
-      {isManager && (
+      {(isManager || role === Role.TEACHER) && (
         <div className="flex items-center justify-end gap-2">
-          <Link href="/curriculum/overview">
-            <Button variant="outline" size="sm">Vista semestral</Button>
-          </Link>
+          {role === Role.TEACHER && (
+            <Link href="/attendance/overview">
+              <Button variant="outline" size="sm">Frequência de alunos</Button>
+            </Link>
+          )}
+          {isManager && (
+            <Link href="/curriculum/overview">
+              <Button variant="outline" size="sm">Vista semestral</Button>
+            </Link>
+          )}
         </div>
       )}
       <LessonsClient

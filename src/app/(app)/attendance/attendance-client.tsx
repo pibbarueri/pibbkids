@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check, Search, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { sortClasses } from "@/lib/classes";
 
@@ -35,6 +36,7 @@ export function AttendanceClient({
   const [saving, setSaving] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState<string>("all");
+  const [horarioTab, setHorarioTab] = useState<"EBD" | "CULTO">("EBD");
 
   // Distinct turmas present among the children, in canonical order.
   const classOptions = sortClasses(
@@ -85,30 +87,42 @@ export function AttendanceClient({
     };
   }, [selectedISO]);
 
-  const filtered = children.filter(
+  // Only children whose frequency includes the active tab's tipo show up at all.
+  const eligibleForTab = children.filter(
+    (c) => c.frequency === "AMBOS" || c.frequency === horarioTab
+  );
+
+  function isPresent(childId: string) {
+    return attendance.some((a) => a.childId === childId && a.type === horarioTab && a.present);
+  }
+
+  // Count of present children per turma, for the active tab — shown next to each filter chip.
+  const presentCountByClass = new Map<string, number>();
+  for (const c of eligibleForTab) {
+    if (!c.classGroupId || !isPresent(c.id)) continue;
+    presentCountByClass.set(c.classGroupId, (presentCountByClass.get(c.classGroupId) ?? 0) + 1);
+  }
+  const totalPresent = eligibleForTab.filter((c) => isPresent(c.id)).length;
+
+  const filtered = eligibleForTab.filter(
     (c) =>
       c.name.toLowerCase().includes(search.trim().toLowerCase()) &&
       (classFilter === "all" || c.classGroupId === classFilter)
   );
 
-  function statusFor(childId: string, type: string) {
-    return attendance.find((a) => a.childId === childId && a.type === type);
-  }
-
-  async function toggle(childId: string, type: string, current: boolean | undefined) {
+  async function toggle(childId: string, current: boolean) {
     if (!editable) return;
     const present = !current;
-    const key = `${childId}-${type}`;
-    setSaving(key);
+    setSaving(childId);
     const res = await fetch("/api/attendance", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ childId, date: selectedISO, type, present }),
+      body: JSON.stringify({ childId, date: selectedISO, type: horarioTab, present }),
     });
     if (res.ok) {
       const saved = await res.json();
       setAttendance((prev) => {
-        const idx = prev.findIndex((a) => a.childId === childId && a.type === type);
+        const idx = prev.findIndex((a) => a.childId === childId && a.type === horarioTab);
         if (idx === -1) return [...prev, saved];
         const copy = [...prev];
         copy[idx] = saved;
@@ -158,6 +172,13 @@ export function AttendanceClient({
         </div>
       )}
 
+      <Tabs value={horarioTab} onValueChange={(v) => setHorarioTab(v as "EBD" | "CULTO")}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="EBD">EBD</TabsTrigger>
+          <TabsTrigger value="CULTO">Culto</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {classOptions.length > 1 && (
         <div className="flex flex-wrap gap-2">
           <button
@@ -167,7 +188,7 @@ export function AttendanceClient({
               classFilter === "all" ? "border-primary bg-primary text-primary-foreground" : "border-input"
             )}
           >
-            Todas
+            Todas ({totalPresent})
           </button>
           {classOptions.map((c) => (
             <button
@@ -178,7 +199,7 @@ export function AttendanceClient({
                 classFilter === c.id ? "border-primary bg-primary text-primary-foreground" : "border-input"
               )}
             >
-              {c.name}
+              {c.name} ({presentCountByClass.get(c.id) ?? 0})
             </button>
           ))}
         </div>
@@ -196,35 +217,24 @@ export function AttendanceClient({
 
       <div className="space-y-2">
         {filtered.map((child) => {
-          const types = child.frequency === "AMBOS" ? ["EBD", "CULTO"] : [child.frequency];
+          const present = isPresent(child.id);
           return (
             <div key={child.id} className="flex items-center gap-2 p-3 border rounded-lg bg-background">
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm truncate">{child.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{child.classGroup?.name ?? "Sem turma"}</p>
               </div>
-              <div className="flex gap-2 shrink-0">
-                {types.map((type) => {
-                  const status = statusFor(child.id, type);
-                  const key = `${child.id}-${type}`;
-                  return (
-                    <div key={type} className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground">{type}</span>
-                      <button
-                        disabled={saving === key || !editable}
-                        onClick={() => toggle(child.id, type, status?.present)}
-                        className={cn(
-                          "h-9 w-9 rounded-full border flex items-center justify-center transition-colors",
-                          status?.present ? "bg-green-600 border-green-600 text-white" : "border-input",
-                          !editable && "opacity-50 cursor-not-allowed"
-                        )}
-                      >
-                        {status?.present && <Check className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+              <button
+                disabled={saving === child.id || !editable}
+                onClick={() => toggle(child.id, present)}
+                className={cn(
+                  "h-9 w-9 rounded-full border flex items-center justify-center transition-colors shrink-0",
+                  present ? "bg-green-600 border-green-600 text-white" : "border-input",
+                  !editable && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {present && <Check className="h-4 w-4" />}
+              </button>
             </div>
           );
         })}
@@ -232,7 +242,7 @@ export function AttendanceClient({
 
       {filtered.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">
-          {children.length === 0 ? "Nenhuma criança aprovada." : "Nenhuma criança encontrada."}
+          {eligibleForTab.length === 0 ? "Nenhuma criança nesse horário." : "Nenhuma criança encontrada."}
         </p>
       )}
     </div>

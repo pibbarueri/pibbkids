@@ -20,6 +20,7 @@ const PAGE_TITLES: [string, string][] = [
   ["/curriculum/overview", "Vista semestral"],
   ["/curriculum/lessons", "Aulas"],
   ["/schedule", "Escala"],
+  ["/attendance/overview", "Frequência de alunos"],
   ["/attendance", "Presença"],
   ["/materials", "Materiais"],
   ["/events", "Eventos"],
@@ -33,7 +34,10 @@ export function BackHeader({ profile }: { profile: Profile }) {
   const pathname = usePathname();
 
   // Vista semestral belongs under Aulas — its back returns there, not home.
-  const target = pathname === "/curriculum/overview" ? "/curriculum/lessons" : "/dashboard";
+  const target =
+    pathname === "/curriculum/overview" ? "/curriculum/lessons" :
+    pathname === "/attendance/overview" ? "/attendance" :
+    "/dashboard";
   const showBack = pathname !== "/dashboard";
   const title = PAGE_TITLES.find(([href]) => pathname.startsWith(href))?.[1];
 
