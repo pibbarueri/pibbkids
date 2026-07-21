@@ -23,9 +23,12 @@ export default async function DashboardPage() {
   const role = session!.user.role;
 
   const nextSunday = getNextSunday();
-  const nextSundayEnd = new Date(nextSunday);
-  nextSundayEnd.setDate(nextSundayEnd.getDate() + 1);
   const isManager = canManage(role);
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const in30Days = new Date(today);
+  in30Days.setDate(in30Days.getDate() + 30);
 
   const hasApoioGeral = await prisma.volunteerFunction.findFirst({
     where: { userId: session!.user.id, function: "APOIO_GERAL" },
@@ -35,7 +38,7 @@ export default async function DashboardPage() {
   const shortcuts = [
     { href: "/purchase-requests", label: "Compras", icon: ShoppingCart, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.RECEPTIONIST] },
     { href: "/events", label: "Eventos", icon: PartyPopper, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] },
-    { href: "/attendance", label: "Presença", icon: ClipboardCheck, roles: [Role.ADMIN, Role.COORDINATOR, Role.RECEPTIONIST] },
+    { href: "/attendance", label: "Presença", icon: ClipboardCheck, roles: [Role.ADMIN, Role.COORDINATOR] },
     { href: "/materials", label: "Materiais", icon: Package, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] },
     { href: "/curriculum", label: "Revistas", icon: BookOpen, roles: [Role.ADMIN, Role.COORDINATOR] },
   ]
@@ -57,9 +60,10 @@ export default async function DashboardPage() {
     }),
     prisma.event.findMany({
       where: {
-        date: { gte: nextSunday, lt: nextSundayEnd },
+        date: { gte: today, lt: in30Days },
         volunteers: { some: { userId: session!.user.id } },
       },
+      orderBy: { date: "asc" },
       select: { id: true, title: true, date: true, endDate: true },
     }),
     prisma.child.findMany({ where: { active: true }, select: { name: true, birthdate: true } }),

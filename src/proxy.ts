@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   "/register/child",
   "/register/volunteer",
   "/api/auth",
+  "/api/classes",
   "/manifest.webmanifest",
 ];
 
