@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { AlertCircle, Check, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { formatPhone, phoneDigits } from "@/lib/phone";
+import { ageLabel } from "@/lib/age";
 
 const FREQUENCIA_LABELS: Record<string, string> = {
   EBD: "Escola Dominical (EBD)",
@@ -362,6 +363,7 @@ export function ChildrenClient({
             <div className="space-y-3 text-sm">
               <Row label="Turma" value={selected.classGroup?.name ?? "Sem turma"} />
               <Row label="Data de nascimento" value={new Date(selected.birthdate).toLocaleDateString("pt-BR", { timeZone: "UTC" })} />
+              <Row label="Idade" value={ageLabel(new Date(selected.birthdate))} />
               <Row label="Frequência" value={FREQUENCIA_LABELS[selected.frequency] ?? selected.frequency} />
               <Row label="Pai" value={selected.fatherName} />
               <Row label="Mãe" value={selected.motherName} />
