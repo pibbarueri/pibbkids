@@ -145,10 +145,6 @@ export function EventsCalendar({
         </div>
       )}
 
-      {events.length === 0 && (
-        <p className="text-xs text-muted-foreground text-center py-2">Nenhum evento futuro.</p>
-      )}
-
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent>
           {detail && (

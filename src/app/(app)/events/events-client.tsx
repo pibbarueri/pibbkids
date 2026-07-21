@@ -135,10 +135,6 @@ export function EventsClient({
           </div>
         </div>
       ))}
-
-      {events.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-8">Nenhum evento futuro.</p>
-      )}
     </div>
   );
 }
