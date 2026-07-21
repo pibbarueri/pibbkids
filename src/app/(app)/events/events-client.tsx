@@ -1,24 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Copy, Trash2 } from "lucide-react";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { Plus, Copy, Trash2, Pencil } from "lucide-react";
 
+type Volunteer = { id: string; name: string };
 type Event = {
   id: string;
   title: string;
   date: string;
   description: string | null;
+  volunteers: { userId: string; user: { name: string } }[];
 };
+
+const emptyForm = { title: "", date: "", description: "", volunteerIds: [] as string[] };
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
@@ -26,35 +31,77 @@ function formatDate(iso: string) {
 
 export function EventsClient({
   initialEvents,
+  volunteers,
   isManager,
 }: {
   initialEvents: Event[];
+  volunteers: Volunteer[];
   isManager: boolean;
 }) {
   const [events, setEvents] = useState(() =>
     initialEvents.map((e) => ({ ...e, date: new Date(e.date).toISOString() }))
   );
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ title: "", date: "", description: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const searchParams = useSearchParams();
 
-  async function create() {
-    setSaving(true);
-    const res = await fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+  // Deep link support: /events?eventId=<id> opens that event's detail dialog.
+  useEffect(() => {
+    const eventId = searchParams.get("eventId");
+    if (!eventId) return;
+    const ev = events.find((e) => e.id === eventId);
+    if (ev) openDetail(ev);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  function openCreate() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setOpen(true);
+  }
+
+  function openDetail(event: Event) {
+    setEditingId(event.id);
+    setForm({
+      title: event.title,
+      date: event.date.slice(0, 10),
+      description: event.description ?? "",
+      volunteerIds: event.volunteers.map((v) => v.userId),
     });
-    const saved = await res.json();
-    setEvents((prev) => [...prev, saved].sort((a, b) => a.date.localeCompare(b.date)));
+    setOpen(true);
+  }
+
+  async function save() {
+    setSaving(true);
+    if (editingId) {
+      const res = await fetch(`/api/events/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const updated = await res.json();
+      setEvents((prev) => prev.map((e) => (e.id === editingId ? updated : e)).sort((a, b) => a.date.localeCompare(b.date)));
+    } else {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const saved = await res.json();
+      setEvents((prev) => [...prev, saved].sort((a, b) => a.date.localeCompare(b.date)));
+    }
     setSaving(false);
     setOpen(false);
-    setForm({ title: "", date: "", description: "" });
+    setEditingId(null);
+    setForm(emptyForm);
   }
 
   async function remove(id: string) {
     await fetch(`/api/events/${id}`, { method: "DELETE" });
     setEvents((prev) => prev.filter((e) => e.id !== id));
+    setOpen(false);
   }
 
   function copyWhatsApp(event: Event) {
@@ -69,72 +116,120 @@ export function EventsClient({
   return (
     <div className="space-y-3">
       {isManager && (
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger
-            className={cn(buttonVariants({ size: "icon" }), "fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40")}
-            aria-label="Novo evento"
-          >
-            <Plus className="h-6 w-6" />
-          </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Novo evento</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Título</p>
-                <Input
-                  className="h-12"
-                  value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Data</p>
-                <Input
-                  type="date"
-                  className="h-12"
-                  value={form.date}
-                  onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Descrição</p>
-                <Input
-                  className="h-12"
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                />
-              </div>
-              <Button className="w-full h-12" disabled={!form.title || !form.date || saving} onClick={create}>
-                Salvar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button
+          size="icon"
+          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40"
+          aria-label="Novo evento"
+          onClick={openCreate}
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
       )}
 
       {events.map((e) => (
-        <div key={e.id} className="p-4 border rounded-lg bg-background space-y-2">
+        <button
+          key={e.id}
+          onClick={() => (isManager ? openDetail(e) : undefined)}
+          className={cn(
+            "w-full text-left p-4 border rounded-lg bg-background space-y-2",
+            isManager && "hover:bg-muted/50 transition-colors"
+          )}
+        >
           <div className="flex items-start justify-between">
             <div>
               <p className="font-medium text-sm">{e.title}</p>
               <p className="text-xs text-muted-foreground">{formatDate(e.date)}</p>
               {e.description && <p className="text-xs mt-1">{e.description}</p>}
+              {e.volunteers.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {e.volunteers.map((v) => v.user.name).join(", ")}
+                </p>
+              )}
             </div>
             <div className="flex gap-1 shrink-0">
-              <Button variant="ghost" size="icon" onClick={() => copyWhatsApp(e)}>
+              <span
+                role="button"
+                aria-label="Copiar"
+                onClick={(ev) => { ev.stopPropagation(); copyWhatsApp(e); }}
+                className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
+              >
                 <Copy className="h-4 w-4" />
-              </Button>
+              </span>
               {isManager && (
-                <Button variant="ghost" size="icon" onClick={() => remove(e.id)}>
-                  <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                </Button>
+                <span
+                  role="button"
+                  aria-label="Editar"
+                  onClick={(ev) => { ev.stopPropagation(); openDetail(e); }}
+                  className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted text-muted-foreground"
+                >
+                  <Pencil className="h-4 w-4" />
+                </span>
               )}
             </div>
           </div>
-        </div>
+        </button>
       ))}
+
+      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditingId(null); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Editar evento" : "Novo evento"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Título</p>
+              <Input
+                className="h-12"
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                disabled={!isManager}
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Data</p>
+              <Input
+                type="date"
+                className="h-12"
+                value={form.date}
+                onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                disabled={!isManager}
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Descrição</p>
+              <Input
+                className="h-12"
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                disabled={!isManager}
+              />
+            </div>
+            {isManager && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Voluntários</p>
+                <MultiSelect
+                  options={volunteers.map((v) => ({ value: v.id, label: v.name }))}
+                  selected={form.volunteerIds}
+                  onChange={(next) => setForm((f) => ({ ...f, volunteerIds: next }))}
+                  placeholder="Selecione os voluntários"
+                />
+              </div>
+            )}
+            {isManager && (
+              <div className="flex gap-2">
+                <Button className="flex-1 h-12" disabled={!form.title || !form.date || saving} onClick={save}>
+                  Salvar
+                </Button>
+                {editingId && (
+                  <Button variant="destructive" className="h-12 px-4" onClick={() => remove(editingId)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
