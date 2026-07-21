@@ -26,7 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         },
       }),
     },
-    include: { volunteers: { select: { userId: true, user: { select: { name: true } } } } },
+    include: { volunteers: { select: { userId: true, user: { select: { name: true, username: true } } } } },
   });
 
   return NextResponse.json(event);

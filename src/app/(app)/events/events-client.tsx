@@ -11,24 +11,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MultiSelect } from "@/components/ui/multi-select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Copy, Trash2, Pencil } from "lucide-react";
 import { eventTimeRange, toDateInput, toTimeInput, fromDateTimeInputs } from "@/lib/event-time";
 
-type Volunteer = { id: string; name: string };
+type Volunteer = { id: string; name: string; username: string | null };
 type Event = {
   id: string;
   title: string;
   date: string;
   endDate: string | null;
   description: string | null;
-  volunteers: { userId: string; user: { name: string } }[];
+  volunteers: { userId: string; user: { name: string; username: string | null } }[];
 };
 
 const emptyForm = { title: "", date: "", startTime: "", endTime: "", description: "", volunteerIds: [] as string[] };
+const VOLUNTEERS_COLLAPSED_LIMIT = 5;
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", timeZone: "America/Sao_Paulo" });
+}
+
+function volunteerLabel(v: { name: string; username: string | null }) {
+  return v.username ?? v.name;
 }
 
 export function EventsClient({
@@ -47,6 +52,7 @@ export function EventsClient({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const searchParams = useSearchParams();
 
   // Deep link support: /events?eventId=<id> opens that event's detail dialog.
@@ -151,11 +157,44 @@ export function EventsClient({
               <p className="font-medium text-sm">{e.title}</p>
               <p className="text-xs text-muted-foreground">{formatDate(e.date)} · {eventTimeRange(e.date, e.endDate)}</p>
               {e.description && <p className="text-xs mt-1">{e.description}</p>}
-              {e.volunteers.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {e.volunteers.map((v) => v.user.name).join(", ")}
-                </p>
-              )}
+              {e.volunteers.length > 0 && (() => {
+                const expanded = expandedIds.has(e.id);
+                const shown = expanded ? e.volunteers : e.volunteers.slice(0, VOLUNTEERS_COLLAPSED_LIMIT);
+                const hidden = e.volunteers.length - shown.length;
+                return (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {shown.map((v) => volunteerLabel(v.user)).join(", ")}
+                    {hidden > 0 && (
+                      <span
+                        role="button"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          setExpandedIds((prev) => new Set(prev).add(e.id));
+                        }}
+                        className="ml-1 text-primary underline"
+                      >
+                        +{hidden} ver mais
+                      </span>
+                    )}
+                    {expanded && e.volunteers.length > VOLUNTEERS_COLLAPSED_LIMIT && (
+                      <span
+                        role="button"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          setExpandedIds((prev) => {
+                            const next = new Set(prev);
+                            next.delete(e.id);
+                            return next;
+                          });
+                        }}
+                        className="ml-1 text-primary underline"
+                      >
+                        ver menos
+                      </span>
+                    )}
+                  </p>
+                );
+              })()}
             </div>
             <div className="flex gap-1 shrink-0">
               <span
@@ -239,13 +278,28 @@ export function EventsClient({
             </div>
             {isManager && (
               <div className="space-y-1">
-                <p className="text-sm font-medium">Voluntários</p>
-                <MultiSelect
-                  options={volunteers.map((v) => ({ value: v.id, label: v.name }))}
-                  selected={form.volunteerIds}
-                  onChange={(next) => setForm((f) => ({ ...f, volunteerIds: next }))}
-                  placeholder="Selecione os voluntários"
-                />
+                <p className="text-sm font-medium">Voluntários ({form.volunteerIds.length} selecionados)</p>
+                <div className="max-h-64 overflow-y-auto rounded-md border divide-y">
+                  {volunteers.map((v) => {
+                    const checked = form.volunteerIds.includes(v.id);
+                    return (
+                      <label key={v.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(next) =>
+                            setForm((f) => ({
+                              ...f,
+                              volunteerIds: next
+                                ? [...f.volunteerIds, v.id]
+                                : f.volunteerIds.filter((id) => id !== v.id),
+                            }))
+                          }
+                        />
+                        {volunteerLabel(v)}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
             )}
             {isManager && (

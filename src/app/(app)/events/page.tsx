@@ -12,13 +12,13 @@ export default async function EventsPage() {
     prisma.event.findMany({
       where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
       orderBy: { date: "asc" },
-      include: { volunteers: { select: { userId: true, user: { select: { name: true } } } } },
+      include: { volunteers: { select: { userId: true, user: { select: { name: true, username: true } } } } },
     }),
     isManager
       ? prisma.user.findMany({
           where: { active: true, status: "APPROVED" },
           orderBy: { name: "asc" },
-          select: { id: true, name: true },
+          select: { id: true, name: true, username: true },
         })
       : Promise.resolve([]),
   ]);
