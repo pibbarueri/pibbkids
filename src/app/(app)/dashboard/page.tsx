@@ -7,12 +7,14 @@ import { EventsCalendar } from "@/components/dashboard/events-calendar";
 import { NextSundaySchedule } from "@/components/dashboard/next-sunday-schedule";
 import { computeUpcomingBirthdays } from "@/lib/birthdays";
 
+// Local-midnight construction, matching how schedule/page.tsx builds slot dates —
+// building this in UTC instead causes a timezone offset that never matches stored slots.
 function getNextSunday() {
   const now = new Date();
-  const utc = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-  const diff = utc.getUTCDay() === 0 ? 0 : 7 - utc.getUTCDay();
-  utc.setUTCDate(utc.getUTCDate() + diff);
-  return utc;
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = date.getDay() === 0 ? 0 : 7 - date.getDay();
+  date.setDate(date.getDate() + diff);
+  return date;
 }
 
 export default async function DashboardPage() {
@@ -29,15 +31,14 @@ export default async function DashboardPage() {
 
   const nextSunday = getNextSunday();
 
-  const [me, events, scheduleSlots, birthdayChildren, birthdayVolunteers] = await Promise.all([
-    prisma.user.findUnique({ where: { id: session!.user.id }, select: { name: true } }),
+  const [events, scheduleSlots, birthdayChildren, birthdayVolunteers] = await Promise.all([
     prisma.event.findMany({
       where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
       orderBy: { date: "asc" },
       select: { id: true, title: true, date: true, description: true },
     }),
     prisma.scheduleSlot.findMany({
-      where: { date: nextSunday },
+      where: { date: nextSunday, userId: session!.user.id },
       include: {
         user: { select: { name: true } },
         classGroup: { select: { name: true } },
@@ -59,10 +60,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-4 space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">Olá, {(me?.name ?? session!.user.name).split(" ")[0]}!</h1>
-      </div>
-
       {shortcuts.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {shortcuts.map((s) => (
@@ -77,6 +74,8 @@ export default async function DashboardPage() {
           ))}
         </div>
       )}
+
+      <NextSundaySchedule date={nextSunday.toISOString()} slots={scheduleSlots} />
 
       <EventsCalendar
         events={events.map((e) => ({ ...e, date: e.date.toISOString() }))}
@@ -108,8 +107,6 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
-
-      <NextSundaySchedule date={nextSunday.toISOString()} slots={scheduleSlots} />
     </div>
   );
 }
