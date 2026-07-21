@@ -21,7 +21,8 @@ function sundaysThroughYearEnd(now: Date): Date[] {
 export default async function SchedulePage() {
   const session = await auth();
   const role = session!.user.role;
-  const canViewAll = canManage(role);
+  // Read-only view of the full schedule is open to every role; only management can edit.
+  const canViewAll = true;
   const canEdit = canManage(role);
 
   const sundays = sundaysThroughYearEnd(new Date());
@@ -58,7 +59,6 @@ export default async function SchedulePage() {
 
   return (
     <div className="p-4 pb-24 space-y-4">
-      <h1 className="text-xl font-bold">Escala</h1>
       <ScheduleClient
         initialSlots={slots as any}
         classes={sortClasses(classes)}

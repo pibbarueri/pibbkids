@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, Copy, Pencil, Plus, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Sala Plus has no horário (17h-18h, before EBD/Culto) — always shows in both tabs.
 function inHorario(slot: { slotType: string; horario: string | null }, tab: "EBD" | "CULTO") {
@@ -236,7 +237,9 @@ export function ScheduleClient({
   }
 
   const shownSlots = canViewAll ? tabSlots : tabSlots.filter((s) => s.user.id === currentUserId);
-  const specialSlots = tabSlots.filter((s) => s.slotType !== "TURMA");
+  const coordSlots = tabSlots.filter((s) => s.slotType === "COORDENACAO");
+  const salaPlusSlots = tabSlots.filter((s) => s.slotType === "SALA_PLUS");
+  const specialSlots = tabSlots.filter((s) => s.slotType !== "TURMA" && s.slotType !== "COORDENACAO" && s.slotType !== "SALA_PLUS");
   const classSlots = tabSlots.filter((s) => s.slotType === "TURMA");
 
   return (
@@ -284,11 +287,31 @@ export function ScheduleClient({
         </p>
       ) : (
         <div className="space-y-4">
+          {/* Coordenador do dia — highlighted, always first */}
+          {coordSlots.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Coordenação</p>
+              {coordSlots.map((s) => (
+                <SlotRow key={s.id} slot={s} canEdit={canEdit} onEdit={() => openEdit(s)} onDelete={() => setDeleteTarget(s)} highlight />
+              ))}
+            </div>
+          )}
+
           {/* Special slots */}
           {specialSlots.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Apoio / Geral</p>
               {specialSlots.map((s) => (
+                <SlotRow key={s.id} slot={s} canEdit={canEdit} onEdit={() => openEdit(s)} onDelete={() => setDeleteTarget(s)} />
+              ))}
+            </div>
+          )}
+
+          {/* Sala Plus — its own subgroup, like a class */}
+          {salaPlusSlots.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sala Plus</p>
+              {salaPlusSlots.map((s) => (
                 <SlotRow key={s.id} slot={s} canEdit={canEdit} onEdit={() => openEdit(s)} onDelete={() => setDeleteTarget(s)} />
               ))}
             </div>
@@ -446,14 +469,21 @@ function SlotRow({
   canEdit,
   onEdit,
   onDelete,
+  highlight,
 }: {
   slot: Slot;
   canEdit: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  highlight?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between p-3 border rounded-lg bg-background">
+    <div
+      className={cn(
+        "flex items-center justify-between p-3 border rounded-lg bg-background",
+        highlight && "border-primary bg-primary/5"
+      )}
+    >
       <div>
         <p className="font-medium text-sm">{slot.user.name}</p>
         <p className="text-xs text-muted-foreground">
