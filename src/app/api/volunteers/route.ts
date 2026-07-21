@@ -4,13 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canManage, isLeadership } from "@/lib/permissions";
 import { FunctionType, Role } from "@prisma/client";
+import { phoneDigits } from "@/lib/phone";
 
 // Admin-created volunteer: username assigned, no password (set on first access),
 // CPF + birthdate required so first-access identity check can work.
 const createSchema = z.object({
   name: z.string().min(2),
   username: z.string().min(3).regex(/^[a-z0-9._-]+$/, "Usuário deve ter só letras minúsculas sem acento, números, ponto, hífen ou underline"),
-  phone: z.string().optional(),
+  phone: z.string().optional().transform((p) => (p ? phoneDigits(p) : p)),
   cpf: z.string().min(11),
   birthdate: z.string().min(1),
   motherName: z.string().optional(),

@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { FunctionType, Role } from "@prisma/client";
+import { phoneDigits } from "@/lib/phone";
 
 const schema = z.object({
   name: z.string().min(2),
-  phone: z.string().min(8),
+  phone: z.string().min(8).transform(phoneDigits),
   cpf: z.string().min(11),
   birthdate: z.string().min(1),
   motherName: z.string().optional(),

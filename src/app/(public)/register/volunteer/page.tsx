@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ANTECEDENTES_LINKS, whatsappLink } from "@/lib/contact";
+import { formatPhone, phoneDigits } from "@/lib/phone";
 
 const FUNCTION_LABELS: Record<FunctionType, string> = {
   PROFESSOR: "Professor(a)",
@@ -51,8 +52,11 @@ export default function RegisterVolunteerPage() {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
+
+  const phone = watch("phone") ?? "";
 
   useEffect(() => {
     fetch("/api/classes").then((r) => r.json()).then(setClasses);
@@ -116,7 +120,13 @@ export default function RegisterVolunteerPage() {
           </Field>
 
           <Field label="Telefone *" error={errors.phone?.message}>
-            <Input type="tel" {...register("phone")} className="h-12" />
+            <Input
+              type="tel"
+              inputMode="numeric"
+              className="h-12"
+              value={formatPhone(phone)}
+              onChange={(e) => setValue("phone", phoneDigits(e.target.value), { shouldValidate: true })}
+            />
           </Field>
 
           <Field label="CPF *" error={errors.cpf?.message}>
