@@ -52,6 +52,7 @@ export default async function SchedulePage() {
             name: true,
             role: true,
             preferredClasses: { select: { classGroupId: true } },
+            functions: { select: { function: true } },
           },
         })
       : Promise.resolve([]),

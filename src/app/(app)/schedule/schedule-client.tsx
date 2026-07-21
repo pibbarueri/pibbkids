@@ -63,6 +63,7 @@ type Volunteer = {
   name: string;
   role: string;
   preferredClasses: { classGroupId: string }[];
+  functions: { function: string }[];
 };
 
 function formatDate(iso: string) {
@@ -152,6 +153,10 @@ export function ScheduleClient({
     ? []
     : isRealClass
     ? volunteers.filter((v) => v.preferredClasses.some((c) => c.classGroupId === form.turma))
+    : form.turma === "COORDENACAO"
+    ? volunteers.filter((v) => v.role === "ADMIN" || v.role === "COORDINATOR")
+    : ["SALA_PLUS", "RECEPCAO", "LANCHE"].includes(form.turma)
+    ? volunteers.filter((v) => v.functions.some((f) => f.function === "APOIO_GERAL"))
     : volunteers;
 
   function openAdd() {
