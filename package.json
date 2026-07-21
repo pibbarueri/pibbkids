@@ -11,6 +11,7 @@
     "import": "dotenv -e .env -- tsx scripts/import.ts",
     "import:journals": "dotenv -e .env -- tsx scripts/import-journals.ts",
     "import:schedule": "dotenv -e .env -- tsx scripts/import-schedule.ts",
+    "import:lessons": "dotenv -e .env -- tsx scripts/import-lessons.ts",
     "migrate:deploy": "prisma migrate deploy",
     "postinstall": "prisma generate"
   },
