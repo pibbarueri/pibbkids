@@ -24,7 +24,6 @@ export default async function CurriculumPage() {
 
   return (
     <div className="p-4 pb-24 space-y-4">
-      <h1 className="text-xl font-bold">Revistas</h1>
       <JournalsClient initialJournals={journals as any} classes={sortClasses(classes)} />
     </div>
   );

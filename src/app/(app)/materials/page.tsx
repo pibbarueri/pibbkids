@@ -14,7 +14,6 @@ export default async function MaterialsPage() {
 
   return (
     <div className="p-4 pb-24 space-y-4">
-      <h1 className="text-xl font-bold">Materiais</h1>
       <MaterialsClient initialMaterials={materials} isManager={isManager} />
     </div>
   );

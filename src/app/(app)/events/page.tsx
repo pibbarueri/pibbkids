@@ -15,7 +15,6 @@ export default async function EventsPage() {
 
   return (
     <div className="p-4 pb-24 space-y-4">
-      <h1 className="text-xl font-bold">Eventos</h1>
       <EventsClient initialEvents={events as any} isManager={isManager} />
     </div>
   );

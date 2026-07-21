@@ -19,7 +19,6 @@ export default async function PurchaseRequestsPage() {
 
   return (
     <div className="p-4 pb-24 space-y-4">
-      <h1 className="text-xl font-bold">Solicitações de compra</h1>
       <PurchaseRequestsClient
         initialRequests={requests as any}
         isManager={isManager}

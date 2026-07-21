@@ -44,7 +44,7 @@ export default async function OverviewPage() {
 
   return (
     <div className="p-4 space-y-4">
-      <h1 className="text-xl font-bold">Vista semestral — {semester}º semestre {year}</h1>
+      <p className="text-sm text-muted-foreground">{semester}º semestre {year}</p>
       <OverviewClient
         plans={plans as any}
         classes={sortClasses(classes)}

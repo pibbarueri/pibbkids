@@ -41,7 +41,6 @@ export default async function VolunteersPage() {
 
   return (
     <div className="p-4 pb-24 space-y-4">
-      <h1 className="text-xl font-bold">Voluntários</h1>
       <VolunteersClient
         initialVolunteers={volunteers as any}
         classes={sortClasses(classes)}
