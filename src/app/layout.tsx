@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Baloo_2 } from "next/font/google";
 import "./globals.css";
 
@@ -21,6 +21,20 @@ const baloo2 = Baloo_2({
 export const metadata: Metadata = {
   title: "PIBB Kids",
   description: "Ministério Infantil da Primeira Igreja Batista em Barueri",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "PIBB Kids",
+  },
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#faf7f2",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
