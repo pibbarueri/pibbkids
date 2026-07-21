@@ -4,6 +4,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -60,6 +61,7 @@ const emptyEditForm = {
   role: "ASSISTANT",
   functions: [] as string[],
   preferredClassIds: [] as string[],
+  inclusionEnabled: false,
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -96,6 +98,7 @@ type Volunteer = {
   motherName?: string | null;
   functions: { function: string }[];
   preferredClasses: { classGroupId: string; classGroup: { name: string } }[];
+  inclusionEnabled?: boolean;
 };
 
 export function VolunteersClient({
@@ -168,6 +171,7 @@ export function VolunteersClient({
       role: v.role,
       functions: v.functions.map((f) => f.function),
       preferredClassIds: v.preferredClasses.map((c) => c.classGroupId),
+      inclusionEnabled: v.inclusionEnabled ?? false,
     });
     setEditing(v);
   }
@@ -480,6 +484,13 @@ export function VolunteersClient({
                     <p className="text-sm font-medium">Nome da mãe</p>
                     <Input className="h-12" value={editForm.motherName} onChange={(e) => setEditForm((f) => ({ ...f, motherName: e.target.value }))} />
                   </div>
+                  <label className="flex items-center gap-2">
+                    <Checkbox
+                      checked={editForm.inclusionEnabled}
+                      onCheckedChange={(v) => setEditForm((f) => ({ ...f, inclusionEnabled: !!v }))}
+                    />
+                    <span className="text-sm font-medium">Habilitado para Inclusão</span>
+                  </label>
                 </>
               )}
               <div className="space-y-1">

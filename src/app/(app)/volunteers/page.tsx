@@ -32,6 +32,7 @@ export default async function VolunteersPage() {
       documentUrl: showSensitive,
       birthdate: showSensitive,
       motherName: showSensitive,
+      inclusionEnabled: true,
       functions: { select: { function: true } },
       preferredClasses: {
         select: { classGroupId: true, classGroup: { select: { name: true } } },

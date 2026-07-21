@@ -51,6 +51,7 @@ export default async function SchedulePage() {
             id: true,
             name: true,
             role: true,
+            inclusionEnabled: true,
             preferredClasses: { select: { classGroupId: true } },
             functions: { select: { function: true } },
           },

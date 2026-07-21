@@ -31,6 +31,7 @@ const SLOT_LABELS: Record<string, string> = {
   SALA_PLUS: "Sala Plus",
   RECEPCAO: "Recepção",
   LANCHE: "Lanche",
+  INCLUSAO: "Inclusão",
 };
 
 // Pseudo "turma" options that aren't real ClassGroups — support slots not tied to a class.
@@ -39,6 +40,7 @@ const PSEUDO_TURMAS: Record<string, string> = {
   SALA_PLUS: "Sala Plus",
   RECEPCAO: "Recepção",
   LANCHE: "Lanche",
+  INCLUSAO: "Inclusão",
 };
 
 function slotLabel(slot: Pick<Slot, "slotType" | "role">) {
@@ -62,6 +64,7 @@ type Volunteer = {
   id: string;
   name: string;
   role: string;
+  inclusionEnabled: boolean;
   preferredClasses: { classGroupId: string }[];
   functions: { function: string }[];
 };
@@ -157,6 +160,8 @@ export function ScheduleClient({
     ? volunteers.filter((v) => v.role === "ADMIN" || v.role === "COORDINATOR")
     : form.turma === "RECEPCAO"
     ? volunteers.filter((v) => v.functions.some((f) => f.function === "RECEPCAO"))
+    : form.turma === "INCLUSAO"
+    ? volunteers.filter((v) => v.inclusionEnabled)
     : ["SALA_PLUS", "LANCHE"].includes(form.turma)
     ? volunteers.filter((v) => v.functions.some((f) => f.function === "APOIO_GERAL"))
     : volunteers;

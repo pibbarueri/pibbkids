@@ -37,6 +37,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(body.role !== undefined && { role: body.role }),
       ...(body.active !== undefined && { active: body.active }),
       ...(body.requirePasswordChange !== undefined && { requirePasswordChange: body.requirePasswordChange }),
+      ...(body.inclusionEnabled !== undefined && { inclusionEnabled: body.inclusionEnabled }),
       ...(body.functions !== undefined && {
         functions: {
           deleteMany: {},
@@ -62,6 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       documentUrl: true,
       birthdate: true,
       motherName: true,
+      inclusionEnabled: true,
       functions: { select: { function: true } },
       preferredClasses: { select: { classGroupId: true, classGroup: { select: { name: true } } } },
     },
