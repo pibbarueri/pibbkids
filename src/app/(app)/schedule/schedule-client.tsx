@@ -125,7 +125,7 @@ export function ScheduleClient({
   const [addOpen, setAddOpen] = useState(false);
   const [editingSlot, setEditingSlot] = useState<Slot | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Slot | null>(null);
-  const emptyForm = { horario: "" as "EBD" | "CULTO" | "", turma: "", userId: "" };
+  const emptyForm = { horario: "" as "EBD" | "CULTO" | "", turma: "", userId: "", cargo: "" as "PROFESSOR" | "AUXILIAR" | "" };
   const [form, setForm] = useState(emptyForm);
   const [repeatDates, setRepeatDates] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -155,7 +155,9 @@ export function ScheduleClient({
     ? volunteers.filter((v) => v.preferredClasses.some((c) => c.classGroupId === form.turma))
     : form.turma === "COORDENACAO"
     ? volunteers.filter((v) => v.role === "ADMIN" || v.role === "COORDINATOR")
-    : ["SALA_PLUS", "RECEPCAO", "LANCHE"].includes(form.turma)
+    : form.turma === "RECEPCAO"
+    ? volunteers.filter((v) => v.functions.some((f) => f.function === "RECEPCAO"))
+    : ["SALA_PLUS", "LANCHE"].includes(form.turma)
     ? volunteers.filter((v) => v.functions.some((f) => f.function === "APOIO_GERAL"))
     : volunteers;
 
@@ -173,8 +175,20 @@ export function ScheduleClient({
       horario: (slot.horario as "EBD" | "CULTO" | null) ?? "",
       turma,
       userId: slot.user.id,
+      cargo: (slot.role as "PROFESSOR" | "AUXILIAR" | null) ?? "",
     });
     setAddOpen(true);
+  }
+
+  // Default cargo from the volunteer's own function (Professor vs Auxiliar) when picked.
+  function cargoForVolunteer(userId: string): "PROFESSOR" | "AUXILIAR" | "" {
+    const v = volunteers.find((vol) => vol.id === userId);
+    if (!v) return "";
+    const hasProfessor = v.functions.some((f) => f.function === "PROFESSOR");
+    const hasAuxiliar = v.functions.some((f) => f.function === "AUXILIAR");
+    if (hasProfessor && !hasAuxiliar) return "PROFESSOR";
+    if (hasAuxiliar && !hasProfessor) return "AUXILIAR";
+    return "";
   }
 
   function slotTypeFor(turma: string) {
@@ -188,7 +202,7 @@ export function ScheduleClient({
       slotType: slotTypeFor(form.turma),
       horario: form.turma === "SALA_PLUS" ? null : form.horario,
       classGroupId: isRealClass ? form.turma : null,
-      role: isRealClass ? "PROFESSOR" : null,
+      role: isRealClass ? (form.cargo || null) : null,
       userId: form.userId,
     };
 
@@ -375,7 +389,7 @@ export function ScheduleClient({
                     type="button"
                     variant={form.horario === "EBD" ? "default" : "outline"}
                     className="h-12"
-                    onClick={() => setForm((f) => ({ ...f, horario: "EBD", userId: "" }))}
+                    onClick={() => setForm((f) => ({ ...f, horario: "EBD", userId: "", cargo: "" }))}
                   >
                     EBD
                   </Button>
@@ -383,7 +397,7 @@ export function ScheduleClient({
                     type="button"
                     variant={form.horario === "CULTO" ? "default" : "outline"}
                     className="h-12"
-                    onClick={() => setForm((f) => ({ ...f, horario: "CULTO", userId: "" }))}
+                    onClick={() => setForm((f) => ({ ...f, horario: "CULTO", userId: "", cargo: "" }))}
                   >
                     Culto
                   </Button>
@@ -395,7 +409,7 @@ export function ScheduleClient({
               <p className="text-sm font-medium">Voluntário</p>
               <Select
                 value={form.userId}
-                onValueChange={(v) => setForm((f) => ({ ...f, userId: v ?? "" }))}
+                onValueChange={(v) => setForm((f) => ({ ...f, userId: v ?? "", cargo: v ? cargoForVolunteer(v) : "" }))}
                 items={Object.fromEntries(eligibleVolunteers.map((v) => [v.id, v.name]))}
                 disabled={!form.turma || (form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && !form.horario)}
               >
@@ -411,6 +425,30 @@ export function ScheduleClient({
                 </SelectContent>
               </Select>
             </div>
+
+            {isRealClass && form.userId && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Cargo</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={form.cargo === "PROFESSOR" ? "default" : "outline"}
+                    className="h-12"
+                    onClick={() => setForm((f) => ({ ...f, cargo: "PROFESSOR" }))}
+                  >
+                    Professor
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={form.cargo === "AUXILIAR" ? "default" : "outline"}
+                    className="h-12"
+                    onClick={() => setForm((f) => ({ ...f, cargo: "AUXILIAR" }))}
+                  >
+                    Auxiliar
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {!editingSlot && (
               <div className="space-y-1">
@@ -435,6 +473,7 @@ export function ScheduleClient({
                 !form.turma ||
                 !form.userId ||
                 (form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && !form.horario) ||
+                (isRealClass && !form.cargo) ||
                 (!editingSlot && repeatDates.length === 0) ||
                 saving
               }
