@@ -1,8 +1,12 @@
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+
 const SLOT_LABELS: Record<string, string> = {
   COORDENACAO: "Coordenação",
   SALA_PLUS: "Sala Plus",
   RECEPCAO: "Recepção",
   LANCHE: "Lanche",
+  INCLUSAO: "Inclusão",
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -21,6 +25,8 @@ type Slot = {
   classGroup: { name: string } | null;
 };
 
+type EventItem = { id: string; title: string };
+
 function slotDescription(slot: Slot) {
   if (slot.classGroup) {
     const cargo = slot.role ? ROLE_LABELS[slot.role] : null;
@@ -29,7 +35,7 @@ function slotDescription(slot: Slot) {
   return SLOT_LABELS[slot.slotType] ?? slot.slotType;
 }
 
-export function NextSundaySchedule({ date, slots }: { date: string; slots: Slot[] }) {
+export function NextSundaySchedule({ date, slots, events }: { date: string; slots: Slot[]; events: EventItem[] }) {
   const label = new Date(date).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "long",
@@ -50,8 +56,13 @@ export function NextSundaySchedule({ date, slots }: { date: string; slots: Slot[
 
   return (
     <div className="border rounded-lg p-3 space-y-2 bg-background">
-      <p className="font-medium text-sm">Próxima escala: {label}</p>
-      {groups.length === 0 && (
+      <div className="flex items-center justify-between">
+        <p className="font-medium text-sm">Próxima escala: {label}</p>
+        <Link href={`/schedule?date=${date}`} aria-label="Ver escala" className="text-muted-foreground hover:text-foreground">
+          <ChevronRight className="h-4 w-4" />
+        </Link>
+      </div>
+      {groups.length === 0 && events.length === 0 && (
         <p className="text-xs text-muted-foreground text-center py-2">Você não está na escala deste domingo.</p>
       )}
       {groups.map(([group, groupSlots]) => (
@@ -62,6 +73,19 @@ export function NextSundaySchedule({ date, slots }: { date: string; slots: Slot[
           ))}
         </div>
       ))}
+      {events.length > 0 && (
+        <div className="text-sm">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">Eventos</p>
+          {events.map((e) => (
+            <div key={e.id} className="flex items-center justify-between gap-2">
+              <p className="truncate">{e.title}</p>
+              <Link href={`/events?eventId=${e.id}`} className="text-xs text-primary shrink-0">
+                Ver detalhes
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

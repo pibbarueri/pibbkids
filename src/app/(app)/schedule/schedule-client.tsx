@@ -108,6 +108,7 @@ export function ScheduleClient({
   classes,
   volunteers,
   sundays,
+  initialSundayIdx,
   currentUserId,
   canViewAll,
   canEdit,
@@ -116,6 +117,7 @@ export function ScheduleClient({
   classes: ClassGroup[];
   volunteers: Volunteer[];
   sundays: string[];
+  initialSundayIdx: number;
   currentUserId: string;
   canViewAll: boolean;
   canEdit: boolean;
@@ -123,7 +125,7 @@ export function ScheduleClient({
   const [slots, setSlots] = useState(() =>
     initialSlots.map((s) => ({ ...s, date: new Date(s.date).toISOString() }))
   );
-  const [sundayIdx, setSundayIdx] = useState(0);
+  const [sundayIdx, setSundayIdx] = useState(initialSundayIdx);
   const [horarioTab, setHorarioTab] = useState<"EBD" | "CULTO">("EBD");
   const [addOpen, setAddOpen] = useState(false);
   const [editingSlot, setEditingSlot] = useState<Slot | null>(null);

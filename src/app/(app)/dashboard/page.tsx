@@ -31,7 +31,7 @@ export default async function DashboardPage() {
 
   const nextSunday = getNextSunday();
 
-  const [events, scheduleSlots, birthdayChildren, birthdayVolunteers] = await Promise.all([
+  const [events, scheduleSlots, myEvents, birthdayChildren, birthdayVolunteers] = await Promise.all([
     prisma.event.findMany({
       where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
       orderBy: { date: "asc" },
@@ -43,6 +43,10 @@ export default async function DashboardPage() {
         user: { select: { name: true } },
         classGroup: { select: { name: true } },
       },
+    }),
+    prisma.event.findMany({
+      where: { date: nextSunday, volunteers: { some: { userId: session!.user.id } } },
+      select: { id: true, title: true },
     }),
     prisma.child.findMany({ where: { active: true }, select: { name: true, birthdate: true } }),
     prisma.user.findMany({
@@ -75,7 +79,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <NextSundaySchedule date={nextSunday.toISOString()} slots={scheduleSlots} />
+      <NextSundaySchedule date={nextSunday.toISOString()} slots={scheduleSlots} events={myEvents} />
 
       <EventsCalendar
         events={events.map((e) => ({ ...e, date: e.date.toISOString() }))}

@@ -18,7 +18,11 @@ function sundaysThroughYearEnd(now: Date): Date[] {
   return sundays;
 }
 
-export default async function SchedulePage() {
+export default async function SchedulePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
   const session = await auth();
   const role = session!.user.role;
   // Read-only view of the full schedule is open to every role; only management can edit.
@@ -29,6 +33,14 @@ export default async function SchedulePage() {
 
   const from = sundays[0];
   const to = sundays[sundays.length - 1];
+
+  const { date } = await searchParams;
+  let initialSundayIdx = 0;
+  if (date) {
+    const target = new Date(date).toISOString().slice(0, 10);
+    const found = sundays.findIndex((s) => s.toISOString().slice(0, 10) === target);
+    if (found !== -1) initialSundayIdx = found;
+  }
 
   const [slots, classes, volunteers] = await Promise.all([
     prisma.scheduleSlot.findMany({
@@ -66,6 +78,7 @@ export default async function SchedulePage() {
         classes={sortClasses(classes)}
         volunteers={volunteers}
         sundays={sundays.map((d) => d.toISOString())}
+        initialSundayIdx={initialSundayIdx}
         currentUserId={session!.user.id}
         canViewAll={canViewAll}
         canEdit={canEdit}
