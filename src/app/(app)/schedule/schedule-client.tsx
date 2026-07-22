@@ -302,8 +302,8 @@ export function ScheduleClient({
             <Copy className="h-4 w-4 mr-2" /> Copiar escala
           </Button>
           {canEdit && (
-            <Link href="/schedule/overview">
-              <Button variant="outline" className="h-10">Visão semestral</Button>
+            <Link href="/schedule/overview" className="flex-1">
+              <Button variant="outline" className="w-full h-10">Visão semestral</Button>
             </Link>
           )}
         </div>

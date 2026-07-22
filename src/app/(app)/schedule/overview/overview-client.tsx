@@ -6,20 +6,37 @@ import { Copy } from "lucide-react";
 type ClassGroup = { id: string; name: string };
 type Slot = {
   date: string;
+  slotType: string;
   classGroupId: string | null;
   horario: string | null;
   role: string | null;
-  user: { name: string };
+  user: { name: string; username: string | null };
 };
+
+// Non-class slot types, in display order — coordenação first.
+const SPECIAL_COLUMNS: { slotType: string; label: string }[] = [
+  { slotType: "COORDENACAO", label: "Coordenação" },
+  { slotType: "RECEPCAO", label: "Recepção" },
+  { slotType: "LANCHE", label: "Lanche" },
+  { slotType: "SALA_PLUS", label: "Sala Plus" },
+  { slotType: "INCLUSAO", label: "Inclusão" },
+];
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
 }
 
-function slotLabel(s: Slot | undefined) {
-  if (!s) return "—";
-  const cargo = s.role === "AUXILIAR" ? "Aux" : "Prof";
-  return `${s.user.name} (${cargo})`;
+function volunteerLabel(u: { name: string; username: string | null }) {
+  return u.username ?? u.name;
+}
+
+function slotLabel(s: Slot) {
+  const cargo = s.role === "AUXILIAR" ? "Aux" : s.role === "PROFESSOR" ? "Prof" : null;
+  return cargo ? `${volunteerLabel(s.user)} (${cargo})` : volunteerLabel(s.user);
+}
+
+function groupLabel(slots: Slot[]) {
+  return slots.length > 0 ? slots.map(slotLabel).join(", ") : "—";
 }
 
 export function OverviewClient({
@@ -40,11 +57,22 @@ export function OverviewClient({
       const daySlots = slots.filter((s) => s.date.startsWith(key));
       if (daySlots.length === 0) continue;
       lines.push(`*${formatDate(sunday)}*`);
+      for (const col of SPECIAL_COLUMNS) {
+        const colSlots = daySlots.filter((s) => s.slotType === col.slotType);
+        if (colSlots.length === 0) continue;
+        const ebd = colSlots.filter((s) => s.horario === "EBD");
+        const culto = colSlots.filter((s) => s.horario === "CULTO");
+        const none = colSlots.filter((s) => !s.horario);
+        if (none.length > 0) lines.push(`  ${col.label}: ${groupLabel(none)}`);
+        if (ebd.length > 0 || culto.length > 0) {
+          lines.push(`  ${col.label}: EBD ${groupLabel(ebd)} · Culto ${groupLabel(culto)}`);
+        }
+      }
       for (const cls of classes) {
-        const ebd = daySlots.find((s) => s.classGroupId === cls.id && s.horario === "EBD");
-        const culto = daySlots.find((s) => s.classGroupId === cls.id && s.horario === "CULTO");
-        if (!ebd && !culto) continue;
-        lines.push(`  ${cls.name}: EBD ${slotLabel(ebd)} · Culto ${slotLabel(culto)}`);
+        const ebd = daySlots.filter((s) => s.slotType === "TURMA" && s.classGroupId === cls.id && s.horario === "EBD");
+        const culto = daySlots.filter((s) => s.slotType === "TURMA" && s.classGroupId === cls.id && s.horario === "CULTO");
+        if (ebd.length === 0 && culto.length === 0) continue;
+        lines.push(`  ${cls.name}: EBD ${groupLabel(ebd)} · Culto ${groupLabel(culto)}`);
       }
       lines.push("");
     }
@@ -62,6 +90,9 @@ export function OverviewClient({
           <thead>
             <tr className="bg-muted/50">
               <th className="sticky left-0 bg-muted/50 p-2 text-left border-r z-10 min-w-[80px]">Domingo</th>
+              {SPECIAL_COLUMNS.map((col) => (
+                <th key={col.slotType} className="p-2 text-left border-r min-w-[160px]">{col.label}</th>
+              ))}
               {classes.map((cls) => (
                 <th key={cls.id} className="p-2 text-left border-r min-w-[180px]">{cls.name}</th>
               ))}
@@ -76,13 +107,31 @@ export function OverviewClient({
                   <td className="sticky left-0 bg-background p-2 border-r font-medium z-10">
                     {formatDate(sunday)}
                   </td>
+                  {SPECIAL_COLUMNS.map((col) => {
+                    const colSlots = daySlots.filter((s) => s.slotType === col.slotType);
+                    const ebd = colSlots.filter((s) => s.horario === "EBD");
+                    const culto = colSlots.filter((s) => s.horario === "CULTO");
+                    const none = colSlots.filter((s) => !s.horario);
+                    return (
+                      <td key={col.slotType} className="p-2 border-r align-top">
+                        {none.length > 0 ? (
+                          <p className="text-xs">{groupLabel(none)}</p>
+                        ) : (
+                          <>
+                            <p className="text-xs">EBD: {groupLabel(ebd)}</p>
+                            <p className="text-xs">Culto: {groupLabel(culto)}</p>
+                          </>
+                        )}
+                      </td>
+                    );
+                  })}
                   {classes.map((cls) => {
-                    const ebd = daySlots.find((s) => s.classGroupId === cls.id && s.horario === "EBD");
-                    const culto = daySlots.find((s) => s.classGroupId === cls.id && s.horario === "CULTO");
+                    const ebd = daySlots.filter((s) => s.slotType === "TURMA" && s.classGroupId === cls.id && s.horario === "EBD");
+                    const culto = daySlots.filter((s) => s.slotType === "TURMA" && s.classGroupId === cls.id && s.horario === "CULTO");
                     return (
                       <td key={cls.id} className="p-2 border-r align-top">
-                        <p className="text-xs">EBD: {slotLabel(ebd)}</p>
-                        <p className="text-xs">Culto: {slotLabel(culto)}</p>
+                        <p className="text-xs">EBD: {groupLabel(ebd)}</p>
+                        <p className="text-xs">Culto: {groupLabel(culto)}</p>
                       </td>
                     );
                   })}

@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Check, Pencil, Plus, RotateCcw, Search, X } from "lucide-react";
+import { Check, Filter, Pencil, Plus, RotateCcw, Search, X } from "lucide-react";
 import { formatPhone, phoneDigits } from "@/lib/phone";
 import { normalizeUsername } from "@/lib/text";
 
@@ -118,6 +118,10 @@ export function VolunteersClient({
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterFunctions, setFilterFunctions] = useState<string[]>([]);
+  const [filterClassIds, setFilterClassIds] = useState<string[]>([]);
+  const [filterInclusion, setFilterInclusion] = useState(false);
   const [editing, setEditing] = useState<Volunteer | null>(null);
   const [editForm, setEditForm] = useState(emptyEditForm);
   const [editSaving, setEditSaving] = useState(false);
@@ -130,10 +134,23 @@ export function VolunteersClient({
     initialVolunteers.some((v) => v.active && v.status === "PENDING") ? "pending" : "approved"
   );
 
-  const filtered = volunteers.filter((v) => v.name.toLowerCase().includes(search.trim().toLowerCase()));
+  const filtered = volunteers
+    .filter((v) => v.name.toLowerCase().includes(search.trim().toLowerCase()))
+    .filter((v) => filterFunctions.length === 0 || v.functions.some((f) => filterFunctions.includes(f.function)))
+    .filter((v) => filterClassIds.length === 0 || v.preferredClasses.some((c) => filterClassIds.includes(c.classGroupId)))
+    .filter((v) => !filterInclusion || v.inclusionEnabled);
   const pending = filtered.filter((v) => v.active && v.status === "PENDING");
   const approved = filtered.filter((v) => v.active && v.status === "APPROVED");
   const inactive = filtered.filter((v) => !v.active);
+  const filterCount = filterFunctions.length + filterClassIds.length + (filterInclusion ? 1 : 0);
+
+  function toggleFilterFunction(fn: string) {
+    setFilterFunctions((prev) => (prev.includes(fn) ? prev.filter((x) => x !== fn) : [...prev, fn]));
+  }
+
+  function toggleFilterClass(id: string) {
+    setFilterClassIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
 
   const addValid =
     addForm.name && addForm.username.length >= 3 && addForm.cpf.length >= 11 && addForm.birthdate && addForm.role;
@@ -334,15 +351,73 @@ export function VolunteersClient({
       </Dialog>
       )}
 
-      <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar voluntário..."
-          className="h-11 pl-9"
-        />
+      <div className="flex gap-2 mb-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar voluntário..."
+            className="h-11 pl-9"
+          />
+        </div>
+        <Button variant="outline" className="h-11 relative" onClick={() => setFilterOpen(true)}>
+          <Filter className="h-4 w-4" />
+          {filterCount > 0 && (
+            <Badge className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 text-[10px]">{filterCount}</Badge>
+          )}
+        </Button>
       </div>
+
+      <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Filtrar voluntários</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Função</p>
+              <div className="max-h-40 overflow-y-auto rounded-md border divide-y">
+                {FUNCTION_OPTIONS.map((f) => (
+                  <label key={f.value} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer">
+                    <Checkbox checked={filterFunctions.includes(f.value)} onCheckedChange={() => toggleFilterFunction(f.value)} />
+                    {f.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            {classes.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Turma</p>
+                <div className="max-h-40 overflow-y-auto rounded-md border divide-y">
+                  {classes.map((c) => (
+                    <label key={c.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer">
+                      <Checkbox checked={filterClassIds.includes(c.id)} onCheckedChange={() => toggleFilterClass(c.id)} />
+                      {c.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            <label className="flex items-center gap-2">
+              <Checkbox checked={filterInclusion} onCheckedChange={(v) => setFilterInclusion(!!v)} />
+              <span className="text-sm font-medium">Habilitado para Inclusão</span>
+            </label>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 h-11"
+                onClick={() => { setFilterFunctions([]); setFilterClassIds([]); setFilterInclusion(false); }}
+              >
+                Limpar
+              </Button>
+              <Button className="flex-1 h-11" onClick={() => setFilterOpen(false)}>
+                Aplicar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as string)}>
         <TabsList className="w-full">

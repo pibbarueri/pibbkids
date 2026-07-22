@@ -22,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, Check, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertCircle, Check, Filter, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { formatPhone, phoneDigits } from "@/lib/phone";
 import { ageLabel } from "@/lib/age";
 
@@ -107,6 +108,9 @@ export function ChildrenClient({
   const [addForm, setAddForm] = useState(emptyChildForm);
   const [addSaving, setAddSaving] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterClassIds, setFilterClassIds] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<"name" | "age">("name");
   const [editing, setEditing] = useState<Child | null>(null);
   const [editForm, setEditForm] = useState(emptyChildForm);
   const [editSaving, setEditSaving] = useState(false);
@@ -117,10 +121,22 @@ export function ChildrenClient({
     isManager && initialChildren.some((c) => c.active && !c.classGroupId) ? "pending" : "approved"
   );
 
-  const filtered = children.filter((c) => c.name.toLowerCase().includes(search.trim().toLowerCase()));
+  const filtered = children
+    .filter((c) => c.name.toLowerCase().includes(search.trim().toLowerCase()))
+    .filter((c) => filterClassIds.length === 0 || (c.classGroupId && filterClassIds.includes(c.classGroupId)))
+    .sort((a, b) =>
+      sortBy === "name"
+        ? a.name.localeCompare(b.name)
+        : new Date(a.birthdate).getTime() - new Date(b.birthdate).getTime()
+    );
   const pending = filtered.filter((c) => c.active && !c.classGroupId);
   const approved = filtered.filter((c) => c.active && !!c.classGroupId);
   const inactive = filtered.filter((c) => !c.active);
+  const filterCount = filterClassIds.length + (sortBy !== "name" ? 1 : 0);
+
+  function toggleFilterClass(id: string) {
+    setFilterClassIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
 
   const addValid = addForm.name && addForm.birthdate && addForm.frequency && addForm.classGroupId;
 
@@ -270,15 +286,81 @@ export function ChildrenClient({
         </Dialog>
       )}
 
-      <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar criança..."
-          className="h-11 pl-9"
-        />
+      <div className="flex gap-2 mb-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar criança..."
+            className="h-11 pl-9"
+          />
+        </div>
+        <Button variant="outline" className="h-11 relative" onClick={() => setFilterOpen(true)}>
+          <Filter className="h-4 w-4" />
+          {filterCount > 0 && (
+            <Badge className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 text-[10px]">{filterCount}</Badge>
+          )}
+        </Button>
       </div>
+
+      <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Filtrar crianças</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Turma</p>
+              <div className="max-h-48 overflow-y-auto rounded-md border divide-y">
+                {classes.map((c) => (
+                  <label key={c.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer">
+                    <Checkbox checked={filterClassIds.includes(c.id)} onCheckedChange={() => toggleFilterClass(c.id)} />
+                    {c.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Ordenar por</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSortBy("name")}
+                  className={cn(
+                    "h-11 rounded-lg border text-sm font-medium transition-colors",
+                    sortBy === "name" ? "border-primary bg-primary text-primary-foreground" : "border-input bg-transparent"
+                  )}
+                >
+                  Nome (A-Z)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSortBy("age")}
+                  className={cn(
+                    "h-11 rounded-lg border text-sm font-medium transition-colors",
+                    sortBy === "age" ? "border-primary bg-primary text-primary-foreground" : "border-input bg-transparent"
+                  )}
+                >
+                  Idade
+                </button>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 h-11"
+                onClick={() => { setFilterClassIds([]); setSortBy("name"); }}
+              >
+                Limpar
+              </Button>
+              <Button className="flex-1 h-11" onClick={() => setFilterOpen(false)}>
+                Aplicar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as string)}>
         {isManager && (

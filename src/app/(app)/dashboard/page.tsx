@@ -106,7 +106,7 @@ export default async function DashboardPage() {
           <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5 shrink-0" />
           <div>
             <p className="font-medium text-orange-800 dark:text-orange-200">O LANCHE ESTÁ ACABANDO!</p>
-            <p className="text-sm text-orange-700 dark:text-orange-300">{lowSnacksMessage}</p>
+            <p className="text-sm text-orange-700 dark:text-orange-300 whitespace-pre-line">{lowSnacksMessage}</p>
           </div>
         </div>
       )}

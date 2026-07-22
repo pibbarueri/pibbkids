@@ -30,9 +30,9 @@ export default async function ScheduleOverviewPage() {
 
   const [slots, classes] = await Promise.all([
     prisma.scheduleSlot.findMany({
-      where: { date: { gte: start, lte: end }, slotType: "TURMA" },
+      where: { date: { gte: start, lte: end } },
       include: {
-        user: { select: { name: true } },
+        user: { select: { name: true, username: true } },
         classGroup: { select: { id: true, name: true } },
       },
     }),
