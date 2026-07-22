@@ -31,7 +31,6 @@ model User {
   purchaseRequests  PurchaseRequest[]
   attendance        Attendance[]
   sessions          UserSession[]
-  events            EventVolunteer[]
 
   @@map("users")
 }
@@ -302,27 +301,16 @@ enum RequestStatus {
 
 // ─── Eventos ──────────────────────────────────────────────────────────────────
 
+// Events are for everyone — no per-volunteer assignment.
 model Event {
   id          String    @id @default(cuid())
   title       String
   date        DateTime
   endDate     DateTime? @map("end_date")
   description String?
-  notes       String?          @map("notes")
-  volunteers  EventVolunteer[]
+  notes       String?   @map("notes")
 
   @@map("events")
-}
-
-// Volunteers serving an event — no assigned role, just "I'll be there".
-model EventVolunteer {
-  eventId String @map("event_id")
-  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  userId  String @map("user_id")
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([eventId, userId])
-  @@map("event_volunteers")
 }
 
 // ─── Lanches ──────────────────────────────────────────────────────────────────

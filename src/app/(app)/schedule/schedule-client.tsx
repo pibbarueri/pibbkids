@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -138,13 +139,13 @@ export function ScheduleClient({
   const selectedSunday = sundays[sundayIdx];
   const daySlots = slots.filter((s) => s.date.startsWith(selectedSunday.slice(0, 10)));
 
-  // Bulk "Repetir em": the currently viewed sunday plus the next 3 — relative to
-  // whichever sunday is selected in the picker, not today's real-world date.
+  // Bulk "Repetir em": the 4 sundays after the currently viewed one — the viewed
+  // sunday itself is always included separately, so it's excluded here.
   const repeatSundays = useMemo(() => {
     const d = new Date(selectedSunday);
     return Array.from({ length: 4 }, (_, i) => {
       const s = new Date(d);
-      s.setUTCDate(d.getUTCDate() + i * 7);
+      s.setUTCDate(d.getUTCDate() + (i + 1) * 7);
       return s.toISOString();
     });
   }, [selectedSunday]);
@@ -163,7 +164,7 @@ export function ScheduleClient({
     ? volunteers.filter((v) => v.functions.some((f) => f.function === "RECEPCAO"))
     : form.turma === "INCLUSAO"
     ? volunteers.filter((v) => v.inclusionEnabled)
-    : ["SALA_PLUS", "LANCHE"].includes(form.turma)
+    : form.turma === "LANCHE"
     ? volunteers.filter((v) => v.functions.some((f) => f.function === "APOIO_GERAL"))
     : volunteers;
 
@@ -296,9 +297,16 @@ export function ScheduleClient({
 
       {/* Actions */}
       {canViewAll && (
-        <Button variant="outline" className="w-full h-10" onClick={copyWhatsApp}>
-          <Copy className="h-4 w-4 mr-2" /> Copiar escala
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="flex-1 h-10" onClick={copyWhatsApp}>
+            <Copy className="h-4 w-4 mr-2" /> Copiar escala
+          </Button>
+          {canEdit && (
+            <Link href="/schedule/overview">
+              <Button variant="outline" className="h-10">Visão semestral</Button>
+            </Link>
+          )}
+        </div>
       )}
       {canEdit && (
         <Button

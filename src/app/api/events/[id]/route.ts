@@ -8,10 +8,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const event = await prisma.event.findUnique({
-    where: { id },
-    include: { volunteers: { select: { userId: true, user: { select: { name: true, username: true } } } } },
-  });
+  const event = await prisma.event.findUnique({ where: { id } });
   if (!event) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   return NextResponse.json(event);
@@ -34,14 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(body.endDate !== undefined && { endDate: body.endDate ? new Date(body.endDate) : null }),
       ...(body.description !== undefined && { description: body.description || null }),
       ...(body.notes !== undefined && { notes: body.notes || null }),
-      ...(body.volunteerIds !== undefined && {
-        volunteers: {
-          deleteMany: {},
-          create: body.volunteerIds.map((userId: string) => ({ userId })),
-        },
-      }),
     },
-    include: { volunteers: { select: { userId: true, user: { select: { name: true, username: true } } } } },
   });
 
   return NextResponse.json(event);

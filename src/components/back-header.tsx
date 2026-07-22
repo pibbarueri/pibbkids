@@ -17,8 +17,9 @@ type Profile = {
 const PAGE_TITLES: [string, string][] = [
   ["/children", "Crianças"],
   ["/volunteers", "Voluntários"],
-  ["/curriculum/overview", "Vista semestral"],
+  ["/curriculum/overview", "Visão semestral"],
   ["/curriculum/lessons", "Aulas"],
+  ["/schedule/overview", "Visão semestral"],
   ["/schedule", "Escala"],
   ["/attendance/overview", "Frequência de alunos"],
   ["/attendance", "Presença"],
@@ -33,9 +34,10 @@ export function BackHeader({ profile }: { profile: Profile }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Vista semestral belongs under Aulas — its back returns there, not home.
+  // Visão semestral belongs under Aulas/Escala — its back returns there, not home.
   const target =
     pathname === "/curriculum/overview" ? "/curriculum/lessons" :
+    pathname === "/schedule/overview" ? "/schedule" :
     pathname === "/attendance/overview" ? "/attendance" :
     "/dashboard";
   const showBack = pathname !== "/dashboard";

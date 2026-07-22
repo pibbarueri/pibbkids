@@ -11,12 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Copy, Trash2, Pencil } from "lucide-react";
 import { eventTimeRange, toDateInput, toTimeInput, fromDateTimeInputs } from "@/lib/event-time";
 import { EventDetailDialog } from "@/components/events/event-detail-dialog";
 
-type Volunteer = { id: string; name: string; username: string | null };
 type Event = {
   id: string;
   title: string;
@@ -24,27 +22,19 @@ type Event = {
   endDate: string | null;
   description: string | null;
   notes: string | null;
-  volunteers: { userId: string; user: { name: string; username: string | null } }[];
 };
 
-const emptyForm = { title: "", date: "", startTime: "", endTime: "", description: "", notes: "", volunteerIds: [] as string[] };
-const VOLUNTEERS_COLLAPSED_LIMIT = 5;
+const emptyForm = { title: "", date: "", startTime: "", endTime: "", description: "", notes: "" };
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", timeZone: "America/Sao_Paulo" });
 }
 
-function volunteerLabel(v: { name: string; username: string | null }) {
-  return v.username ?? v.name;
-}
-
 export function EventsClient({
   initialEvents,
-  volunteers,
   isManager,
 }: {
   initialEvents: Event[];
-  volunteers: Volunteer[];
   isManager: boolean;
 }) {
   const [events, setEvents] = useState(() =>
@@ -55,7 +45,6 @@ export function EventsClient({
   const [manualDetailId, setManualDetailId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -81,7 +70,6 @@ export function EventsClient({
       endTime: event.endDate ? toTimeInput(event.endDate) : "",
       description: event.description ?? "",
       notes: event.notes ?? "",
-      volunteerIds: event.volunteers.map((v) => v.userId),
     });
     setOpen(true);
   }
@@ -94,7 +82,6 @@ export function EventsClient({
       endDate: form.endTime ? fromDateTimeInputs(form.date, form.endTime) : null,
       description: form.description,
       notes: form.notes,
-      volunteerIds: form.volunteerIds,
     };
     if (editingId) {
       const res = await fetch(`/api/events/${editingId}`, {
@@ -158,47 +145,6 @@ export function EventsClient({
               <p className="font-medium text-sm">{e.title}</p>
               <p className="text-xs text-muted-foreground">{formatDate(e.date)} · {eventTimeRange(e.date, e.endDate)}</p>
               {e.description && <p className="text-xs mt-1">{e.description}</p>}
-              {e.volunteers.length > 0 && (() => {
-                const expanded = expandedIds.has(e.id);
-                const shown = expanded ? e.volunteers : e.volunteers.slice(0, VOLUNTEERS_COLLAPSED_LIMIT);
-                const hidden = e.volunteers.length - shown.length;
-                return (
-                  <div className="mt-1">
-                    <p className="text-xs font-medium">Voluntários</p>
-                    <p className="text-xs text-muted-foreground">
-                    {shown.map((v) => volunteerLabel(v.user)).join(", ")}
-                    {hidden > 0 && (
-                      <span
-                        role="button"
-                        onClick={(ev) => {
-                          ev.stopPropagation();
-                          setExpandedIds((prev) => new Set(prev).add(e.id));
-                        }}
-                        className="ml-1 text-primary underline"
-                      >
-                        +{hidden} ver mais
-                      </span>
-                    )}
-                    {expanded && e.volunteers.length > VOLUNTEERS_COLLAPSED_LIMIT && (
-                      <span
-                        role="button"
-                        onClick={(ev) => {
-                          ev.stopPropagation();
-                          setExpandedIds((prev) => {
-                            const next = new Set(prev);
-                            next.delete(e.id);
-                            return next;
-                          });
-                        }}
-                        className="ml-1 text-primary underline"
-                      >
-                        ver menos
-                      </span>
-                    )}
-                    </p>
-                  </div>
-                );
-              })()}
             </div>
             <div className="flex gap-1 shrink-0">
               <span
@@ -239,12 +185,12 @@ export function EventsClient({
                 disabled={!isManager}
               />
             </div>
-            <div className="grid grid-cols-5 gap-2">
-              <div className="col-span-3 space-y-1">
+            <div className="grid grid-cols-4 gap-2">
+              <div className="col-span-2 space-y-1">
                 <p className="text-sm font-medium">Data</p>
                 <Input
                   type="date"
-                  className="h-12"
+                  className="h-12 text-center"
                   value={form.date}
                   onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
                   disabled={!isManager}
@@ -254,7 +200,7 @@ export function EventsClient({
                 <p className="text-sm font-medium">Início</p>
                 <Input
                   type="time"
-                  className="h-12"
+                  className="h-12 text-center"
                   value={form.startTime}
                   onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
                   disabled={!isManager}
@@ -264,7 +210,7 @@ export function EventsClient({
                 <p className="text-sm font-medium">Fim</p>
                 <Input
                   type="time"
-                  className="h-12"
+                  className="h-12 text-center"
                   value={form.endTime}
                   onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
                   disabled={!isManager}
@@ -287,32 +233,6 @@ export function EventsClient({
                 disabled={!isManager}
               />
             </div>
-            {isManager && (
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Voluntários ({form.volunteerIds.length} selecionados)</p>
-                <div className="max-h-64 overflow-y-auto rounded-md border divide-y">
-                  {volunteers.map((v) => {
-                    const checked = form.volunteerIds.includes(v.id);
-                    return (
-                      <label key={v.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer">
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={(next) =>
-                            setForm((f) => ({
-                              ...f,
-                              volunteerIds: next
-                                ? [...f.volunteerIds, v.id]
-                                : f.volunteerIds.filter((id) => id !== v.id),
-                            }))
-                          }
-                        />
-                        {volunteerLabel(v)}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
             {isManager && (
               <div className="flex gap-2">
                 <Button className="flex-1 h-12" disabled={!form.title || !form.date || !form.startTime || saving} onClick={save}>

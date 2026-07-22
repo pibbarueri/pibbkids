@@ -11,14 +11,7 @@ type EventDetail = {
   endDate: string | null;
   description: string | null;
   notes: string | null;
-  volunteers: { userId: string; user: { name: string; username: string | null } }[];
 };
-
-const COLLAPSED_LIMIT = 5;
-
-function volunteerLabel(v: { name: string; username: string | null }) {
-  return v.username ?? v.name;
-}
 
 function Row({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null;
@@ -40,7 +33,6 @@ export function EventDetailDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [event, setEvent] = useState<EventDetail | null>(null);
-  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (!eventId) return;
@@ -50,15 +42,11 @@ export function EventDetailDialog({
       .then((data) => {
         if (cancelled) return;
         setEvent(data);
-        setExpanded(false);
       });
     return () => {
       cancelled = true;
     };
   }, [eventId]);
-
-  const shown = event ? (expanded ? event.volunteers : event.volunteers.slice(0, COLLAPSED_LIMIT)) : [];
-  const hidden = event ? event.volunteers.length - shown.length : 0;
 
   return (
     <Dialog open={!!eventId} onOpenChange={onOpenChange}>
@@ -72,32 +60,6 @@ export function EventDetailDialog({
               <Row label="Data e horário" value={eventDateTimeLabel(event.date, event.endDate)} />
               <Row label="Descrição" value={event.description} />
               <Row label="Informações complementares" value={event.notes} />
-              {event.volunteers.length > 0 && (
-                <div>
-                  <p className="font-medium text-sm">Voluntários</p>
-                  <p className="text-muted-foreground">
-                    {shown.map((v) => volunteerLabel(v.user)).join(", ")}
-                    {hidden > 0 && (
-                      <span
-                        role="button"
-                        onClick={() => setExpanded(true)}
-                        className="ml-1 text-primary underline"
-                      >
-                        +{hidden} ver mais
-                      </span>
-                    )}
-                    {expanded && event.volunteers.length > COLLAPSED_LIMIT && (
-                      <span
-                        role="button"
-                        onClick={() => setExpanded(false)}
-                        className="ml-1 text-primary underline"
-                      >
-                        ver menos
-                      </span>
-                    )}
-                  </p>
-                </div>
-              )}
             </div>
           </>
         )}

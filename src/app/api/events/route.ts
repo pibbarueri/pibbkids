@@ -10,7 +10,6 @@ export async function GET() {
   const events = await prisma.event.findMany({
     where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
     orderBy: { date: "asc" },
-    include: { volunteers: { select: { userId: true, user: { select: { name: true, username: true } } } } },
   });
 
   return NextResponse.json(events);
@@ -23,7 +22,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { title, date, endDate, description, notes, volunteerIds } = body;
+  const { title, date, endDate, description, notes } = body;
 
   const event = await prisma.event.create({
     data: {
@@ -32,11 +31,7 @@ export async function POST(req: NextRequest) {
       endDate: endDate ? new Date(endDate) : null,
       description: description || null,
       notes: notes || null,
-      volunteers: volunteerIds?.length
-        ? { create: volunteerIds.map((userId: string) => ({ userId })) }
-        : undefined,
     },
-    include: { volunteers: { select: { userId: true, user: { select: { name: true, username: true } } } } },
   });
 
   return NextResponse.json(event, { status: 201 });

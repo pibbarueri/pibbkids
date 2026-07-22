@@ -8,26 +8,15 @@ export default async function EventsPage() {
   const role = session!.user.role;
   const isManager = canManage(role);
 
-  const [events, volunteers] = await Promise.all([
-    prisma.event.findMany({
-      where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
-      orderBy: { date: "asc" },
-      include: { volunteers: { select: { userId: true, user: { select: { name: true, username: true } } } } },
-    }),
-    isManager
-      ? prisma.user.findMany({
-          where: { active: true, status: "APPROVED" },
-          orderBy: { name: "asc" },
-          select: { id: true, name: true, username: true },
-        })
-      : Promise.resolve([]),
-  ]);
+  const events = await prisma.event.findMany({
+    where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+    orderBy: { date: "asc" },
+  });
 
   return (
     <div className="p-4 pb-24 space-y-4">
       <EventsClient
-        initialEvents={events as any}
-        volunteers={volunteers}
+        initialEvents={events.map((e) => ({ ...e, date: e.date.toISOString(), endDate: e.endDate?.toISOString() ?? null }))}
         isManager={isManager}
       />
     </div>

@@ -45,7 +45,7 @@ export default async function DashboardPage() {
     .filter((s) => s.roles.includes(role))
     .concat(canAccessSnacks ? [{ href: "/snacks", label: "Lanches", icon: Cookie, roles: [] }] : []);
 
-  const [events, scheduleSlots, myEvents, birthdayChildren, birthdayVolunteers, lowSnacks] = await Promise.all([
+  const [events, scheduleSlots, upcomingEvents30d, birthdayChildren, birthdayVolunteers, lowSnacks] = await Promise.all([
     prisma.event.findMany({
       where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
       orderBy: { date: "asc" },
@@ -59,10 +59,7 @@ export default async function DashboardPage() {
       },
     }),
     prisma.event.findMany({
-      where: {
-        date: { gte: today, lt: in30Days },
-        volunteers: { some: { userId: session!.user.id } },
-      },
+      where: { date: { gte: today, lt: in30Days } },
       orderBy: { date: "asc" },
       select: { id: true, title: true, date: true, endDate: true },
     }),
@@ -77,7 +74,7 @@ export default async function DashboardPage() {
   ]);
 
   const lowSnacksMessage = lowSnacks.length > 0
-    ? lowSnacks.map((s) => `há apenas ${s.quantity} ${s.unit} de ${s.description}`).join(" e ")
+    ? lowSnacks.map((s) => `Temos ${s.quantity} ${s.unit} de ${s.description}`).join("\n")
     : null;
 
   const birthdays = computeUpcomingBirthdays([
@@ -108,7 +105,7 @@ export default async function DashboardPage() {
         <div className="flex gap-2 p-3 bg-orange-50 dark:bg-orange-950 rounded-lg border border-orange-200 dark:border-orange-800">
           <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5 shrink-0" />
           <div>
-            <p className="font-medium text-orange-800 dark:text-orange-200">Atenção: o lanche tá acabando!</p>
+            <p className="font-medium text-orange-800 dark:text-orange-200">O LANCHE ESTÁ ACABANDO!</p>
             <p className="text-sm text-orange-700 dark:text-orange-300">{lowSnacksMessage}</p>
           </div>
         </div>
@@ -117,7 +114,7 @@ export default async function DashboardPage() {
       <NextSundaySchedule
         date={nextSunday.toISOString()}
         slots={scheduleSlots}
-        events={myEvents.map((e) => ({ ...e, date: e.date.toISOString(), endDate: e.endDate?.toISOString() ?? null }))}
+        events={upcomingEvents30d.map((e) => ({ ...e, date: e.date.toISOString(), endDate: e.endDate?.toISOString() ?? null }))}
       />
 
       <EventsCalendar

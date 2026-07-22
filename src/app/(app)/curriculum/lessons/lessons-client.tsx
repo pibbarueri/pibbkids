@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -178,9 +179,14 @@ export function LessonsClient({
       </div>
 
       {isManager && (
-        <Button variant="outline" className="w-full h-10" onClick={copyWhatsApp}>
-          <Copy className="h-4 w-4 mr-2" /> Copiar aulas
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="flex-1 h-10" onClick={copyWhatsApp}>
+            <Copy className="h-4 w-4 mr-2" /> Copiar aulas
+          </Button>
+          <Link href="/curriculum/overview">
+            <Button variant="outline" className="h-10">Visão semestral</Button>
+          </Link>
+        </div>
       )}
 
       <div className="space-y-3">
@@ -205,7 +211,7 @@ export function LessonsClient({
                       <p className="text-xs text-muted-foreground">{TIPO_LABELS[tipo]}</p>
                       <p className="text-sm">{plan ? planLabel(plan) : "Sem plano"}</p>
                       {plan?.observations && (
-                        <p className="text-xs text-muted-foreground italic mt-0.5">{plan.observations}</p>
+                        <p className="text-xs text-muted-foreground italic mt-0.5 whitespace-pre-line">{plan.observations}</p>
                       )}
                     </div>
                     {plan && (canToggleDone || plan.done) && (
