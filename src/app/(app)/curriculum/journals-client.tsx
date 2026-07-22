@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
+import { Filter, Plus, Trash2 } from "lucide-react";
 
 const SERIES_LABELS: Record<string, string> = {
   CULTO_INFANTIL: "Culto Infantil",
@@ -75,6 +75,26 @@ export function JournalsClient({
   const [editing, setEditing] = useState<Journal | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterClassIds, setFilterClassIds] = useState<string[]>([]);
+  const [filterSeries, setFilterSeries] = useState<string[]>([]);
+  const [filterUsage, setFilterUsage] = useState<string[]>([]);
+  const filterCount = filterClassIds.length + filterSeries.length + filterUsage.length;
+
+  function toggleFilterClass(id: string) {
+    setFilterClassIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+  function toggleFilterSeries(s: string) {
+    setFilterSeries((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+  }
+  function toggleFilterUsage(u: string) {
+    setFilterUsage((prev) => (prev.includes(u) ? prev.filter((x) => x !== u) : [...prev, u]));
+  }
+
+  const filteredJournals = journals
+    .filter((j) => filterClassIds.length === 0 || filterClassIds.includes(j.classGroupId))
+    .filter((j) => filterSeries.length === 0 || filterSeries.includes(j.series))
+    .filter((j) => filterUsage.length === 0 || filterUsage.includes(j.usage));
 
   function openCreate() {
     setEditing(null);
@@ -142,6 +162,68 @@ export function JournalsClient({
 
   return (
     <div className="space-y-3">
+      <Button variant="outline" className="h-11 relative w-full" onClick={() => setFilterOpen(true)}>
+        <Filter className="h-4 w-4 mr-2" /> Filtrar
+        {filterCount > 0 && (
+          <Badge className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 text-[10px]">{filterCount}</Badge>
+        )}
+      </Button>
+
+      <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Filtrar revistas</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Turma</p>
+              <div className="max-h-40 overflow-y-auto rounded-md border divide-y">
+                {classes.map((c) => (
+                  <label key={c.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer">
+                    <Checkbox checked={filterClassIds.includes(c.id)} onCheckedChange={() => toggleFilterClass(c.id)} />
+                    {c.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Série</p>
+              <div className="max-h-40 overflow-y-auto rounded-md border divide-y">
+                {Object.entries(SERIES_LABELS).map(([value, label]) => (
+                  <label key={value} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer">
+                    <Checkbox checked={filterSeries.includes(value)} onCheckedChange={() => toggleFilterSeries(value)} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Uso</p>
+              <div className="rounded-md border divide-y">
+                {Object.entries(USAGE_LABELS).map(([value, label]) => (
+                  <label key={value} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer">
+                    <Checkbox checked={filterUsage.includes(value)} onCheckedChange={() => toggleFilterUsage(value)} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 h-11"
+                onClick={() => { setFilterClassIds([]); setFilterSeries([]); setFilterUsage([]); }}
+              >
+                Limpar
+              </Button>
+              <Button className="flex-1 h-11" onClick={() => setFilterOpen(false)}>
+                Aplicar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger
           onClick={openCreate}
@@ -260,7 +342,7 @@ export function JournalsClient({
       </Dialog>
 
       {classes.map((cls) => {
-        const clsJournals = journals.filter((j) => j.classGroupId === cls.id);
+        const clsJournals = filteredJournals.filter((j) => j.classGroupId === cls.id);
         if (clsJournals.length === 0) return null;
         return (
           <div key={cls.id} className="space-y-2">
@@ -295,9 +377,9 @@ export function JournalsClient({
         );
       })}
 
-      {journals.length === 0 && (
+      {filteredJournals.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">
-          Nenhuma revista cadastrada.
+          {journals.length === 0 ? "Nenhuma revista cadastrada." : "Nenhuma revista encontrada."}
         </p>
       )}
     </div>

@@ -44,6 +44,11 @@ function matchLessonType(raw: string): LessonType {
   return "TEMA_LIVRE";
 }
 
+// "19h00" reads as right after the service's louvor segment ends — descriptive, not a clock time.
+function horarioLabel(raw: string): string {
+  return raw === "19h00" ? "após o louvor" : raw;
+}
+
 function parseLicaoNumber(material: string): number | null {
   const m = material.match(/li[cç][aã]o\s*(\d+)/i);
   return m ? Number(m[1]) : null;
@@ -148,7 +153,7 @@ async function main() {
       const obsParts: string[] = [];
       if (!isCleanMatch && lessonType !== "TEMA_LIVRE") obsParts.push(atividade);
       if (lessonType === "TEMA_LIVRE") obsParts.push(atividade);
-      if (horario) obsParts.push(`Horário de subida: ${horario}`);
+      if (horario) obsParts.push(`Horário de subida: ${horarioLabel(horario)}`);
       const observations = obsParts.length > 0 ? obsParts.join(" | ") : null;
 
       const specialTitle = ["AULA_EXTRA", "REVIEW", "QUIZ_GINCANA"].includes(lessonType) ? atividade : null;
