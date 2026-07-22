@@ -8,6 +8,7 @@ const prisma = new PrismaClient({ adapter });
 
 const warnings: string[] = [];
 const YEAR = 2026;
+const HEADER_ROW = 3; // "Maternal 5 - Obedecendo a Deus (16 licoes)" etc — one journal per column group, for the whole semester.
 const DATA_ROW_START = 6;
 const DATA_ROW_END = 23; // inclusive — 29/11 wrap-up row
 
@@ -54,6 +55,18 @@ function parseDate(raw: string): Date | null {
   return new Date(YEAR, Number(m[2]) - 1, Number(m[1]));
 }
 
+// Header cell format: "[EBD|CULTO -] <Série> <edição> - <título> (<N> semanas|licoes)" or
+// "... - <título> - <N> licoes" (trailing dash instead of parens). The edition number is
+// the first "<digits> -" after stripping an optional leading "EBD -"/"CULTO -" tag; the
+// weeks/lições count is the number immediately before "semanas"/"licoes"/"lições" anywhere.
+function parseJournalHeader(raw: string): { edition: number | null; weeks: number | null } {
+  const cleaned = raw.replace(/^(EBD|CULTO)\s*-\s*/i, "");
+  const editionMatch = cleaned.match(/(\d+)\s*-/);
+  const weeksMatch = raw.match(/(\d+)\s*li[cç][õo]es|(\d+)\s*semanas/i);
+  const weeks = weeksMatch ? Number(weeksMatch[1] ?? weeksMatch[2]) : null;
+  return { edition: editionMatch ? Number(editionMatch[1]) : null, weeks };
+}
+
 async function main() {
   const classes = await prisma.classGroup.findMany();
   const classByName = new Map(classes.map((c) => [c.name, c.id]));
@@ -64,6 +77,42 @@ async function main() {
     bom: true,
     skip_empty_lines: false,
   });
+
+  const deleted = await prisma.sundayPlan.deleteMany({});
+  console.log(`Aulas removidas: ${deleted.count}`);
+
+  // One journal per column group for the whole semester — resolved once, reused for every row.
+  const journalByGroup = new Map<Group, string | null>();
+  for (const g of GROUPS) {
+    const classGroupId = classByName.get(g.turma);
+    if (!classGroupId) {
+      warnings.push(`Turma "${g.turma}" não encontrada no banco`);
+      continue;
+    }
+    const headerRaw = rows[HEADER_ROW]?.[g.dataCol]?.trim() ?? "";
+    if (!headerRaw) {
+      warnings.push(`Sem cabeçalho de revista para ${g.turma}/${g.tipo}`);
+      continue;
+    }
+    const { edition, weeks } = parseJournalHeader(headerRaw);
+    if (edition === null) {
+      warnings.push(`Não consegui extrair edição de "${headerRaw}" (${g.turma}/${g.tipo})`);
+      continue;
+    }
+    const journal = journals.find(
+      (j) => j.classGroupId === classGroupId && (j.usage === g.tipo || j.usage === "AMBOS") && j.edition === edition
+    );
+    if (!journal) {
+      warnings.push(`Sem revista casando ${g.turma}/${g.tipo} edição ${edition} ("${headerRaw}")`);
+      journalByGroup.set(g, null);
+      continue;
+    }
+    journalByGroup.set(g, journal.id);
+    if (weeks !== null && journal.totalWeeks !== weeks) {
+      await prisma.journal.update({ where: { id: journal.id }, data: { totalWeeks: weeks } });
+      console.log(`Revista "${journal.title}" (${g.turma}/${journal.usage}): semanas ${journal.totalWeeks ?? "—"} -> ${weeks}`);
+    }
+  }
 
   let created = 0;
 
@@ -86,22 +135,11 @@ async function main() {
       }
 
       const classGroupId = classByName.get(g.turma);
-      if (!classGroupId) {
-        warnings.push(`Turma "${g.turma}" não encontrada no banco`);
-        continue;
-      }
+      if (!classGroupId) continue; // already warned above
 
       const lessonType = matchLessonType(atividade);
       const licaoNumber = lessonType === "APOSTILA" ? parseLicaoNumber(material) : null;
-
-      let journalId: string | null = null;
-      if (lessonType === "APOSTILA" && licaoNumber !== null) {
-        const journal = journals.find(
-          (j) => j.classGroupId === classGroupId && (j.usage === g.tipo || j.usage === "AMBOS") && j.edition === licaoNumber
-        );
-        if (journal) journalId = journal.id;
-        else warnings.push(`Sem revista casando ${g.turma}/${g.tipo} edição ${licaoNumber} (${dateRaw})`);
-      }
+      const journalId = lessonType === "APOSTILA" ? journalByGroup.get(g) ?? null : null;
 
       // Extra descriptive text beyond a clean type match, plus "horário de subida", goes to observations.
       const isCleanMatch = normalize(atividade) === normalize(
@@ -110,25 +148,16 @@ async function main() {
       const obsParts: string[] = [];
       if (!isCleanMatch && lessonType !== "TEMA_LIVRE") obsParts.push(atividade);
       if (lessonType === "TEMA_LIVRE") obsParts.push(atividade);
-      if (licaoNumber !== null && /\d+\s*e\s*\d+/i.test(material)) obsParts.push(`Material: ${material}`);
       if (horario) obsParts.push(`Horário de subida: ${horario}`);
       const observations = obsParts.length > 0 ? obsParts.join(" | ") : null;
 
       const specialTitle = ["AULA_EXTRA", "REVIEW", "QUIZ_GINCANA"].includes(lessonType) ? atividade : null;
 
-      await prisma.sundayPlan.upsert({
-        where: { date_classGroupId_tipo: { date, classGroupId, tipo: g.tipo } },
-        create: {
+      await prisma.sundayPlan.create({
+        data: {
           date,
           classGroupId,
           tipo: g.tipo,
-          journalId,
-          licaoNumber,
-          lessonType,
-          specialTitle,
-          observations,
-        },
-        update: {
           journalId,
           licaoNumber,
           lessonType,
@@ -140,7 +169,7 @@ async function main() {
     }
   }
 
-  console.log(`Aulas importadas/atualizadas: ${created}`);
+  console.log(`Aulas importadas: ${created}`);
   if (warnings.length > 0) {
     console.log(`\n${warnings.length} avisos:`);
     for (const w of warnings) console.log(" -", w);
