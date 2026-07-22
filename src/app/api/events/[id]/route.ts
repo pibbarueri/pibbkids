@@ -33,6 +33,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(body.date !== undefined && { date: new Date(body.date) }),
       ...(body.endDate !== undefined && { endDate: body.endDate ? new Date(body.endDate) : null }),
       ...(body.description !== undefined && { description: body.description || null }),
+      ...(body.notes !== undefined && { notes: body.notes || null }),
       ...(body.volunteerIds !== undefined && {
         volunteers: {
           deleteMany: {},

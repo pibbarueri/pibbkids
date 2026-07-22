@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -22,10 +23,11 @@ type Event = {
   date: string;
   endDate: string | null;
   description: string | null;
+  notes: string | null;
   volunteers: { userId: string; user: { name: string; username: string | null } }[];
 };
 
-const emptyForm = { title: "", date: "", startTime: "", endTime: "", description: "", volunteerIds: [] as string[] };
+const emptyForm = { title: "", date: "", startTime: "", endTime: "", description: "", notes: "", volunteerIds: [] as string[] };
 const VOLUNTEERS_COLLAPSED_LIMIT = 5;
 
 function formatDate(iso: string) {
@@ -78,6 +80,7 @@ export function EventsClient({
       startTime: toTimeInput(event.date),
       endTime: event.endDate ? toTimeInput(event.endDate) : "",
       description: event.description ?? "",
+      notes: event.notes ?? "",
       volunteerIds: event.volunteers.map((v) => v.userId),
     });
     setOpen(true);
@@ -90,6 +93,7 @@ export function EventsClient({
       date: fromDateTimeInputs(form.date, form.startTime),
       endDate: form.endTime ? fromDateTimeInputs(form.date, form.endTime) : null,
       description: form.description,
+      notes: form.notes,
       volunteerIds: form.volunteerIds,
     };
     if (editingId) {
@@ -159,8 +163,10 @@ export function EventsClient({
                 const shown = expanded ? e.volunteers : e.volunteers.slice(0, VOLUNTEERS_COLLAPSED_LIMIT);
                 const hidden = e.volunteers.length - shown.length;
                 return (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Voluntários: {shown.map((v) => volunteerLabel(v.user)).join(", ")}
+                  <div className="mt-1">
+                    <p className="text-xs font-medium">Voluntários</p>
+                    <p className="text-xs text-muted-foreground">
+                    {shown.map((v) => volunteerLabel(v.user)).join(", ")}
                     {hidden > 0 && (
                       <span
                         role="button"
@@ -189,7 +195,8 @@ export function EventsClient({
                         ver menos
                       </span>
                     )}
-                  </p>
+                    </p>
+                  </div>
                 );
               })()}
             </div>
@@ -232,8 +239,8 @@ export function EventsClient({
                 disabled={!isManager}
               />
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="space-y-1">
+            <div className="grid grid-cols-5 gap-2">
+              <div className="col-span-3 space-y-1">
                 <p className="text-sm font-medium">Data</p>
                 <Input
                   type="date"
@@ -243,7 +250,7 @@ export function EventsClient({
                   disabled={!isManager}
                 />
               </div>
-              <div className="space-y-1">
+              <div className="col-span-1 space-y-1">
                 <p className="text-sm font-medium">Início</p>
                 <Input
                   type="time"
@@ -253,7 +260,7 @@ export function EventsClient({
                   disabled={!isManager}
                 />
               </div>
-              <div className="space-y-1">
+              <div className="col-span-1 space-y-1">
                 <p className="text-sm font-medium">Fim</p>
                 <Input
                   type="time"
@@ -266,10 +273,17 @@ export function EventsClient({
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Descrição</p>
-              <Input
-                className="h-12"
+              <Textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                disabled={!isManager}
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Informações complementares</p>
+              <Textarea
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                 disabled={!isManager}
               />
             </div>

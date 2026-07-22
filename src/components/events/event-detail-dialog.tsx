@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { eventTimeRange } from "@/lib/event-time";
+import { eventDateTimeLabel } from "@/lib/event-time";
 
 type EventDetail = {
   id: string;
@@ -10,14 +10,11 @@ type EventDetail = {
   date: string;
   endDate: string | null;
   description: string | null;
+  notes: string | null;
   volunteers: { userId: string; user: { name: string; username: string | null } }[];
 };
 
 const COLLAPSED_LIMIT = 5;
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", timeZone: "America/Sao_Paulo" });
-}
 
 function volunteerLabel(v: { name: string; username: string | null }) {
   return v.username ?? v.name;
@@ -72,13 +69,13 @@ export function EventDetailDialog({
               <DialogTitle>{event.title}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 text-sm">
-              <Row label="Data" value={formatDate(event.date)} />
-              <Row label="Horário" value={eventTimeRange(event.date, event.endDate)} />
+              <Row label="Data e horário" value={eventDateTimeLabel(event.date, event.endDate)} />
               <Row label="Descrição" value={event.description} />
+              <Row label="Informações complementares" value={event.notes} />
               {event.volunteers.length > 0 && (
                 <div>
-                  <p className="text-muted-foreground text-xs">Voluntários</p>
-                  <p>
+                  <p className="font-medium text-sm">Voluntários</p>
+                  <p className="text-muted-foreground">
                     {shown.map((v) => volunteerLabel(v.user)).join(", ")}
                     {hidden > 0 && (
                       <span

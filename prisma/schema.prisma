@@ -308,6 +308,7 @@ model Event {
   date        DateTime
   endDate     DateTime? @map("end_date")
   description String?
+  notes       String?          @map("notes")
   volunteers  EventVolunteer[]
 
   @@map("events")

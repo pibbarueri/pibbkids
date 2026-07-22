@@ -130,7 +130,7 @@ export function ScheduleClient({
   const [addOpen, setAddOpen] = useState(false);
   const [editingSlot, setEditingSlot] = useState<Slot | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Slot | null>(null);
-  const emptyForm = { horario: "" as "EBD" | "CULTO" | "", turma: "", userId: "", cargo: "" as "PROFESSOR" | "AUXILIAR" | "" };
+  const emptyForm = { horarios: [] as ("EBD" | "CULTO")[], turma: "", userId: "", cargo: "" as "PROFESSOR" | "AUXILIAR" | "" };
   const [form, setForm] = useState(emptyForm);
   const [repeatDates, setRepeatDates] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -138,17 +138,16 @@ export function ScheduleClient({
   const selectedSunday = sundays[sundayIdx];
   const daySlots = slots.filter((s) => s.date.startsWith(selectedSunday.slice(0, 10)));
 
-  // Bulk "Repetir em": always the next 4 sundays starting from the upcoming one.
+  // Bulk "Repetir em": the currently viewed sunday plus the next 3 — relative to
+  // whichever sunday is selected in the picker, not today's real-world date.
   const repeatSundays = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + ((7 - d.getDay()) % 7)); // nearest upcoming sunday (today if sunday)
+    const d = new Date(selectedSunday);
     return Array.from({ length: 4 }, (_, i) => {
       const s = new Date(d);
-      s.setDate(d.getDate() + i * 7);
+      s.setUTCDate(d.getUTCDate() + i * 7);
       return s.toISOString();
     });
-  }, []);
+  }, [selectedSunday]);
 
   const tabSlots = daySlots.filter((s) => inHorario(s, horarioTab));
 
@@ -171,7 +170,7 @@ export function ScheduleClient({
   function openAdd() {
     setEditingSlot(null);
     setForm(emptyForm);
-    setRepeatDates([repeatSundays[0]]);
+    setRepeatDates([]);
     setAddOpen(true);
   }
 
@@ -179,12 +178,25 @@ export function ScheduleClient({
     setEditingSlot(slot);
     const turma = slot.classGroupId ?? slot.slotType;
     setForm({
-      horario: (slot.horario as "EBD" | "CULTO" | null) ?? "",
+      horarios: slot.horario ? [slot.horario as "EBD" | "CULTO"] : [],
       turma,
       userId: slot.user.id,
       cargo: (slot.role as "PROFESSOR" | "AUXILIAR" | null) ?? "",
     });
     setAddOpen(true);
+  }
+
+  function toggleHorario(h: "EBD" | "CULTO") {
+    setForm((f) => ({
+      ...f,
+      horarios: editingSlot
+        ? [h]
+        : f.horarios.includes(h)
+        ? f.horarios.filter((x) => x !== h)
+        : [...f.horarios, h],
+      userId: "",
+      cargo: "",
+    }));
   }
 
   // Default cargo from the volunteer's own function (Professor vs Auxiliar) when picked.
@@ -203,11 +215,15 @@ export function ScheduleClient({
     return "TURMA"; // real class
   }
 
+  // SALA_PLUS has no horário at all; LANCHE is always CULTO — both skip the horário
+  // picker. Everything else lets EBD and CULTO both be checked to create 2 slots at once.
+  const horarioList: (string | null)[] =
+    form.turma === "SALA_PLUS" ? [null] : form.turma === "LANCHE" ? ["CULTO"] : form.horarios;
+
   async function saveSlot() {
     setSaving(true);
-    const payload = {
+    const basePayload = {
       slotType: slotTypeFor(form.turma),
-      horario: form.turma === "SALA_PLUS" ? null : form.horario,
       classGroupId: isRealClass ? form.turma : null,
       role: isRealClass ? (form.cargo || null) : null,
       userId: form.userId,
@@ -217,26 +233,23 @@ export function ScheduleClient({
       const res = await fetch(`/api/schedule/${editingSlot.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...basePayload, horario: horarioList[0] ?? null }),
       });
       const updated = await res.json();
       setSlots((prev) => prev.map((s) => (s.id === editingSlot.id ? updated : s)));
-    } else if (repeatDates.length > 1) {
-      const res = await fetch("/api/schedule/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dates: repeatDates, ...payload }),
-      });
-      const created = await res.json();
-      setSlots((prev) => [...prev, ...created]);
     } else {
-      const res = await fetch("/api/schedule", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: repeatDates[0] ?? selectedSunday, ...payload }),
-      });
-      const slot = await res.json();
-      setSlots((prev) => [...prev, slot]);
+      const dates = repeatDates.length > 0 ? repeatDates : [selectedSunday];
+      const createdAll: Slot[] = [];
+      for (const horario of horarioList) {
+        const res = await fetch("/api/schedule/bulk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dates, horario, ...basePayload }),
+        });
+        const created = await res.json();
+        createdAll.push(...created);
+      }
+      setSlots((prev) => [...prev, ...createdAll]);
     }
 
     setSaving(false);
@@ -374,7 +387,7 @@ export function ScheduleClient({
                   ...f,
                   turma: v ?? "",
                   userId: "",
-                  horario: v === "SALA_PLUS" ? "" : v === "LANCHE" ? "CULTO" : f.horario,
+                  horarios: v === "SALA_PLUS" || v === "LANCHE" ? [] : f.horarios,
                 }))}
                 items={{ ...Object.fromEntries(classes.map((c) => [c.id, c.name])), ...PSEUDO_TURMAS }}
               >
@@ -390,21 +403,21 @@ export function ScheduleClient({
 
             {form.turma && form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && (
               <div className="space-y-1">
-                <p className="text-sm font-medium">Horário</p>
+                <p className="text-sm font-medium">Horário {!editingSlot && "(selecione um ou ambos)"}</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     type="button"
-                    variant={form.horario === "EBD" ? "default" : "outline"}
+                    variant={form.horarios.includes("EBD") ? "default" : "outline"}
                     className="h-12"
-                    onClick={() => setForm((f) => ({ ...f, horario: "EBD", userId: "", cargo: "" }))}
+                    onClick={() => toggleHorario("EBD")}
                   >
                     EBD
                   </Button>
                   <Button
                     type="button"
-                    variant={form.horario === "CULTO" ? "default" : "outline"}
+                    variant={form.horarios.includes("CULTO") ? "default" : "outline"}
                     className="h-12"
-                    onClick={() => setForm((f) => ({ ...f, horario: "CULTO", userId: "", cargo: "" }))}
+                    onClick={() => toggleHorario("CULTO")}
                   >
                     Culto
                   </Button>
@@ -418,7 +431,7 @@ export function ScheduleClient({
                 value={form.userId}
                 onValueChange={(v) => setForm((f) => ({ ...f, userId: v ?? "", cargo: v ? cargoForVolunteer(v) : "" }))}
                 items={Object.fromEntries(eligibleVolunteers.map((v) => [v.id, v.name]))}
-                disabled={!form.turma || (form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && !form.horario)}
+                disabled={!form.turma || (form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && form.horarios.length === 0)}
               >
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder={form.turma ? "Selecione..." : "Selecione a turma primeiro"} />
@@ -459,7 +472,9 @@ export function ScheduleClient({
 
             {!editingSlot && (
               <div className="space-y-1">
-                <p className="text-sm font-medium">Repetir em</p>
+                <p className="text-sm font-medium">
+                  Repetir em <span className="text-muted-foreground font-normal">(opcional — sem seleção, só {formatDate(selectedSunday)})</span>
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   {repeatSundays.map((s) => (
                     <label key={s} className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer text-sm">
@@ -479,14 +494,14 @@ export function ScheduleClient({
               disabled={
                 !form.turma ||
                 !form.userId ||
-                (form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && !form.horario) ||
+                (form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && form.horarios.length === 0) ||
                 (isRealClass && !form.cargo) ||
-                (!editingSlot && repeatDates.length === 0) ||
                 saving
               }
               onClick={saveSlot}
             >
               Salvar{!editingSlot && repeatDates.length > 1 ? ` (${repeatDates.length} domingos)` : ""}
+              {!editingSlot && horarioList.length > 1 ? ` × ${horarioList.length} horários` : ""}
             </Button>
           </div>
         </DialogContent>

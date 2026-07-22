@@ -23,6 +23,13 @@ export function eventTimeRange(start: string, end: string | null): string {
   return `${formatTime(start)} à ${formatTime(end)}`;
 }
 
+// "25 de julho das 12:00 às 17:00" (or "às 12:00" without an end time) — BRT.
+export function eventDateTimeLabel(start: string, end: string | null): string {
+  const dateLabel = new Date(start).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", timeZone: TZ });
+  if (!end) return `${dateLabel} às ${formatTime(start)}`;
+  return `${dateLabel} das ${formatTime(start)} às ${formatTime(end)}`;
+}
+
 // For prefilling <input type="date"> / <input type="time">, both BRT-based.
 export function toDateInput(iso: string): string {
   return new Date(iso).toLocaleDateString("en-CA", { timeZone: TZ });
