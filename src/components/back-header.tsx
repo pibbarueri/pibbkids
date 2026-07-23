@@ -28,6 +28,7 @@ const PAGE_TITLES: [string, string][] = [
   ["/purchase-requests", "Solicitações de compra"],
   ["/curriculum", "Revistas"],
   ["/snacks", "Lanches"],
+  ["/qrcodes", "QR Codes"],
 ];
 
 export function BackHeader({ profile }: { profile: Profile }) {

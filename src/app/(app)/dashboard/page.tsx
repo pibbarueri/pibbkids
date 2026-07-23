@@ -2,7 +2,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
-import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen, Cake, AlertTriangle, Cookie } from "lucide-react";
+import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen, Cake, AlertTriangle, Cookie, QrCode } from "lucide-react";
 import { EventsCalendar } from "@/components/dashboard/events-calendar";
 import { NextSundaySchedule } from "@/components/dashboard/next-sunday-schedule";
 import { computeUpcomingBirthdays } from "@/lib/birthdays";
@@ -69,6 +69,7 @@ export default async function DashboardPage() {
     { href: "/attendance", label: "Presença", icon: ClipboardCheck, roles: [Role.ADMIN, Role.COORDINATOR] },
     { href: "/materials", label: "Materiais", icon: Package, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] },
     { href: "/curriculum", label: "Revistas", icon: BookOpen, roles: [Role.ADMIN, Role.COORDINATOR] },
+    { href: "/qrcodes", label: "QR Codes", icon: QrCode, roles: [Role.ADMIN, Role.COORDINATOR] },
   ]
     .filter((s) => s.roles.includes(role))
     .concat(canAccessSnacks ? [{ href: "/snacks", label: "Lanches", icon: Cookie, roles: [] }] : []);
