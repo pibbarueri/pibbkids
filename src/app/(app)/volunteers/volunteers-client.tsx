@@ -70,6 +70,7 @@ const ROLE_LABELS: Record<string, string> = {
   TEACHER: "Professor",
   ASSISTANT: "Auxiliar",
   RECEPTIONIST: "Recepção",
+  SUPPORT: "Apoio",
 };
 
 const FUNCTION_LABELS: Record<string, string> = {

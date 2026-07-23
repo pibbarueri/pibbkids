@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
-import { Users, CalendarDays, BookOpen, Home, ClipboardCheck } from "lucide-react";
+import { Users, CalendarDays, BookOpen, Home, ClipboardCheck, Cookie } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -18,13 +18,13 @@ const NAV_ITEMS: NavItem[] = [
     href: "/dashboard",
     label: "Início",
     icon: <Home className="h-5 w-5" />,
-    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST],
+    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST, Role.SUPPORT],
   },
   {
     href: "/children",
     label: "Crianças",
     icon: <Users className="h-5 w-5" />,
-    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST],
+    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST, Role.SUPPORT],
   },
   {
     href: "/volunteers",
@@ -36,7 +36,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/schedule",
     label: "Escala",
     icon: <CalendarDays className="h-5 w-5" />,
-    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST],
+    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST, Role.SUPPORT],
   },
   {
     href: "/curriculum/lessons",
@@ -49,6 +49,18 @@ const NAV_ITEMS: NavItem[] = [
     label: "Presença",
     icon: <ClipboardCheck className="h-5 w-5" />,
     roles: [Role.RECEPTIONIST],
+  },
+  {
+    href: "/attendance/view",
+    label: "Presença",
+    icon: <ClipboardCheck className="h-5 w-5" />,
+    roles: [Role.SUPPORT],
+  },
+  {
+    href: "/snacks",
+    label: "Lanches",
+    icon: <Cookie className="h-5 w-5" />,
+    roles: [Role.SUPPORT],
   },
 ];
 

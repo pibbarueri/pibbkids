@@ -22,6 +22,7 @@ const PAGE_TITLES: [string, string][] = [
   ["/schedule/overview", "Visão semestral"],
   ["/schedule", "Escala"],
   ["/attendance/overview", "Frequência de alunos"],
+  ["/attendance/view", "Presença"],
   ["/attendance", "Presença"],
   ["/materials", "Materiais"],
   ["/events", "Eventos"],

@@ -66,14 +66,15 @@ export default async function DashboardPage() {
   const canAccessSnacks = canManageSnacks(role, !!hasApoioGeral);
 
   const shortcuts = [
-    { href: "/purchase-requests", label: "Compras", icon: ShoppingCart, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.RECEPTIONIST] },
-    { href: "/events", label: "Eventos", icon: PartyPopper, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] },
+    { href: "/purchase-requests", label: "Compras", icon: ShoppingCart, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.RECEPTIONIST, Role.SUPPORT] },
+    { href: "/events", label: "Eventos", icon: PartyPopper, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST, Role.SUPPORT] },
     { href: "/attendance", label: "Presença", icon: ClipboardCheck, roles: [Role.ADMIN, Role.COORDINATOR] },
-    { href: "/materials", label: "Materiais", icon: Package, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] },
+    { href: "/materials", label: "Materiais", icon: Package, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST, Role.SUPPORT] },
     { href: "/curriculum", label: "Revistas", icon: BookOpen, roles: [Role.ADMIN, Role.COORDINATOR] },
   ]
     .filter((s) => s.roles.includes(role))
-    .concat(canAccessSnacks ? [{ href: "/snacks", label: "Lanches", icon: Cookie, roles: [] }] : []);
+    // SUPPORT already has Lanches as a bottom-nav tab — no need for the dashboard shortcut too.
+    .concat(canAccessSnacks && role !== Role.SUPPORT ? [{ href: "/snacks", label: "Lanches", icon: Cookie, roles: [] }] : []);
 
   const lowSnacksMessage = lowSnacks.length > 0
     ? lowSnacks.map((s) => `Temos ${s.quantity} ${s.unit} de ${s.description}`).join("\n")

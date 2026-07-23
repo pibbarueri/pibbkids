@@ -52,6 +52,7 @@ enum Role {
   TEACHER
   ASSISTANT
   RECEPTIONIST
+  SUPPORT
 
   @@map("role")
 }
