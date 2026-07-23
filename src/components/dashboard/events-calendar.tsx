@@ -95,7 +95,7 @@ export function EventsCalendar({
               key={i}
               onClick={() => setSelectedKey(key === selectedKey ? null : key)}
               className={cn(
-                "aspect-square rounded-md text-xs flex items-center justify-center relative",
+                "aspect-square rounded-md text-xs flex items-center justify-center relative transition-transform active:scale-90",
                 isToday && "font-bold border border-primary",
                 key === selectedKey && "bg-primary text-primary-foreground",
                 (hasEvents || hasBirthday) && key !== selectedKey && "bg-muted"
@@ -126,7 +126,7 @@ export function EventsCalendar({
             <button
               key={ev.id}
               onClick={() => setDetailId(ev.id)}
-              className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-0.5 hover:bg-muted text-left"
+              className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-0.5 hover:bg-muted text-left transition-transform active:scale-[0.98]"
             >
               <span className="text-sm truncate">
                 🎉 {ev.title} <span className="text-muted-foreground">· {eventTimeRange(ev.date, ev.endDate)}</span>

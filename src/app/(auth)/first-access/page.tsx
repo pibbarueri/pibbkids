@@ -166,7 +166,7 @@ export default function FirstAccessPage() {
                         type="button"
                         onClick={() => setCpfPrefix(o.prefix)}
                         className={cn(
-                          "w-full h-11 rounded-lg border text-left px-3 font-mono text-sm transition-colors",
+                          "w-full h-11 rounded-lg border text-left px-3 font-mono text-sm transition-all active:scale-[0.98]",
                           cpfPrefix === o.prefix ? "border-primary bg-primary/10" : "border-input"
                         )}
                       >
@@ -204,7 +204,7 @@ export default function FirstAccessPage() {
                         type="button"
                         onClick={() => setDateIdx(i)}
                         className={cn(
-                          "w-full h-11 rounded-lg border text-left px-3 text-sm transition-colors",
+                          "w-full h-11 rounded-lg border text-left px-3 text-sm transition-all active:scale-[0.98]",
                           dateIdx === i ? "border-primary bg-primary/10" : "border-input"
                         )}
                       >
@@ -232,7 +232,7 @@ export default function FirstAccessPage() {
               <button
                 type="button"
                 onClick={() => { setStep("id"); setError(null); }}
-                className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-transform active:scale-95"
               >
                 Voltar
               </button>

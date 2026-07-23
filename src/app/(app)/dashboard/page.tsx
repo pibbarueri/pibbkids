@@ -92,7 +92,7 @@ export default async function DashboardPage() {
             <Link
               key={s.href}
               href={s.href}
-              className="flex flex-col items-center gap-1 p-3 border rounded-lg bg-background hover:bg-muted/50 transition-colors"
+              className="flex flex-col items-center gap-1 p-3 border rounded-lg bg-background hover:bg-muted/50 transition-all active:scale-95"
             >
               <s.icon className="h-5 w-5" />
               <span className="text-xs text-center">{s.label}</span>

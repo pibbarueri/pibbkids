@@ -351,7 +351,7 @@ export function JournalsClient({
               <button
                 key={j.id}
                 onClick={() => openEdit(j)}
-                className="w-full text-left p-4 border rounded-lg bg-background hover:bg-muted/50 transition-colors"
+                className="w-full text-left p-4 border rounded-lg bg-background hover:bg-muted/50 transition-all active:scale-[0.98]"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -366,7 +366,7 @@ export function JournalsClient({
                   <div className="flex items-center gap-2">
                     {j.teacherCopies === 0 && <Badge variant="destructive">Sem estoque</Badge>}
                     <Trash2
-                      className="h-4 w-4 text-muted-foreground hover:text-destructive"
+                      className="h-4 w-4 text-muted-foreground hover:text-destructive transition-transform active:scale-90"
                       onClick={(e) => { e.stopPropagation(); remove(j.id); }}
                     />
                   </div>

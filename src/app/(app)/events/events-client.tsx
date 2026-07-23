@@ -138,7 +138,7 @@ export function EventsClient({
         <button
           key={e.id}
           onClick={() => setManualDetailId(e.id)}
-          className="w-full text-left p-4 border rounded-lg bg-background space-y-2 hover:bg-muted/50 transition-colors"
+          className="w-full text-left p-4 border rounded-lg bg-background space-y-2 hover:bg-muted/50 transition-all active:scale-[0.98]"
         >
           <div className="flex items-start justify-between">
             <div>
@@ -151,7 +151,7 @@ export function EventsClient({
                 role="button"
                 aria-label="Copiar"
                 onClick={(ev) => { ev.stopPropagation(); copyWhatsApp(e); }}
-                className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
+                className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted transition-transform active:scale-90"
               >
                 <Copy className="h-4 w-4" />
               </span>
@@ -160,7 +160,7 @@ export function EventsClient({
                   role="button"
                   aria-label="Editar"
                   onClick={(ev) => { ev.stopPropagation(); openEdit(e); }}
-                  className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted text-muted-foreground"
+                  className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted transition-transform active:scale-90 text-muted-foreground"
                 >
                   <Pencil className="h-4 w-4" />
                 </span>

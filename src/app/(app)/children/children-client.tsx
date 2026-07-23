@@ -50,7 +50,7 @@ function FrequencyRadio({ value, onChange }: { value: string; onChange: (v: Freq
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "h-12 rounded-lg border text-sm font-medium transition-colors",
+            "h-12 rounded-lg border text-sm font-medium transition-all active:scale-95",
             value === o.value
               ? "border-primary bg-primary text-primary-foreground"
               : "border-input bg-transparent"
@@ -328,7 +328,7 @@ export function ChildrenClient({
                   type="button"
                   onClick={() => setSortBy("name")}
                   className={cn(
-                    "h-11 rounded-lg border text-sm font-medium transition-colors",
+                    "h-11 rounded-lg border text-sm font-medium transition-all active:scale-95",
                     sortBy === "name" ? "border-primary bg-primary text-primary-foreground" : "border-input bg-transparent"
                   )}
                 >
@@ -338,7 +338,7 @@ export function ChildrenClient({
                   type="button"
                   onClick={() => setSortBy("age")}
                   className={cn(
-                    "h-11 rounded-lg border text-sm font-medium transition-colors",
+                    "h-11 rounded-lg border text-sm font-medium transition-all active:scale-95",
                     sortBy === "age" ? "border-primary bg-primary text-primary-foreground" : "border-input bg-transparent"
                   )}
                 >
@@ -614,7 +614,7 @@ function ChildCard({
   return (
     <button
       onClick={onSelect}
-      className="w-full text-left p-4 border rounded-lg bg-background hover:bg-muted/50 transition-colors"
+      className="w-full text-left p-4 border rounded-lg bg-background hover:bg-muted/50 transition-all active:scale-[0.98]"
     >
       <div className="flex items-center justify-between">
         <div>
@@ -631,7 +631,7 @@ function ChildCard({
               role="button"
               aria-label="Aprovar"
               onClick={(e) => { e.stopPropagation(); onApprove(); }}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90 bg-green-600 text-white"
             >
               <Check className="h-4 w-4" />
             </span>
@@ -641,7 +641,7 @@ function ChildCard({
               role="button"
               aria-label="Rejeitar"
               onClick={(e) => { e.stopPropagation(); onReject(); }}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90 bg-destructive text-white"
             >
               <X className="h-4 w-4" />
             </span>
@@ -651,7 +651,7 @@ function ChildCard({
               role="button"
               aria-label="Restaurar"
               onClick={(e) => { e.stopPropagation(); onRestore(); }}
-              className="flex h-8 w-8 items-center justify-center rounded-full border"
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90 border"
             >
               <RotateCcw className="h-4 w-4 text-muted-foreground" />
             </span>
@@ -661,7 +661,7 @@ function ChildCard({
               role="button"
               aria-label="Editar"
               onClick={(e) => { e.stopPropagation(); onEdit(); }}
-              className="p-1 -m-1"
+              className="p-1 -m-1 transition-transform active:scale-90"
             >
               <Pencil className="h-4 w-4 text-muted-foreground" />
             </span>

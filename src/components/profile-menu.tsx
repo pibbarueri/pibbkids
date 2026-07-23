@@ -79,7 +79,7 @@ export function ProfileMenu({ profile }: { profile: Profile }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="flex h-9 w-9 items-center justify-center rounded-full border bg-background hover:bg-muted"
+          className="flex h-9 w-9 items-center justify-center rounded-full border bg-background hover:bg-muted transition-transform active:scale-90"
           aria-label="Perfil"
         >
           <User className="h-5 w-5" />

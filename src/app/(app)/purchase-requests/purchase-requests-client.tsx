@@ -221,7 +221,7 @@ export function PurchaseRequestsClient({
             setSelected(r);
             setRejecting(false);
           }}
-          className="w-full text-left p-4 border rounded-lg bg-background flex items-start justify-between gap-2 hover:bg-muted/50 transition-colors"
+          className="w-full text-left p-4 border rounded-lg bg-background flex items-start justify-between gap-2 hover:bg-muted/50 transition-all active:scale-[0.98]"
         >
           <div>
             <p className="font-medium text-sm">

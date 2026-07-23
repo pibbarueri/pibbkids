@@ -138,7 +138,7 @@ export function AttendanceClient({
       <div className="flex items-center justify-between rounded-lg border bg-background p-2">
         <button
           onClick={() => setWeekOffset((w) => w - 1)}
-          className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-muted"
+          className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-muted transition-transform active:scale-90"
           aria-label="Domingo anterior"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -156,7 +156,7 @@ export function AttendanceClient({
         </div>
         <button
           onClick={() => setWeekOffset((w) => w + 1)}
-          className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-muted"
+          className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-muted transition-transform active:scale-90"
           aria-label="Próximo domingo"
         >
           <ChevronRight className="h-5 w-5" />
@@ -184,7 +184,7 @@ export function AttendanceClient({
           <button
             onClick={() => setClassFilter("all")}
             className={cn(
-              "h-8 rounded-full border px-3 text-xs font-medium transition-colors",
+              "h-8 rounded-full border px-3 text-xs font-medium transition-all active:scale-95",
               classFilter === "all" ? "border-primary bg-primary text-primary-foreground" : "border-input"
             )}
           >
@@ -195,7 +195,7 @@ export function AttendanceClient({
               key={c.id}
               onClick={() => setClassFilter(c.id)}
               className={cn(
-                "h-8 rounded-full border px-3 text-xs font-medium transition-colors",
+                "h-8 rounded-full border px-3 text-xs font-medium transition-all active:scale-95",
                 classFilter === c.id ? "border-primary bg-primary text-primary-foreground" : "border-input"
               )}
             >
@@ -228,7 +228,7 @@ export function AttendanceClient({
                 disabled={saving === child.id || !editable}
                 onClick={() => toggle(child.id, present)}
                 className={cn(
-                  "h-9 w-9 rounded-full border flex items-center justify-center transition-colors shrink-0",
+                  "h-9 w-9 rounded-full border flex items-center justify-center transition-all active:scale-90 shrink-0",
                   present ? "bg-green-600 border-green-600 text-white" : "border-input",
                   !editable && "opacity-50 cursor-not-allowed"
                 )}

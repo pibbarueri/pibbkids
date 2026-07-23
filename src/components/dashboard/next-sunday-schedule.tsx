@@ -64,7 +64,7 @@ export function NextSundaySchedule({ date, slots, events }: { date: string; slot
     <div className="border rounded-lg p-4 space-y-3 bg-background">
       <div className="flex items-center justify-between">
         <p className="font-medium text-sm">Próxima escala: {label}</p>
-        <Link href={`/schedule?date=${date}`} aria-label="Ver escala" className="text-muted-foreground hover:text-foreground">
+        <Link href={`/schedule?date=${date}`} aria-label="Ver escala" className="text-muted-foreground hover:text-foreground transition-transform active:scale-90">
           <ChevronRight className="h-4 w-4" />
         </Link>
       </div>
@@ -94,7 +94,7 @@ export function NextSundaySchedule({ date, slots, events }: { date: string; slot
                 </p>
                 <button
                   onClick={() => setDetailId(e.id)}
-                  className="text-xs text-primary shrink-0"
+                  className="text-xs text-primary shrink-0 transition-transform active:scale-90"
                 >
                   Ver detalhes
                 </button>

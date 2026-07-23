@@ -727,7 +727,7 @@ function VolunteerCard({
   return (
     <button
       onClick={onSelect}
-      className="w-full text-left p-4 border rounded-lg bg-background hover:bg-muted/50 transition-colors"
+      className="w-full text-left p-4 border rounded-lg bg-background hover:bg-muted/50 transition-all active:scale-[0.98]"
     >
       <div className="flex items-center justify-between">
         <div>
@@ -745,7 +745,7 @@ function VolunteerCard({
               role="button"
               aria-label="Aprovar"
               onClick={(e) => { e.stopPropagation(); onApprove(); }}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90 bg-green-600 text-white"
             >
               <Check className="h-4 w-4" />
             </span>
@@ -755,7 +755,7 @@ function VolunteerCard({
               role="button"
               aria-label="Rejeitar"
               onClick={(e) => { e.stopPropagation(); onReject(); }}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90 bg-destructive text-white"
             >
               <X className="h-4 w-4" />
             </span>
@@ -765,7 +765,7 @@ function VolunteerCard({
               role="button"
               aria-label="Restaurar"
               onClick={(e) => { e.stopPropagation(); onRestore(); }}
-              className="flex h-8 w-8 items-center justify-center rounded-full border"
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90 border"
             >
               <RotateCcw className="h-4 w-4 text-muted-foreground" />
             </span>
@@ -775,7 +775,7 @@ function VolunteerCard({
               role="button"
               aria-label="Editar"
               onClick={(e) => { e.stopPropagation(); onEdit(); }}
-              className="p-1 -m-1"
+              className="p-1 -m-1 transition-transform active:scale-90"
             >
               <Pencil className="h-4 w-4 text-muted-foreground" />
             </span>
