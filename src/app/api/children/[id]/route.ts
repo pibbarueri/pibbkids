@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canManage } from "@/lib/permissions";
@@ -40,7 +41,28 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
 
   const { id } = await params;
-  // Soft delete: keep the row (and its attendance history), just deactivate.
+
+  // ?hard=1 — permanent delete, used to reject a pending registration or purge
+  // an inactive record for good. Otherwise: soft delete, keeps the row (and
+  // attendance history), just deactivates it.
+  if (req.nextUrl.searchParams.get("hard") === "1") {
+    try {
+      await prisma.child.delete({ where: { id } });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === "P2025") return NextResponse.json({ ok: true }); // already deleted — idempotent
+        if (err.code === "P2003") {
+          return NextResponse.json(
+            { error: "Não é possível excluir: esta criança possui registros de presença vinculados." },
+            { status: 409 }
+          );
+        }
+      }
+      throw err;
+    }
+    return NextResponse.json({ ok: true });
+  }
+
   const child = await prisma.child.update({
     where: { id },
     data: { active: false },

@@ -25,7 +25,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, Check, Filter, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { formatPhone, phoneDigits } from "@/lib/phone";
-import { ageLabel } from "@/lib/age";
+import { ageLabel, suggestedClassName } from "@/lib/age";
 
 const FREQUENCIA_LABELS: Record<string, string> = {
   EBD: "Escola Dominical (EBD)",
@@ -117,6 +117,15 @@ export function ChildrenClient({
   const [deleteTarget, setDeleteTarget] = useState<Child | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [restoreTarget, setRestoreTarget] = useState<Child | null>(null);
+  const [approveTarget, setApproveTarget] = useState<Child | null>(null);
+  const [approveClassId, setApproveClassId] = useState("");
+  const [approveSaving, setApproveSaving] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<Child | null>(null);
+  const [rejectSaving, setRejectSaving] = useState(false);
+  const [permanentDeleteTarget, setPermanentDeleteTarget] = useState<Child | null>(null);
+  const [permanentDeleteConfirmText, setPermanentDeleteConfirmText] = useState("");
+  const [permanentDeleteSaving, setPermanentDeleteSaving] = useState(false);
+  const [permanentDeleteError, setPermanentDeleteError] = useState<string | null>(null);
   const [tab, setTab] = useState(
     isManager && initialChildren.some((c) => c.active && !c.classGroupId) ? "pending" : "approved"
   );
@@ -212,6 +221,56 @@ export function ChildrenClient({
       const updated = await res.json();
       setChildren((prev) => prev.map((c) => (c.id === child.id ? { ...updated, active: true } : c)));
     }
+  }
+
+  function openApprove(child: Child) {
+    const suggestion = suggestedClassName(new Date(child.birthdate));
+    const match = classes.find((c) => c.name.toLowerCase() === suggestion.toLowerCase());
+    setApproveClassId(child.classGroupId ?? match?.id ?? "");
+    setApproveTarget(child);
+  }
+
+  async function confirmApprove() {
+    if (!approveTarget || !approveClassId) return;
+    setApproveSaving(true);
+    const res = await fetch(`/api/children/${approveTarget.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ classGroupId: approveClassId }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setChildren((prev) => prev.map((c) => (c.id === approveTarget.id ? updated : c)));
+      setApproveTarget(null);
+    }
+    setApproveSaving(false);
+  }
+
+  async function confirmReject() {
+    if (!rejectTarget) return;
+    setRejectSaving(true);
+    const res = await fetch(`/api/children/${rejectTarget.id}?hard=1`, { method: "DELETE" });
+    if (res.ok) {
+      setChildren((prev) => prev.filter((c) => c.id !== rejectTarget.id));
+      setRejectTarget(null);
+    }
+    setRejectSaving(false);
+  }
+
+  async function confirmPermanentDelete() {
+    if (!permanentDeleteTarget || permanentDeleteConfirmText.trim().toLowerCase() !== "confirmar exclusão") return;
+    setPermanentDeleteSaving(true);
+    setPermanentDeleteError(null);
+    const res = await fetch(`/api/children/${permanentDeleteTarget.id}?hard=1`, { method: "DELETE" });
+    if (res.ok) {
+      setChildren((prev) => prev.filter((c) => c.id !== permanentDeleteTarget.id));
+      setPermanentDeleteTarget(null);
+      setPermanentDeleteConfirmText("");
+    } else {
+      const body = await res.json();
+      setPermanentDeleteError(body.error ?? "Erro ao excluir.");
+    }
+    setPermanentDeleteSaving(false);
   }
 
   return (
@@ -390,9 +449,9 @@ export function ChildrenClient({
                 child={child}
                 onSelect={() => setSelected(child)}
                 onEdit={() => openEdit(child)}
-                canEdit={isManager}
-                onApprove={() => openEdit(child)}
-                onReject={() => setDeleteTarget(child)}
+                canEdit={false}
+                onApprove={() => openApprove(child)}
+                onReject={() => setRejectTarget(child)}
               />
             ))}
           </TabsContent>
@@ -430,6 +489,7 @@ export function ChildrenClient({
                 onEdit={() => openEdit(child)}
                 canEdit={false}
                 onRestore={() => setRestoreTarget(child)}
+                onDelete={() => { setPermanentDeleteTarget(child); setPermanentDeleteConfirmText(""); setPermanentDeleteError(null); }}
               />
             ))}
           </TabsContent>
@@ -530,7 +590,7 @@ export function ChildrenClient({
               <Textarea rows={2} value={editForm.restrictions} onChange={(e) => setEditForm((f) => ({ ...f, restrictions: e.target.value }))} />
             </div>
             <Button className="w-full h-12" disabled={!editValid || editSaving} onClick={saveEdit}>
-              {!editing?.classGroupId && editForm.classGroupId ? "Salvar e aprovar" : "Salvar alterações"}
+              Salvar alterações
             </Button>
             {isManager && editing && (
               <Button
@@ -560,6 +620,99 @@ export function ChildrenClient({
             </Button>
             <Button variant="destructive" className="flex-1 h-12" disabled={deleting} onClick={confirmDelete}>
               Remover
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!approveTarget} onOpenChange={(o) => !o && setApproveTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aprovar {approveTarget?.name}</DialogTitle>
+          </DialogHeader>
+          {approveTarget && (
+            <div className="space-y-3">
+              <Row
+                label="Data de nascimento"
+                value={new Date(approveTarget.birthdate).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
+              />
+              <Row label="Idade" value={ageLabel(new Date(approveTarget.birthdate))} />
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Turma *</p>
+                <Select
+                  value={approveClassId}
+                  onValueChange={(v) => setApproveClassId(v ?? "")}
+                  items={Object.fromEntries(classes.map((c) => [c.id, c.name]))}
+                >
+                  <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {classes.map((cls) => <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button className="w-full h-12" disabled={!approveClassId || approveSaving} onClick={confirmApprove}>
+                Aprovar
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!rejectTarget} onOpenChange={(o) => !o && setRejectTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rejeitar criança</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Rejeitar <span className="font-medium text-foreground">{rejectTarget?.name}</span>?
+            Essa ação é <span className="font-medium text-foreground">permanente</span> — o cadastro será apagado do sistema.
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 h-12" onClick={() => setRejectTarget(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" className="flex-1 h-12" disabled={rejectSaving} onClick={confirmReject}>
+              Rejeitar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!permanentDeleteTarget}
+        onOpenChange={(o) => { if (!o) { setPermanentDeleteTarget(null); setPermanentDeleteConfirmText(""); setPermanentDeleteError(null); } }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir criança permanentemente</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Excluir <span className="font-medium text-foreground">{permanentDeleteTarget?.name}</span> permanentemente?
+            Essa ação é <span className="font-medium text-foreground">irreversível</span> — todos os dados dela serão apagados do sistema.
+          </p>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">
+              Digite <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">confirmar exclusão</code> para prosseguir
+            </p>
+            <Input
+              className="h-12"
+              value={permanentDeleteConfirmText}
+              onChange={(e) => setPermanentDeleteConfirmText(e.target.value)}
+              placeholder="confirmar exclusão"
+            />
+          </div>
+          {permanentDeleteError && <p className="text-sm text-destructive">{permanentDeleteError}</p>}
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 h-12" onClick={() => setPermanentDeleteTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1 h-12"
+              disabled={permanentDeleteConfirmText.trim().toLowerCase() !== "confirmar exclusão" || permanentDeleteSaving}
+              onClick={confirmPermanentDelete}
+            >
+              Excluir
             </Button>
           </div>
         </DialogContent>
@@ -602,6 +755,7 @@ function ChildCard({
   onApprove,
   onReject,
   onRestore,
+  onDelete,
 }: {
   child: Child;
   onSelect: () => void;
@@ -610,6 +764,7 @@ function ChildCard({
   onApprove?: () => void;
   onReject?: () => void;
   onRestore?: () => void;
+  onDelete?: () => void;
 }) {
   return (
     <button
@@ -654,6 +809,16 @@ function ChildCard({
               className="flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90 border"
             >
               <RotateCcw className="h-4 w-4 text-muted-foreground" />
+            </span>
+          )}
+          {onDelete && (
+            <span
+              role="button"
+              aria-label="Excluir"
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90 border"
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
             </span>
           )}
           {canEdit && (

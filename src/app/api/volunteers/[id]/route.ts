@@ -92,11 +92,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   try {
     await prisma.user.delete({ where: { id } });
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003") {
-      return NextResponse.json(
-        { error: "Não é possível excluir: este voluntário possui registros vinculados (escala ou presença). Desative-o em vez de excluir." },
-        { status: 409 }
-      );
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2025") return NextResponse.json({ ok: true }); // already deleted — idempotent
+      if (err.code === "P2003") {
+        return NextResponse.json(
+          { error: "Não é possível excluir: este voluntário possui registros vinculados (escala ou presença). Desative-o em vez de excluir." },
+          { status: 409 }
+        );
+      }
     }
     throw err;
   }
