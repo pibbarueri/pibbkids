@@ -7,7 +7,8 @@ import { ClassesClient } from "./classes-client";
 
 export default async function ClassesPage() {
   const session = await auth();
-  if (!canManage(session!.user.role)) redirect("/dashboard");
+  if (!session) redirect("/login");
+  if (!canManage(session.user.role)) redirect("/dashboard");
 
   const classes = sortClasses(await prisma.classGroup.findMany({ orderBy: { name: "asc" } }));
 

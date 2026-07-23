@@ -6,7 +6,8 @@ import { PurchaseRequestsClient } from "./purchase-requests-client";
 
 export default async function PurchaseRequestsPage() {
   const session = await auth();
-  const role = session!.user.role;
+  if (!session) redirect("/login");
+  const role = session.user.role;
   if (!canRequestPurchase(role)) redirect("/dashboard");
   const isManager = isLeadership(role);
 

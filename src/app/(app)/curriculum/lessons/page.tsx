@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
@@ -25,7 +26,8 @@ function sundaysInSchoolYear(year: number): Date[] {
 
 export default async function LessonsPage() {
   const session = await auth();
-  const role = session!.user.role;
+  if (!session) redirect("/login");
+  const role = session.user.role;
   const isManager = canManage(role);
 
   const now = new Date();
@@ -60,7 +62,7 @@ export default async function LessonsPage() {
     isManager
       ? Promise.resolve([])
       : prisma.userPreferredClass.findMany({
-          where: { userId: session!.user.id },
+          where: { userId: session.user.id },
           select: { classGroupId: true },
         }),
   ]);

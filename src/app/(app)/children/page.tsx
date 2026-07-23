@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
@@ -6,7 +7,8 @@ import { ChildrenClient } from "./children-client";
 
 export default async function ChildrenPage() {
   const session = await auth();
-  const role = session!.user.role;
+  if (!session) redirect("/login");
+  const role = session.user.role;
   const isManager = canManage(role);
 
   const classes = sortClasses(

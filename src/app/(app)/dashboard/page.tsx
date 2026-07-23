@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
@@ -20,7 +21,8 @@ function getNextSunday() {
 
 export default async function DashboardPage() {
   const session = await auth();
-  const role = session!.user.role;
+  if (!session) redirect("/login");
+  const role = session.user.role;
 
   const nextSunday = getNextSunday();
   const isManager = canManage(role);
@@ -32,7 +34,7 @@ export default async function DashboardPage() {
 
   const [hasApoioGeral, events, scheduleSlots, upcomingEvents30d, birthdayChildren, birthdayVolunteers, lowSnacks] = await Promise.all([
     prisma.volunteerFunction.findFirst({
-      where: { userId: session!.user.id, function: "APOIO_GERAL" },
+      where: { userId: session.user.id, function: "APOIO_GERAL" },
     }),
     prisma.event.findMany({
       where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
@@ -40,7 +42,7 @@ export default async function DashboardPage() {
       select: { id: true, title: true, date: true, endDate: true, description: true },
     }),
     prisma.scheduleSlot.findMany({
-      where: { date: nextSunday, userId: session!.user.id },
+      where: { date: nextSunday, userId: session.user.id },
       include: {
         user: { select: { name: true } },
         classGroup: { select: { name: true } },

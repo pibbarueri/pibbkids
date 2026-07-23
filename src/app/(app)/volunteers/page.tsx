@@ -7,7 +7,8 @@ import { VolunteersClient } from "./volunteers-client";
 
 export default async function VolunteersPage() {
   const session = await auth();
-  const role = session!.user.role;
+  if (!session) redirect("/login");
+  const role = session.user.role;
 
   if (!canManage(role)) redirect("/dashboard");
 

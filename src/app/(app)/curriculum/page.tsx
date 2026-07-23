@@ -7,7 +7,8 @@ import { JournalsClient } from "./journals-client";
 
 export default async function CurriculumPage() {
   const session = await auth();
-  const role = session!.user.role;
+  if (!session) redirect("/login");
+  const role = session.user.role;
 
   if (!canManage(role)) redirect("/dashboard");
 

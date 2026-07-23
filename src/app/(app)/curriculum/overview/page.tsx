@@ -18,7 +18,8 @@ function sundaysInRange(start: Date, end: Date): Date[] {
 
 export default async function OverviewPage() {
   const session = await auth();
-  const role = session!.user.role;
+  if (!session) redirect("/login");
+  const role = session.user.role;
   if (!canManage(role)) redirect("/dashboard");
 
   const now = new Date();

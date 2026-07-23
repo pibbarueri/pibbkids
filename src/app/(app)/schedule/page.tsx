@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
@@ -24,7 +25,8 @@ export default async function SchedulePage({
   searchParams: Promise<{ date?: string }>;
 }) {
   const session = await auth();
-  const role = session!.user.role;
+  if (!session) redirect("/login");
+  const role = session.user.role;
   // Read-only view of the full schedule is open to every role; only management can edit.
   const canViewAll = true;
   const canEdit = canManage(role);
@@ -79,7 +81,7 @@ export default async function SchedulePage({
         volunteers={volunteers}
         sundays={sundays.map((d) => d.toISOString())}
         initialSundayIdx={initialSundayIdx}
-        currentUserId={session!.user.id}
+        currentUserId={session.user.id}
         canViewAll={canViewAll}
         canEdit={canEdit}
       />

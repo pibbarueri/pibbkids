@@ -6,10 +6,11 @@ import { SnacksClient } from "./snacks-client";
 
 export default async function SnacksPage() {
   const session = await auth();
-  const role = session!.user.role;
+  if (!session) redirect("/login");
+  const role = session.user.role;
 
   const hasApoioGeral = await prisma.volunteerFunction.findFirst({
-    where: { userId: session!.user.id, function: "APOIO_GERAL" },
+    where: { userId: session.user.id, function: "APOIO_GERAL" },
   });
   if (!canManageSnacks(role, !!hasApoioGeral)) redirect("/dashboard");
 
