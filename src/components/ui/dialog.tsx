@@ -53,16 +53,16 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-x-hidden overflow-y-auto rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}
       >
         {showCloseButton && (
-          <div className="pointer-events-none sticky top-0 z-30 -mb-4 flex h-0 justify-end">
+          <div className="pointer-events-none sticky -top-2 z-30 -mb-4 flex h-0 justify-end">
             <DialogPrimitive.Close
               data-slot="dialog-close"
-              render={<Button variant="ghost" size="icon-sm" className="pointer-events-auto" />}
+              render={<Button variant="ghost" size="icon-sm" className="pointer-events-auto transition-transform active:scale-90" />}
             >
               <XIcon />
               <span className="sr-only">Close</span>
@@ -80,7 +80,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-header"
       className={cn(
-        "sticky -top-4 z-10 -mx-4 -mt-4 flex flex-col gap-2 border-b bg-popover px-4 pt-4 pb-2",
+        "sticky -top-4 z-10 -mx-4 -mt-6 flex flex-col gap-2 border-b bg-popover px-4 pt-4 pb-2",
         className
       )}
       {...props}
