@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { User, LogOut, Pencil } from "lucide-react";
+import Link from "next/link";
+import { User, LogOut, Pencil, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { normalizeUsername } from "@/lib/text";
@@ -87,6 +88,9 @@ export function ProfileMenu({ profile }: { profile: Profile }) {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setEditOpen(true)}>
             <Pencil className="h-4 w-4" /> Editar Perfil
+          </DropdownMenuItem>
+          <DropdownMenuItem render={<Link href="/qrcodes" />}>
+            <QrCode className="h-4 w-4" /> QR Codes
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => logoutAction()}>
             <LogOut className="h-4 w-4" /> Sair
