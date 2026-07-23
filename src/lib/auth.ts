@@ -1,9 +1,17 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
 import { createSession, isSessionValid } from "@/lib/session";
+
+class InactiveUserError extends CredentialsSignin {
+  code = "inactive";
+}
+
+class FirstAccessError extends CredentialsSignin {
+  code = "first-access";
+}
 
 const {
   handlers,
@@ -25,8 +33,10 @@ const {
           where: { username: credentials.username as string },
         });
 
-        // No password/username yet means the volunteer hasn't done first access — block.
-        if (!user || !user.active || !user.password || !user.username) return null;
+        if (!user || !user.username) return null;
+        if (!user.active) throw new InactiveUserError();
+        // No password yet means the volunteer hasn't done first access.
+        if (!user.password) throw new FirstAccessError();
 
         const valid = await bcrypt.compare(credentials.password as string, user.password);
         if (!valid) return null;

@@ -28,7 +28,11 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("Usuário ou senha inválidos.");
+      const messages: Record<string, string> = {
+        inactive: "Usuário sem acesso ao sistema. Contate a liderança em caso de dúvidas.",
+        "first-access": 'Você ainda não criou sua senha. Clique em "Primeiro acesso?" abaixo.',
+      };
+      setError((result.code && messages[result.code]) ?? "Usuário ou senha inválidos.");
       setLoading(false);
     } else {
       router.push("/dashboard");

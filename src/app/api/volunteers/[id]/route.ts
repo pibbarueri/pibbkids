@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { isLeadership } from "@/lib/permissions";
+import { revokeAllUserSessions } from "@/lib/session";
 
 // Volunteer edit/approve is admin-only; coordinators are read-only.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -68,6 +70,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       preferredClasses: { select: { classGroupId: true, classGroup: { select: { name: true } } } },
     },
   });
+
+  // Role/deactivation changes must invalidate any existing JWT session — otherwise the old
+  // role or full access keeps working until natural 7-day expiry (JWT is self-contained).
+  if (body.role !== undefined || body.active === false) {
+    await revokeAllUserSessions(id);
+  }
 
   return NextResponse.json(user);
 }

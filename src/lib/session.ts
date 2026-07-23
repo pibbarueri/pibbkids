@@ -14,12 +14,14 @@ export async function createSession(userId: string): Promise<string> {
 
 export async function isSessionValid(token: string): Promise<boolean> {
   const row = await prisma.userSession.findUnique({ where: { token } });
-  return !!row && !row.revokedAt && row.expiresAt > new Date();
+  return !!row && row.expiresAt > new Date();
 }
 
+// Free-tier DB: no point keeping revoked sessions around — delete instead of soft-revoking.
 export async function revokeSession(token: string): Promise<void> {
-  await prisma.userSession.updateMany({
-    where: { token, revokedAt: null },
-    data: { revokedAt: new Date() },
-  });
+  await prisma.userSession.deleteMany({ where: { token } });
+}
+
+export async function revokeAllUserSessions(userId: string): Promise<void> {
+  await prisma.userSession.deleteMany({ where: { userId } });
 }
