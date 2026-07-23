@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { User, LogOut, Pencil, QrCode } from "lucide-react";
+import { User, LogOut, Pencil, QrCode, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { normalizeUsername } from "@/lib/text";
@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -30,7 +31,7 @@ type Profile = {
   motherName: string | null;
 };
 
-export function ProfileMenu({ profile }: { profile: Profile }) {
+export function ProfileMenu({ profile, isManager }: { profile: Profile; isManager: boolean }) {
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState({
     name: profile.name,
@@ -85,14 +86,18 @@ export function ProfileMenu({ profile }: { profile: Profile }) {
         >
           <User className="h-5 w-5" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setEditOpen(true)}>
+        <DropdownMenuContent align="end" className="w-56 p-2">
+          <DropdownMenuItem className="px-2 py-2.5" onClick={() => setEditOpen(true)}>
             <Pencil className="h-4 w-4" /> Editar Perfil
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/qrcodes" />}>
+          <DropdownMenuItem className="px-2 py-2.5" render={<Link href="/qrcodes" />}>
             <QrCode className="h-4 w-4" /> QR Codes
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => logoutAction()}>
+          <DropdownMenuItem className="px-2 py-2.5" render={<Link href="/occurrences" />}>
+            <AlertTriangle className="h-4 w-4" /> {isManager ? "Ocorrências" : "Reportar ocorrência"}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="px-2 py-2.5" onClick={() => logoutAction()}>
             <LogOut className="h-4 w-4" /> Sair
           </DropdownMenuItem>
         </DropdownMenuContent>

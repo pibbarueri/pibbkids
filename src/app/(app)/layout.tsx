@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { canManage } from "@/lib/permissions";
 import { BottomNav } from "@/components/bottom-nav";
 import { BackHeader } from "@/components/back-header";
 
@@ -30,7 +31,7 @@ export default async function AppLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <BackHeader profile={profile} />
+      <BackHeader profile={profile} isManager={canManage(session.user.role)} />
       <main className="flex-1 pb-20">{children}</main>
       <BottomNav role={session.user.role} />
     </div>

@@ -627,15 +627,15 @@ export function VolunteersClient({
                 </div>
               )}
               <div className="flex gap-2">
-                <Button className="flex-1 h-12" disabled={!editValid || editSaving} onClick={saveEdit}>
-                  {editing.status === "PENDING" ? "Salvar e aprovar" : "Salvar alterações"}
-                </Button>
                 <Button
                   variant="outline"
-                  className="h-12"
+                  className="flex-1 h-12"
                   onClick={() => setDeactivateTarget(editing)}
                 >
                   Desativar
+                </Button>
+                <Button className="flex-1 h-12" disabled={!editValid || editSaving} onClick={saveEdit}>
+                  {editing.status === "PENDING" ? "Salvar e aprovar" : "Salvar alterações"}
                 </Button>
               </div>
             </div>

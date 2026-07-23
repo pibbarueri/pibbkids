@@ -30,9 +30,10 @@ const PAGE_TITLES: [string, string][] = [
   ["/curriculum", "Revistas"],
   ["/snacks", "Lanches"],
   ["/qrcodes", "QR Codes"],
+  ["/occurrences", "Ocorrências"],
 ];
 
-export function BackHeader({ profile }: { profile: Profile }) {
+export function BackHeader({ profile, isManager }: { profile: Profile; isManager: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -58,7 +59,7 @@ export function BackHeader({ profile }: { profile: Profile }) {
       </div>
       <span className="text-sm font-bold text-center truncate">{title}</span>
       <div className="flex justify-end">
-        <ProfileMenu profile={profile} />
+        <ProfileMenu profile={profile} isManager={isManager} />
       </div>
     </header>
   );

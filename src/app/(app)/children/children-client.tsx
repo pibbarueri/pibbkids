@@ -589,18 +589,20 @@ export function ChildrenClient({
               <p className="text-sm font-medium">Cuidados especiais / restrições</p>
               <Textarea rows={2} value={editForm.restrictions} onChange={(e) => setEditForm((f) => ({ ...f, restrictions: e.target.value }))} />
             </div>
-            <Button className="w-full h-12" disabled={!editValid || editSaving} onClick={saveEdit}>
-              Salvar alterações
-            </Button>
-            {isManager && editing && (
-              <Button
-                variant="ghost"
-                className="w-full h-12 text-destructive hover:text-destructive"
-                onClick={() => setDeleteTarget(editing)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" /> Remover
+            <div className="flex gap-2">
+              {isManager && editing && (
+                <Button
+                  variant="outline"
+                  className="flex-1 h-12"
+                  onClick={() => setDeleteTarget(editing)}
+                >
+                  Remover
+                </Button>
+              )}
+              <Button className="flex-1 h-12" disabled={!editValid || editSaving} onClick={saveEdit}>
+                Salvar alterações
               </Button>
-            )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

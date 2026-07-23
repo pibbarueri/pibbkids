@@ -31,6 +31,8 @@ model User {
   purchaseRequests  PurchaseRequest[]
   attendance        Attendance[]
   sessions          UserSession[]
+  occurrencesReported Occurrence[]      @relation("OccurrenceReporter")
+  occurrencesResolved Occurrence[]      @relation("OccurrenceResolver")
 
   @@map("users")
 }
@@ -333,4 +335,37 @@ enum SnackCategory {
   OUTROS
 
   @@map("snack_category")
+}
+
+// ─── Ocorrências ──────────────────────────────────────────────────────────────
+
+model Occurrence {
+  id           String            @id @default(cuid())
+  reporterId   String            @map("reporter_id")
+  reporter     User              @relation("OccurrenceReporter", fields: [reporterId], references: [id])
+  occurredAt   DateTime          @db.Date @map("occurred_at")
+  context      OccurrenceContext
+  details      String
+  status       OccurrenceStatus  @default(EM_ANALISE)
+  resolvedById String?           @map("resolved_by_id")
+  resolvedBy   User?             @relation("OccurrenceResolver", fields: [resolvedById], references: [id])
+  resolvedAt   DateTime?         @map("resolved_at")
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  @@map("occurrences")
+}
+
+enum OccurrenceContext {
+  EBD
+  CULTO
+  OUTRO
+
+  @@map("occurrence_context")
+}
+
+enum OccurrenceStatus {
+  EM_ANALISE
+  RESOLVIDO
+
+  @@map("occurrence_status")
 }

@@ -37,3 +37,9 @@ export function canManageSnacks(role: Role, hasApoioGeral: boolean) {
 export function canViewAttendanceOverview(role: Role) {
   return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER] as Role[]).includes(role);
 }
+
+// Occurrence reports: any non-management staff can file one; only ADMIN/COORDINATOR
+// see and resolve them (leadership doesn't file reports, it reviews them).
+export function canReportOccurrence(role: Role) {
+  return !canManage(role);
+}
