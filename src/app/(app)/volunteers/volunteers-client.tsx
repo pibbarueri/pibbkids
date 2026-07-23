@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Check, Filter, Pencil, Plus, RotateCcw, Search, X } from "lucide-react";
+import { Check, Filter, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { formatPhone, phoneDigits } from "@/lib/phone";
 import { normalizeUsername } from "@/lib/text";
 
@@ -127,8 +127,13 @@ export function VolunteersClient({
   const [editSaving, setEditSaving] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState<Volunteer | null>(null);
   const [restoreTarget, setRestoreTarget] = useState<Volunteer | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<Volunteer | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Volunteer | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteSaving, setDeleteSaving] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [approveTarget, setApproveTarget] = useState<Volunteer | null>(null);
-  const [approveForm, setApproveForm] = useState({ username: "", role: "ASSISTANT" });
+  const [approveForm, setApproveForm] = useState({ username: "", role: "ASSISTANT", documentUrl: "" });
   const [approveError, setApproveError] = useState<string | null>(null);
   const [tab, setTab] = useState(
     initialVolunteers.some((v) => v.active && v.status === "PENDING") ? "pending" : "approved"
@@ -230,12 +235,12 @@ export function VolunteersClient({
   }
 
   function openApprove(v: Volunteer) {
-    setApproveForm({ username: v.username ?? "", role: v.role });
+    setApproveForm({ username: v.username ?? "", role: v.role, documentUrl: v.documentUrl ?? "" });
     setApproveError(null);
     setApproveTarget(v);
   }
 
-  async function confirmApprove() {
+  async function confirmApprove(includeDocumentUrl: boolean) {
     if (!approveTarget || approveForm.username.length < 3) return;
     setSaving(true);
     setApproveError(null);
@@ -247,6 +252,7 @@ export function VolunteersClient({
         role: approveForm.role,
         status: "APPROVED",
         requirePasswordChange: true,
+        ...(includeDocumentUrl ? { documentUrl: approveForm.documentUrl || null } : {}),
       }),
     });
     if (res.ok) {
@@ -263,10 +269,28 @@ export function VolunteersClient({
   async function reject(v: Volunteer) {
     // Rejected volunteers are deactivated so they land in the Inativos tab.
     await patchVolunteer(v.id, { status: "REJECTED", active: false });
+    setRejectTarget(null);
   }
 
   async function restore(v: Volunteer) {
-    await patchVolunteer(v.id, { active: true, status: "APPROVED" });
+    // A previously rejected volunteer goes back to Pendentes for re-review, not straight to Aprovados.
+    await patchVolunteer(v.id, { active: true, status: v.status === "REJECTED" ? "PENDING" : "APPROVED" });
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || deleteConfirmText.trim().toLowerCase() !== "confirmar exclusão") return;
+    setDeleteSaving(true);
+    setDeleteError(null);
+    const res = await fetch(`/api/volunteers/${deleteTarget.id}`, { method: "DELETE" });
+    if (res.ok) {
+      setVolunteers((prev) => prev.filter((x) => x.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      setDeleteConfirmText("");
+    } else {
+      const body = await res.json();
+      setDeleteError(body.error ?? "Erro ao excluir.");
+    }
+    setDeleteSaving(false);
   }
 
   return (
@@ -444,7 +468,7 @@ export function VolunteersClient({
               volunteer={v}
               onSelect={() => setSelected(v)}
               onApprove={isLeadership ? () => openApprove(v) : undefined}
-              onReject={isLeadership ? () => reject(v) : undefined}
+              onReject={isLeadership ? () => setRejectTarget(v) : undefined}
             />
           ))}
         </TabsContent>
@@ -472,6 +496,7 @@ export function VolunteersClient({
               volunteer={v}
               onSelect={() => setSelected(v)}
               onRestore={isLeadership ? () => setRestoreTarget(v) : undefined}
+              onDelete={isLeadership ? () => { setDeleteTarget(v); setDeleteConfirmText(""); setDeleteError(null); } : undefined}
             />
           ))}
         </TabsContent>
@@ -485,6 +510,7 @@ export function VolunteersClient({
           {selected && (
             <div className="space-y-3 text-sm">
               <Row label="Usuário" value={selected.username} />
+              <Row label="Perfil de acesso" value={ROLE_LABELS[selected.role] ?? selected.role} />
               <Row label="Telefone" value={formatPhone(selected.phone ?? "")} />
 
               {selected.functions.length > 0 && (
@@ -622,6 +648,20 @@ export function VolunteersClient({
             <DialogTitle>Aprovar {approveTarget?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            {approveTarget && (approveTarget.functions.length > 0 || approveTarget.preferredClasses.length > 0) && (
+              <div className="space-y-1 rounded-md bg-muted/40 p-3">
+                {approveTarget.functions.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Funções: {approveTarget.functions.map((f) => FUNCTION_LABELS[f.function] ?? f.function).join(", ")}
+                  </p>
+                )}
+                {approveTarget.preferredClasses.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Turmas: {approveTarget.preferredClasses.map((c) => c.classGroup.name).join(", ")}
+                  </p>
+                )}
+              </div>
+            )}
             <div className="space-y-1">
               <p className="text-sm font-medium">Usuário *</p>
               <Input
@@ -642,14 +682,26 @@ export function VolunteersClient({
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Documentos (link da pasta do Drive)</p>
+              <Input
+                type="url"
+                className="h-12"
+                placeholder="https://drive.google.com/..."
+                value={approveForm.documentUrl}
+                onChange={(e) => setApproveForm((f) => ({ ...f, documentUrl: e.target.value }))}
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
               O voluntário criará a senha no primeiro acesso com CPF + data de nascimento.
             </p>
             {approveError && <p className="text-sm text-destructive">{approveError}</p>}
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 h-12" onClick={() => setApproveTarget(null)}>Cancelar</Button>
-              <Button className="flex-1 h-12" disabled={approveForm.username.length < 3 || saving} onClick={confirmApprove}>
-                Aprovar
+              <Button variant="outline" className="flex-1 h-12" disabled={approveForm.username.length < 3 || saving} onClick={() => confirmApprove(false)}>
+                Informar depois
+              </Button>
+              <Button className="flex-1 h-12" disabled={approveForm.username.length < 3 || saving} onClick={() => confirmApprove(true)}>
+                Salvar
               </Button>
             </div>
           </div>
@@ -686,8 +738,10 @@ export function VolunteersClient({
             <DialogTitle>Restaurar voluntário</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Restaurar <span className="font-medium text-foreground">{restoreTarget?.name}</span>?
-            Ele voltará para a lista de ativos.
+            Restaurar <span className="font-medium text-foreground">{restoreTarget?.name}</span>?{" "}
+            {restoreTarget?.status === "REJECTED"
+              ? "Ele voltará para a aba Pendentes, para nova avaliação."
+              : "Ele voltará para a lista de ativos."}
           </p>
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1 h-12" onClick={() => setRestoreTarget(null)}>
@@ -705,6 +759,67 @@ export function VolunteersClient({
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!rejectTarget} onOpenChange={(o) => !o && setRejectTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rejeitar voluntário</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Rejeitar <span className="font-medium text-foreground">{rejectTarget?.name}</span>?
+            Ele irá para a aba Inativos e pode ser restaurado depois.
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 h-12" onClick={() => setRejectTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1 h-12"
+              onClick={() => rejectTarget && reject(rejectTarget)}
+            >
+              Rejeitar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) { setDeleteTarget(null); setDeleteConfirmText(""); setDeleteError(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir voluntário permanentemente</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Excluir <span className="font-medium text-foreground">{deleteTarget?.name}</span> permanentemente?
+            Essa ação é <span className="font-medium text-foreground">irreversível</span> — todos os dados dele serão apagados do sistema.
+          </p>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">
+              Digite <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">confirmar exclusão</code> para prosseguir
+            </p>
+            <Input
+              className="h-12"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="confirmar exclusão"
+            />
+          </div>
+          {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 h-12" onClick={() => setDeleteTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1 h-12"
+              disabled={deleteConfirmText.trim().toLowerCase() !== "confirmar exclusão" || deleteSaving}
+              onClick={confirmDelete}
+            >
+              Excluir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -716,6 +831,7 @@ function VolunteerCard({
   onApprove,
   onReject,
   onRestore,
+  onDelete,
 }: {
   volunteer: Volunteer;
   onSelect: () => void;
@@ -723,7 +839,9 @@ function VolunteerCard({
   onApprove?: () => void;
   onReject?: () => void;
   onRestore?: () => void;
+  onDelete?: () => void;
 }) {
+  const isPending = !!onApprove;
   return (
     <button
       onClick={onSelect}
@@ -732,12 +850,27 @@ function VolunteerCard({
       <div className="flex items-center justify-between">
         <div>
           <p className="font-medium">{volunteer.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {volunteer.functions.length > 0
-              ? volunteer.functions.map((f) => FUNCTION_LABELS[f.function] ?? f.function).join(", ")
-              : "—"}
-            {!volunteer.active && " · Inativo"}
-          </p>
+          {isPending ? (
+            <div className="mt-0.5 space-y-0.5">
+              <p className="text-xs text-muted-foreground">
+                Funções: {volunteer.functions.length > 0
+                  ? volunteer.functions.map((f) => FUNCTION_LABELS[f.function] ?? f.function).join(", ")
+                  : "—"}
+              </p>
+              {volunteer.preferredClasses.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Turmas: {volunteer.preferredClasses.map((c) => c.classGroup.name).join(", ")}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {volunteer.functions.length > 0
+                ? volunteer.functions.map((f) => FUNCTION_LABELS[f.function] ?? f.function).join(", ")
+                : "—"}
+              {!volunteer.active && " · Inativo"}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {onApprove && (
@@ -768,6 +901,16 @@ function VolunteerCard({
               className="flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90 border"
             >
               <RotateCcw className="h-4 w-4 text-muted-foreground" />
+            </span>
+          )}
+          {onDelete && (
+            <span
+              role="button"
+              aria-label="Excluir"
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90 border"
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
             </span>
           )}
           {onEdit && !onApprove && !onRestore && (

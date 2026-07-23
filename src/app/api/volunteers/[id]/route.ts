@@ -79,3 +79,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   return NextResponse.json(user);
 }
+
+// Hard delete — irreversible, confirmed client-side with a typed phrase. Only leadership can do this.
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session || !isLeadership(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+
+  try {
+    await prisma.user.delete({ where: { id } });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003") {
+      return NextResponse.json(
+        { error: "Não é possível excluir: este voluntário possui registros vinculados (escala ou presença). Desative-o em vez de excluir." },
+        { status: 409 }
+      );
+    }
+    throw err;
+  }
+
+  await revokeAllUserSessions(id);
+  return NextResponse.json({ ok: true });
+}
