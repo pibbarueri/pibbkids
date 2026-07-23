@@ -189,6 +189,12 @@ export function LessonsClient({
         </div>
       )}
 
+      {visibleClasses.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-8">
+          Não há aulas a serem exibidas. Você não está associado a nenhuma turma.
+        </p>
+      )}
+
       <div className="space-y-3">
         {visibleClasses.map((cls) => {
           const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.tipo === "EBD");
