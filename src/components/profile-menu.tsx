@@ -34,12 +34,8 @@ type Profile = {
 export function ProfileMenu({ profile, isManager }: { profile: Profile; isManager: boolean }) {
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState({
-    name: profile.name,
     username: profile.username ?? "",
     phone: profile.phone ?? "",
-    cpf: profile.cpf ?? "",
-    birthdate: profile.birthdate ? new Date(profile.birthdate).toISOString().slice(0, 10) : "",
-    motherName: profile.motherName ?? "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -48,7 +44,7 @@ export function ProfileMenu({ profile, isManager }: { profile: Profile; isManage
 
   const passwordMismatch = !!form.newPassword && form.newPassword !== form.confirmPassword;
   const passwordValid = !form.newPassword || (form.newPassword.length >= 6 && form.newPassword.length <= 70);
-  const valid = form.name.trim() && form.username.trim().length >= 3 && !passwordMismatch && passwordValid;
+  const valid = form.username.trim().length >= 3 && !passwordMismatch && passwordValid;
 
   async function save() {
     if (!valid) return;
@@ -58,12 +54,8 @@ export function ProfileMenu({ profile, isManager }: { profile: Profile; isManage
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: form.name,
         username: form.username,
         phone: form.phone,
-        cpf: form.cpf,
-        birthdate: form.birthdate || null,
-        motherName: form.motherName,
         ...(form.newPassword ? { newPassword: form.newPassword } : {}),
       }),
     });
@@ -110,28 +102,12 @@ export function ProfileMenu({ profile, isManager }: { profile: Profile; isManage
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
-              <p className="text-sm font-medium">Nome</p>
-              <Input className="h-12" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
               <p className="text-sm font-medium">Usuário</p>
               <Input className="h-12" value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: normalizeUsername(e.target.value) }))} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Telefone</p>
               <Input type="tel" inputMode="numeric" className="h-12" value={formatPhone(form.phone)} onChange={(e) => setForm((f) => ({ ...f, phone: phoneDigits(e.target.value) }))} />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">CPF</p>
-              <Input className="h-12" value={form.cpf} onChange={(e) => setForm((f) => ({ ...f, cpf: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Data de nascimento</p>
-              <Input type="date" className="h-12" value={form.birthdate} onChange={(e) => setForm((f) => ({ ...f, birthdate: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Nome da mãe</p>
-              <Input className="h-12" value={form.motherName} onChange={(e) => setForm((f) => ({ ...f, motherName: e.target.value }))} />
             </div>
 
             <div className="border-t pt-3 space-y-3">
