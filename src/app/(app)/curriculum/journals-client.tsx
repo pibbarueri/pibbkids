@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Filter, Plus, Trash2 } from "lucide-react";
+import { Filter, LayoutGrid, Plus, Trash2 } from "lucide-react";
 
 const SERIES_LABELS: Record<string, string> = {
   CULTO_INFANTIL: "Culto Infantil",
@@ -75,6 +75,7 @@ export function JournalsClient({
   const [editing, setEditing] = useState<Journal | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [overviewOpen, setOverviewOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterClassIds, setFilterClassIds] = useState<string[]>([]);
   const [filterSeries, setFilterSeries] = useState<string[]>([]);
@@ -162,12 +163,64 @@ export function JournalsClient({
 
   return (
     <div className="space-y-3">
-      <Button variant="outline" className="h-11 relative w-full" onClick={() => setFilterOpen(true)}>
-        <Filter className="h-4 w-4 mr-2" /> Filtrar
-        {filterCount > 0 && (
-          <Badge className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 text-[10px]">{filterCount}</Badge>
-        )}
-      </Button>
+      <div className="flex gap-2">
+        <Button className="h-11 flex-1" onClick={() => setOverviewOpen(true)}>
+          <LayoutGrid className="h-4 w-4 mr-2" /> Visão geral
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-11 w-11 relative shrink-0"
+          aria-label="Filtrar"
+          onClick={() => setFilterOpen(true)}
+        >
+          <Filter className="h-4 w-4" />
+          {filterCount > 0 && (
+            <Badge className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 text-[10px]">{filterCount}</Badge>
+          )}
+        </Button>
+      </div>
+
+      <Dialog open={overviewOpen} onOpenChange={setOverviewOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Visão geral das revistas</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-auto border rounded-lg max-h-[70vh]">
+            <table className="text-sm w-max">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="sticky top-0 bg-muted p-2 text-left border-r min-w-[120px]">Turma</th>
+                  <th className="sticky top-0 bg-muted p-2 text-left border-r min-w-[110px]">Série</th>
+                  <th className="sticky top-0 bg-muted p-2 text-left border-r min-w-[200px]">Edição - Título</th>
+                  <th className="sticky top-0 bg-muted p-2 text-left border-r min-w-[90px]">Semanas</th>
+                  <th className="sticky top-0 bg-muted p-2 text-left border-r min-w-[80px]">Uso</th>
+                  <th className="sticky top-0 bg-muted p-2 text-left border-r min-w-[110px]">Recursos visuais?</th>
+                  <th className="sticky top-0 bg-muted p-2 text-left border-r min-w-[80px]">Estoque aluno</th>
+                  <th className="sticky top-0 bg-muted p-2 text-left min-w-[90px]">Estoque prof.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredJournals.map((j) => (
+                  <tr key={j.id} className="border-t">
+                    <td className="p-2 border-r align-top">{j.classGroup.name}</td>
+                    <td className="p-2 border-r align-top">{SERIES_LABELS[j.series]}</td>
+                    <td className="p-2 border-r align-top">{j.edition} - {j.title}</td>
+                    <td className="p-2 border-r align-top">{j.totalWeeks ?? "—"}</td>
+                    <td className="p-2 border-r align-top">{USAGE_LABELS[j.usage]}</td>
+                    <td className="p-2 border-r align-top">{j.hasVisualResources ? "Sim" : "Não"}</td>
+                    <td className="p-2 border-r align-top">{j.studentCopies}</td>
+                    <td className="p-2 align-top">{j.teacherCopies}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredJournals.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">Nenhuma revista encontrada.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">

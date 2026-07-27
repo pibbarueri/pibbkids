@@ -168,7 +168,7 @@ export function AttendanceClient({
           <Lock className="h-3.5 w-3.5 shrink-0" />
           {isFuture
             ? "Não é possível marcar presença para um domingo futuro."
-            : "Somente administrador pode editar domingos passados."}
+            : "Somente liderança pode editar domingos passados."}
         </div>
       )}
 
