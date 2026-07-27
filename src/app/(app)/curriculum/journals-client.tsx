@@ -14,13 +14,20 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Filter, LayoutGrid, Plus, Trash2 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { ChevronDown, Filter, LayoutGrid, Plus, Trash2 } from "lucide-react";
 
 const SERIES_LABELS: Record<string, string> = {
   CULTO_INFANTIL: "Culto Infantil",
@@ -80,7 +87,31 @@ export function JournalsClient({
   const [filterClassIds, setFilterClassIds] = useState<string[]>([]);
   const [filterSeries, setFilterSeries] = useState<string[]>([]);
   const [filterUsage, setFilterUsage] = useState<string[]>([]);
-  const filterCount = filterClassIds.length + filterSeries.length + filterUsage.length;
+  const [filterVisual, setFilterVisual] = useState<string[]>([]);
+
+  const studentBounds: [number, number] = [
+    Math.min(0, ...journals.map((j) => j.studentCopies)),
+    Math.max(0, ...journals.map((j) => j.studentCopies)),
+  ];
+  const teacherBounds: [number, number] = [
+    Math.min(0, ...journals.map((j) => j.teacherCopies)),
+    Math.max(0, ...journals.map((j) => j.teacherCopies)),
+  ];
+
+  const [filterStudentRange, setFilterStudentRange] = useState<[number, number]>(studentBounds);
+  const [filterTeacherRange, setFilterTeacherRange] = useState<[number, number]>(teacherBounds);
+
+  function rangeDiffers(a: [number, number], b: [number, number]) {
+    return a[0] !== b[0] || a[1] !== b[1];
+  }
+
+  const filterCount =
+    filterClassIds.length +
+    filterSeries.length +
+    filterUsage.length +
+    filterVisual.length +
+    (rangeDiffers(filterStudentRange, studentBounds) ? 1 : 0) +
+    (rangeDiffers(filterTeacherRange, teacherBounds) ? 1 : 0);
 
   function toggleFilterClass(id: string) {
     setFilterClassIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -91,11 +122,25 @@ export function JournalsClient({
   function toggleFilterUsage(u: string) {
     setFilterUsage((prev) => (prev.includes(u) ? prev.filter((x) => x !== u) : [...prev, u]));
   }
+  function toggleFilterVisual(v: string) {
+    setFilterVisual((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]));
+  }
+  function clearFilters() {
+    setFilterClassIds([]);
+    setFilterSeries([]);
+    setFilterUsage([]);
+    setFilterVisual([]);
+    setFilterStudentRange(studentBounds);
+    setFilterTeacherRange(teacherBounds);
+  }
 
   const filteredJournals = journals
     .filter((j) => filterClassIds.length === 0 || filterClassIds.includes(j.classGroupId))
     .filter((j) => filterSeries.length === 0 || filterSeries.includes(j.series))
-    .filter((j) => filterUsage.length === 0 || filterUsage.includes(j.usage));
+    .filter((j) => filterUsage.length === 0 || filterUsage.includes(j.usage))
+    .filter((j) => filterVisual.length === 0 || filterVisual.includes(j.hasVisualResources ? "sim" : "nao"))
+    .filter((j) => j.studentCopies >= filterStudentRange[0] && j.studentCopies <= filterStudentRange[1])
+    .filter((j) => j.teacherCopies >= filterTeacherRange[0] && j.teacherCopies <= filterTeacherRange[1]);
 
   function openCreate() {
     setEditing(null);
@@ -230,43 +275,100 @@ export function JournalsClient({
           <div className="space-y-4">
             <div className="space-y-1">
               <p className="text-sm font-medium">Turma</p>
-              <div className="max-h-40 overflow-y-auto rounded-md border divide-y">
-                {classes.map((c) => (
-                  <label key={c.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer">
-                    <Checkbox checked={filterClassIds.includes(c.id)} onCheckedChange={() => toggleFilterClass(c.id)} />
-                    {c.name}
-                  </label>
-                ))}
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger className={cn(buttonVariants({ variant: "outline" }), "h-11 w-full justify-between font-normal")}>
+                  {filterClassIds.length === 0 ? "Todas as turmas" : `${filterClassIds.length} selecionada(s)`}
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-(--anchor-width) max-h-60 overflow-y-auto">
+                  {classes.map((c) => (
+                    <DropdownMenuCheckboxItem key={c.id} checked={filterClassIds.includes(c.id)} onCheckedChange={() => toggleFilterClass(c.id)}>
+                      {c.name}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Série</p>
-              <div className="max-h-40 overflow-y-auto rounded-md border divide-y">
-                {Object.entries(SERIES_LABELS).map(([value, label]) => (
-                  <label key={value} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer">
-                    <Checkbox checked={filterSeries.includes(value)} onCheckedChange={() => toggleFilterSeries(value)} />
-                    {label}
-                  </label>
-                ))}
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger className={cn(buttonVariants({ variant: "outline" }), "h-11 w-full justify-between font-normal")}>
+                  {filterSeries.length === 0 ? "Todas as séries" : `${filterSeries.length} selecionada(s)`}
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-(--anchor-width) max-h-60 overflow-y-auto">
+                  {Object.entries(SERIES_LABELS).map(([value, label]) => (
+                    <DropdownMenuCheckboxItem key={value} checked={filterSeries.includes(value)} onCheckedChange={() => toggleFilterSeries(value)}>
+                      {label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Uso</p>
-              <div className="rounded-md border divide-y">
-                {Object.entries(USAGE_LABELS).map(([value, label]) => (
-                  <label key={value} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer">
-                    <Checkbox checked={filterUsage.includes(value)} onCheckedChange={() => toggleFilterUsage(value)} />
-                    {label}
-                  </label>
-                ))}
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger className={cn(buttonVariants({ variant: "outline" }), "h-11 w-full justify-between font-normal")}>
+                  {filterUsage.length === 0 ? "Todos os usos" : `${filterUsage.length} selecionada(s)`}
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-(--anchor-width) max-h-60 overflow-y-auto">
+                  {Object.entries(USAGE_LABELS).map(([value, label]) => (
+                    <DropdownMenuCheckboxItem key={value} checked={filterUsage.includes(value)} onCheckedChange={() => toggleFilterUsage(value)}>
+                      {label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Recursos visuais?</p>
+              <DropdownMenu>
+                <DropdownMenuTrigger className={cn(buttonVariants({ variant: "outline" }), "h-11 w-full justify-between font-normal")}>
+                  {filterVisual.length === 0 ? "Todos" : `${filterVisual.length} selecionada(s)`}
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-(--anchor-width) max-h-60 overflow-y-auto">
+                  <DropdownMenuCheckboxItem checked={filterVisual.includes("sim")} onCheckedChange={() => toggleFilterVisual("sim")}>
+                    Sim
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={filterVisual.includes("nao")} onCheckedChange={() => toggleFilterVisual("nao")}>
+                    Não
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {studentBounds[0] !== studentBounds[1] && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Estoque aluno</p>
+                <Slider
+                  value={filterStudentRange}
+                  onValueChange={(v) => setFilterStudentRange(v as [number, number])}
+                  min={studentBounds[0]}
+                  max={studentBounds[1]}
+                  step={1}
+                />
+                <p className="text-xs text-muted-foreground">{filterStudentRange[0]} – {filterStudentRange[1]} cópias</p>
+              </div>
+            )}
+
+            {teacherBounds[0] !== teacherBounds[1] && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Estoque professor</p>
+                <Slider
+                  value={filterTeacherRange}
+                  onValueChange={(v) => setFilterTeacherRange(v as [number, number])}
+                  min={teacherBounds[0]}
+                  max={teacherBounds[1]}
+                  step={1}
+                />
+                <p className="text-xs text-muted-foreground">{filterTeacherRange[0]} – {filterTeacherRange[1]} cópias</p>
+              </div>
+            )}
+
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 h-11"
-                onClick={() => { setFilterClassIds([]); setFilterSeries([]); setFilterUsage([]); }}
-              >
+              <Button variant="outline" className="flex-1 h-11" onClick={clearFilters}>
                 Limpar
               </Button>
               <Button className="flex-1 h-11" onClick={() => setFilterOpen(false)}>
