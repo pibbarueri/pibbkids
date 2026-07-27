@@ -71,13 +71,13 @@ export function OverviewClient({
         <Copy className="h-4 w-4 mr-2" /> Copiar calendário
       </Button>
 
-      <div className="overflow-x-auto border rounded-lg">
+      <div className="overflow-auto border rounded-lg max-h-[70vh]">
         <table className="text-sm w-max">
           <thead>
             <tr className="bg-muted/50">
-              <th className="sticky left-0 bg-muted/50 p-2 text-left border-r z-10 min-w-[80px]">Domingo</th>
+              <th className="sticky top-0 left-0 bg-muted p-2 text-left border-r z-20 min-w-[80px]">Domingo</th>
               {classes.map((cls) => (
-                <th key={cls.id} className="p-2 text-left border-r min-w-[180px]">{cls.name}</th>
+                <th key={cls.id} className="sticky top-0 bg-muted p-2 text-left border-r z-10 min-w-[180px]">{cls.name}</th>
               ))}
             </tr>
           </thead>
