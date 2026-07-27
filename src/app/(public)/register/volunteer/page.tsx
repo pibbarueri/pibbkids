@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { cn } from "@/lib/utils";
 import { ANTECEDENTES_LINKS, whatsappLink } from "@/lib/contact";
 import { formatPhone, phoneDigits } from "@/lib/phone";
+import { formatCpf, cpfDigits } from "@/lib/cpf";
 
 const FUNCTION_LABELS: Record<FunctionType, string> = {
   PROFESSOR: "Professor(a)",
@@ -57,6 +58,7 @@ export default function RegisterVolunteerPage() {
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const phone = watch("phone") ?? "";
+  const cpf = watch("cpf") ?? "";
 
   useEffect(() => {
     fetch("/api/classes").then((r) => r.json()).then(setClasses);
@@ -135,7 +137,13 @@ export default function RegisterVolunteerPage() {
           </Field>
 
           <Field label="CPF *" error={errors.cpf?.message}>
-            <Input {...register("cpf")} placeholder="000.000.000-00" className="h-12" />
+            <Input
+              inputMode="numeric"
+              value={formatCpf(cpf)}
+              onChange={(e) => setValue("cpf", cpfDigits(e.target.value), { shouldValidate: true })}
+              placeholder="000.000.000-00"
+              className="h-12"
+            />
           </Field>
 
           <Field label="Data de nascimento *" error={errors.birthdate?.message}>

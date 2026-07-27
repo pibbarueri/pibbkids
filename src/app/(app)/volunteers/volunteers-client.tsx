@@ -24,6 +24,7 @@ import {
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Check, Filter, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { formatPhone, phoneDigits } from "@/lib/phone";
+import { formatCpf, cpfDigits } from "@/lib/cpf";
 import { normalizeUsername } from "@/lib/text";
 
 const FUNCTION_OPTIONS = [
@@ -323,7 +324,7 @@ export function VolunteersClient({
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">CPF *</p>
-              <Input className="h-12" value={addForm.cpf} onChange={(e) => setAddForm((f) => ({ ...f, cpf: e.target.value }))} />
+              <Input className="h-12" value={formatCpf(addForm.cpf)} onChange={(e) => setAddForm((f) => ({ ...f, cpf: cpfDigits(e.target.value) }))} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Data de nascimento *</p>
@@ -576,7 +577,7 @@ export function VolunteersClient({
                 <>
                   <div className="space-y-1">
                     <p className="text-sm font-medium">CPF</p>
-                    <Input className="h-12" value={editForm.cpf} onChange={(e) => setEditForm((f) => ({ ...f, cpf: e.target.value }))} />
+                    <Input className="h-12" value={formatCpf(editForm.cpf)} onChange={(e) => setEditForm((f) => ({ ...f, cpf: cpfDigits(e.target.value) }))} />
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Data de nascimento</p>

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { logoutAction } from "@/lib/actions";
 import { formatPhone, phoneDigits } from "@/lib/phone";
+import { formatCpf } from "@/lib/cpf";
 
 type Profile = {
   name: string;
@@ -41,6 +42,7 @@ export function ProfileMenu({ profile, isManager }: { profile: Profile; isManage
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
 
   const passwordMismatch = !!form.newPassword && form.newPassword !== form.confirmPassword;
   const passwordValid = !form.newPassword || (form.newPassword.length >= 6 && form.newPassword.length <= 70);
@@ -50,6 +52,7 @@ export function ProfileMenu({ profile, isManager }: { profile: Profile; isManage
     if (!valid) return;
     setSaving(true);
     setError(null);
+    setUsernameError(null);
     const res = await fetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -62,6 +65,8 @@ export function ProfileMenu({ profile, isManager }: { profile: Profile; isManage
     if (res.ok) {
       setEditOpen(false);
       setForm((f) => ({ ...f, newPassword: "", confirmPassword: "" }));
+    } else if (res.status === 409) {
+      setUsernameError("Esse usuário já existe");
     } else {
       const body = await res.json();
       setError(body.error ?? "Erro ao salvar.");
@@ -103,11 +108,32 @@ export function ProfileMenu({ profile, isManager }: { profile: Profile; isManage
           <div className="space-y-3">
             <div className="space-y-1">
               <p className="text-sm font-medium">Usuário</p>
-              <Input className="h-12" value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: normalizeUsername(e.target.value) }))} />
+              <Input className="h-12" value={form.username} onChange={(e) => { setForm((f) => ({ ...f, username: normalizeUsername(e.target.value) })); setUsernameError(null); }} />
+              {usernameError && <p className="text-xs text-destructive">{usernameError}</p>}
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Telefone</p>
               <Input type="tel" inputMode="numeric" className="h-12" value={formatPhone(form.phone)} onChange={(e) => setForm((f) => ({ ...f, phone: phoneDigits(e.target.value) }))} />
+            </div>
+
+            <div className="border-t pt-3 space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Dados cadastrais</p>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Nome</p>
+                <Input className="h-12" value={profile.name} disabled />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">CPF</p>
+                <Input className="h-12" value={formatCpf(profile.cpf ?? "")} disabled />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Data de nascimento</p>
+                <Input type="date" className="h-12" value={profile.birthdate ? new Date(profile.birthdate).toISOString().slice(0, 10) : ""} disabled />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Nome da mãe</p>
+                <Input className="h-12" value={profile.motherName ?? ""} disabled />
+              </div>
             </div>
 
             <div className="border-t pt-3 space-y-3">
