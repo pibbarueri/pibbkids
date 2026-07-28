@@ -186,7 +186,7 @@ export function EventsClient({
               />
             </div>
             <div className="grid grid-cols-4 gap-2">
-              <div className="col-span-2 space-y-1">
+              <div className="col-span-2 space-y-1 min-w-0">
                 <p className="text-sm font-medium">Data</p>
                 <Input
                   type="date"
@@ -196,7 +196,7 @@ export function EventsClient({
                   disabled={!isManager}
                 />
               </div>
-              <div className="col-span-1 space-y-1">
+              <div className="col-span-1 space-y-1 min-w-0">
                 <p className="text-sm font-medium">Início</p>
                 <Input
                   type="time"
@@ -206,7 +206,7 @@ export function EventsClient({
                   disabled={!isManager}
                 />
               </div>
-              <div className="col-span-1 space-y-1">
+              <div className="col-span-1 space-y-1 min-w-0">
                 <p className="text-sm font-medium">Fim</p>
                 <Input
                   type="time"
