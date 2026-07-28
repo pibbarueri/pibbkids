@@ -19,8 +19,10 @@ async function findUser(name: string, phone: string) {
   const ph = phoneDigits(phone);
   if (!name?.trim() || !ph) return null;
 
+  // No requirePasswordChange filter here — this flow doubles as both "primeiro acesso"
+  // (no password yet) and "esqueci minha senha" (resetting an existing one).
   const candidates = await prisma.user.findMany({
-    where: { active: true, requirePasswordChange: true, phone: ph },
+    where: { active: true, phone: ph },
     select: { id: true, name: true, username: true, cpf: true, motherName: true, birthdate: true },
   });
 

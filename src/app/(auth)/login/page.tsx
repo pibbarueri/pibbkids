@@ -31,6 +31,8 @@ export default function LoginPage() {
       const messages: Record<string, string> = {
         inactive: "Usuário sem acesso ao sistema. Contate a liderança em caso de dúvidas.",
         "first-access": 'Você ainda não criou sua senha. Clique em "Primeiro acesso?" abaixo.',
+        "not-found": "Usuário não encontrado.",
+        "wrong-password": "Senha incorreta.",
       };
       setError((result.code && messages[result.code]) ?? "Usuário ou senha inválidos.");
       setLoading(false);
@@ -80,9 +82,13 @@ export default function LoginPage() {
             <Button type="submit" className="w-full h-12" disabled={loading}>
               {loading ? "Entrando..." : "Entrar"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-muted-foreground space-x-3">
               <Link href="/first-access" className="text-primary hover:underline">
                 Primeiro acesso?
+              </Link>
+              <span>·</span>
+              <Link href="/first-access" className="text-primary hover:underline">
+                Esqueci minha senha
               </Link>
             </p>
           </form>

@@ -13,6 +13,14 @@ class FirstAccessError extends CredentialsSignin {
   code = "first-access";
 }
 
+class UserNotFoundError extends CredentialsSignin {
+  code = "not-found";
+}
+
+class WrongPasswordError extends CredentialsSignin {
+  code = "wrong-password";
+}
+
 const {
   handlers,
   signIn,
@@ -29,17 +37,17 @@ const {
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { username: credentials.username as string },
+        const user = await prisma.user.findFirst({
+          where: { username: { equals: credentials.username as string, mode: "insensitive" } },
         });
 
-        if (!user || !user.username) return null;
+        if (!user || !user.username) throw new UserNotFoundError();
         if (!user.active) throw new InactiveUserError();
         // No password yet means the volunteer hasn't done first access.
         if (!user.password) throw new FirstAccessError();
 
         const valid = await bcrypt.compare(credentials.password as string, user.password);
-        if (!valid) return null;
+        if (!valid) throw new WrongPasswordError();
 
         const sessionToken = await createSession(user.id);
         return { id: user.id, name: user.name, username: user.username, role: user.role, sessionToken };
