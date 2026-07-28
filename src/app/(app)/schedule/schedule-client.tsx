@@ -78,29 +78,49 @@ function formatDate(iso: string) {
   });
 }
 
-function formatWhatsApp(sundays: string[], slots: Slot[], classes: ClassGroup[]) {
-  const lines: string[] = ["📅 *Escala PIBB Kids*\n"];
-  for (const sunday of sundays) {
-    const date = formatDate(sunday);
-    const daySlots = slots.filter((s) => s.date.startsWith(sunday.slice(0, 10)));
-    if (daySlots.length === 0) continue;
-    lines.push(`*${date}*`);
+const CARGO_SHORT: Record<string, string> = { PROFESSOR: "prof", AUXILIAR: "aux" };
 
-    const special = daySlots.filter((s) => s.slotType !== "TURMA");
+function formatWhatsApp(sunday: string, slots: Slot[], classes: ClassGroup[]) {
+  const date = formatDate(sunday);
+  const lines: string[] = [`📅 *Escala PIBB Kids (${date})*`, ""];
+
+  const daySlots = slots.filter((s) => s.date.startsWith(sunday.slice(0, 10)));
+
+  // Coordenação and Sala Plus aren't split by horário in the summary — Sala Plus has no
+  // horário at all, and coordenação reads clearer as one line even when it covers both.
+  const coord = daySlots.find((s) => s.slotType === "COORDENACAO");
+  lines.push(`Coordenação: ${coord?.user.name}`);
+
+  const salaPlus = daySlots.filter((s) => s.slotType === "SALA_PLUS");
+  for (const s of salaPlus) {
+    lines.push(`Sala Plus: ${s.user.name}`);
+  }
+
+  for (const horario of ["EBD", "CULTO"] as const) {
+    const bucket = daySlots.filter(
+      (s) => s.horario === horario && s.slotType !== "COORDENACAO" && s.slotType !== "SALA_PLUS"
+    );
+    if (bucket.length === 0) continue;
+
+    lines.push("", `*${horario === "EBD" ? "EBD" : "Culto"}*`);
+
+    const special = bucket.filter((s) => s.slotType !== "TURMA");
     for (const s of special) {
-      lines.push(`  ${slotLabel(s)}: ${s.user.name}`);
+      lines.push(`${slotLabel(s)}: ${s.user.name}`);
     }
 
     for (const cls of classes) {
-      const classSlots = daySlots.filter((s) => s.classGroupId === cls.id);
+      const classSlots = bucket.filter((s) => s.classGroupId === cls.id);
       if (classSlots.length === 0) continue;
-      lines.push(`  *${cls.name}*`);
+      lines.push(`*${cls.name}*`);
       for (const s of classSlots) {
-        lines.push(`    ${slotLabel(s)} (${s.horario}): ${s.user.name}`);
+        const cargo = CARGO_SHORT[s.role ?? ""] ?? slotLabel(s);
+        lines.push(`  ${s.user.name} (${cargo})`);
       }
     }
-    lines.push("");
   }
+
+  lines.push("");
   return lines.join("\n");
 }
 
@@ -272,7 +292,7 @@ export function ScheduleClient({
   }
 
   function copyWhatsApp() {
-    const text = formatWhatsApp(sundays, slots, classes);
+    const text = formatWhatsApp(selectedSunday, daySlots, classes);
     navigator.clipboard.writeText(text);
   }
 
