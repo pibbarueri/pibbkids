@@ -24,8 +24,9 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, Check, Filter, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
-import { formatPhone, phoneDigits } from "@/lib/phone";
+import { formatPhone, phoneDigits, whatsappChatLink } from "@/lib/phone";
 import { ageLabel, suggestedClassName } from "@/lib/age";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 
 const FREQUENCIA_LABELS: Record<string, string> = {
   EBD: "Escola Dominical (EBD)",
@@ -510,8 +511,8 @@ export function ChildrenClient({
               <Row label="Frequência" value={FREQUENCIA_LABELS[selected.frequency] ?? selected.frequency} />
               <Row label="Pai" value={selected.fatherName} />
               <Row label="Mãe" value={selected.motherName} />
-              <Row label="Telefone Pai" value={formatPhone(selected.fatherPhone ?? "")} />
-              <Row label="Telefone Mãe" value={formatPhone(selected.motherPhone ?? "")} />
+              <PhoneRow label="Telefone Pai" phone={selected.fatherPhone} />
+              <PhoneRow label="Telefone Mãe" phone={selected.motherPhone} />
               {selected.allergies && (
                 <div className="flex gap-2 p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
                   <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
@@ -846,6 +847,27 @@ function Row({ label, value }: { label: string; value: string | null | undefined
     <div>
       <p className="text-muted-foreground text-xs">{label}</p>
       <p>{value}</p>
+    </div>
+  );
+}
+
+function PhoneRow({ label, phone }: { label: string; phone: string | null | undefined }) {
+  if (!phone) return null;
+  return (
+    <div>
+      <p className="text-muted-foreground text-xs">{label}</p>
+      <div className="flex items-center gap-2">
+        <p>{formatPhone(phone)}</p>
+        <a
+          href={whatsappChatLink(phone)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Abrir WhatsApp de ${label}`}
+          className="flex h-6 w-6 items-center justify-center rounded-full text-green-600 transition-transform active:scale-90"
+        >
+          <WhatsAppIcon className="h-4 w-4" />
+        </a>
+      </div>
     </div>
   );
 }

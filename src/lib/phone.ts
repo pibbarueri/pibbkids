@@ -14,3 +14,8 @@ export function formatPhone(value: string): string {
     return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
 }
+
+// wa.me chat link, no predefined message. Assumes a Brazilian number (adds the 55 country code).
+export function whatsappChatLink(value: string): string {
+  return `https://wa.me/55${phoneDigits(value)}`
+}

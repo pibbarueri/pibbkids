@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import QRCodeStyling from "qr-code-styling";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Check, Copy, Download } from "lucide-react";
 
 const TARGETS = [
   { path: "/register/child", label: "Cadastro de crianças" },
@@ -15,6 +15,7 @@ const BRAND_ORANGE = "#ea580c";
 function QrCard({ url, label, path }: { url: string; label: string; path: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const qrRef = useRef<QRCodeStyling | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const qr = new QRCodeStyling({
@@ -42,14 +43,25 @@ function QrCard({ url, label, path }: { url: string; label: string; path: string
     qrRef.current?.download({ name: `qrcode-${path.split("/").pop()}`, extension: "png" });
   }
 
+  function copyLink() {
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   return (
     <div className="flex flex-col items-center gap-3 p-4 border rounded-lg bg-background">
       <p className="font-medium text-sm text-center">{label}</p>
       <div ref={containerRef} className="p-3 bg-white rounded-md" />
-      <p className="text-xs text-muted-foreground text-center break-all">{url}</p>
-      <Button variant="outline" className="w-full" onClick={download}>
-        <Download className="h-4 w-4 mr-2" /> Baixar PNG
-      </Button>
+      <div className="flex gap-2 w-full">
+        <Button variant="outline" className="flex-1" onClick={download}>
+          <Download className="h-4 w-4 mr-2" /> Baixar PNG
+        </Button>
+        <Button variant="outline" className="flex-1" onClick={copyLink}>
+          {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+          {copied ? "Copiado!" : "Copiar Link"}
+        </Button>
+      </div>
     </div>
   );
 }

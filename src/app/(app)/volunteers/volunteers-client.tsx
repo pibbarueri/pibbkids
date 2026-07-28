@@ -23,8 +23,9 @@ import {
 } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Check, Filter, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
-import { formatPhone, phoneDigits } from "@/lib/phone";
+import { formatPhone, phoneDigits, whatsappChatLink } from "@/lib/phone";
 import { formatCpf, cpfDigits } from "@/lib/cpf";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { normalizeUsername } from "@/lib/text";
 
 const FUNCTION_OPTIONS = [
@@ -513,7 +514,7 @@ export function VolunteersClient({
             <div className="space-y-3 text-sm">
               <Row label="Usuário" value={selected.username} />
               <Row label="Perfil de acesso" value={ROLE_LABELS[selected.role] ?? selected.role} />
-              <Row label="Telefone" value={formatPhone(selected.phone ?? "")} />
+              <PhoneRow label="Telefone" phone={selected.phone} />
 
               {selected.functions.length > 0 && (
                 <div>
@@ -937,6 +938,27 @@ function Row({ label, value }: { label: string; value: string | null | undefined
     <div>
       <p className="text-muted-foreground text-xs">{label}</p>
       <p>{value}</p>
+    </div>
+  );
+}
+
+function PhoneRow({ label, phone }: { label: string; phone: string | null | undefined }) {
+  if (!phone) return null;
+  return (
+    <div>
+      <p className="text-muted-foreground text-xs">{label}</p>
+      <div className="flex items-center gap-2">
+        <p>{formatPhone(phone)}</p>
+        <a
+          href={whatsappChatLink(phone)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Abrir WhatsApp de ${label}`}
+          className="flex h-6 w-6 items-center justify-center rounded-full text-green-600 transition-transform active:scale-90"
+        >
+          <WhatsAppIcon className="h-4 w-4" />
+        </a>
+      </div>
     </div>
   );
 }
