@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
-import { Users, CalendarDays, BookOpen, Home, ClipboardCheck, Cookie } from "lucide-react";
+import { Users, CalendarDays, BookOpen, Home, ClipboardCheck, Cookie, NotebookPen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -55,6 +55,12 @@ const NAV_ITEMS: NavItem[] = [
     label: "Escala",
     icon: <CalendarDays className="h-5 w-5" />,
     roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST, Role.SUPPORT],
+  },
+  {
+    href: "/class-journal",
+    label: "Diário",
+    icon: <NotebookPen className="h-5 w-5" />,
+    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER],
   },
   {
     href: "/curriculum/lessons",

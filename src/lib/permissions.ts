@@ -43,3 +43,8 @@ export function canViewAttendanceOverview(role: Role) {
 export function canReportOccurrence(role: Role) {
   return !canManage(role);
 }
+
+// Diário de Sala: only TEACHER can author entries; ADMIN/COORDINATOR review + acknowledge.
+export function canWriteClassJournal(role: Role) {
+  return role === Role.TEACHER;
+}

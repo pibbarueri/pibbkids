@@ -33,6 +33,8 @@ model User {
   sessions          UserSession[]
   occurrencesReported Occurrence[]      @relation("OccurrenceReporter")
   occurrencesResolved Occurrence[]      @relation("OccurrenceResolver")
+  classJournalEntriesAuthored     ClassJournalEntry[] @relation("ClassJournalAuthor")
+  classJournalEntriesAcknowledged ClassJournalEntry[] @relation("ClassJournalAcknowledger")
 
   @@map("users")
 }
@@ -140,6 +142,7 @@ model ClassGroup {
   scheduleSlots  ScheduleSlot[]
   sundayPlans    SundayPlan[]
   preferredBy    UserPreferredClass[]
+  journalEntries ClassJournalEntry[]
 
   @@map("class_groups")
 }
@@ -335,6 +338,25 @@ enum SnackCategory {
   OUTROS
 
   @@map("snack_category")
+}
+
+// ─── Diário de Sala ─────────────────────────────────────────────────────────────
+
+model ClassJournalEntry {
+  id               String     @id @default(cuid())
+  classGroupId     String     @map("class_group_id")
+  classGroup       ClassGroup @relation(fields: [classGroupId], references: [id])
+  title            String
+  entryDate        DateTime   @db.Date @map("entry_date")
+  description      String
+  authorId         String     @map("author_id")
+  author           User       @relation("ClassJournalAuthor", fields: [authorId], references: [id])
+  acknowledgedById String?    @map("acknowledged_by_id")
+  acknowledgedBy   User?      @relation("ClassJournalAcknowledger", fields: [acknowledgedById], references: [id])
+  acknowledgedAt   DateTime?  @map("acknowledged_at")
+  createdAt        DateTime   @default(now()) @map("created_at")
+
+  @@map("class_journal_entries")
 }
 
 // ─── Ocorrências ──────────────────────────────────────────────────────────────
