@@ -249,9 +249,10 @@ export function ChildrenClient({
   async function confirmReject() {
     if (!rejectTarget) return;
     setRejectSaving(true);
-    const res = await fetch(`/api/children/${rejectTarget.id}?hard=1`, { method: "DELETE" });
+    const res = await fetch(`/api/children/${rejectTarget.id}`, { method: "DELETE" });
     if (res.ok) {
-      setChildren((prev) => prev.filter((c) => c.id !== rejectTarget.id));
+      // Soft delete: mark inactive so it moves to the Inativos tab (can be restored or hard-deleted later).
+      setChildren((prev) => prev.map((c) => (c.id === rejectTarget.id ? { ...c, active: false } : c)));
       setRejectTarget(null);
     }
     setRejectSaving(false);
@@ -667,7 +668,7 @@ export function ChildrenClient({
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Rejeitar <span className="font-medium text-foreground">{rejectTarget?.name}</span>?
-            Essa ação é <span className="font-medium text-foreground">permanente</span> — o cadastro será apagado do sistema.
+            O cadastro irá para Inativos e pode ser restaurado depois.
           </p>
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1 h-12" onClick={() => setRejectTarget(null)}>
