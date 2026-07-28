@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
-import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen, Cake, AlertTriangle, Cookie } from "lucide-react";
+import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen, AlertTriangle, Cookie } from "lucide-react";
 import { EventsCalendar } from "@/components/dashboard/events-calendar";
 import { NextSundaySchedule } from "@/components/dashboard/next-sunday-schedule";
+import { BirthdaysSection } from "@/components/dashboard/birthdays-section";
 import { computeUpcomingBirthdays } from "@/lib/birthdays";
 import { canManage, canManageSnacks } from "@/lib/permissions";
 
@@ -73,8 +74,8 @@ export default async function DashboardPage() {
     { href: "/curriculum", label: "Revistas", icon: BookOpen, roles: [Role.ADMIN, Role.COORDINATOR] },
   ]
     .filter((s) => s.roles.includes(role))
-    // SUPPORT already has Lanches as a bottom-nav tab — no need for the dashboard shortcut too.
-    .concat(canAccessSnacks && role !== Role.SUPPORT ? [{ href: "/snacks", label: "Lanches", icon: Cookie, roles: [] }] : []);
+    // SUPPORT/RECEPTIONIST already have Lanches as a bottom-nav tab — no need for the dashboard shortcut too.
+    .concat(canAccessSnacks && role !== Role.SUPPORT && role !== Role.RECEPTIONIST ? [{ href: "/snacks", label: "Lanches", icon: Cookie, roles: [] }] : []);
 
   const lowSnacksMessage = lowSnacks.length > 0
     ? lowSnacks.map((s) => `Temos ${s.quantity} ${s.unit} de ${s.description}`).join("\n")
@@ -131,25 +132,9 @@ export default async function DashboardPage() {
           }))}
       />
 
-      <div className="space-y-2">
-        <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <Cake className="h-4 w-4" /> Próximos aniversários
-        </h2>
-        <div className="divide-y rounded-lg border">
-          {birthdays.length === 0 ? (
-            <p className="p-6 text-center text-sm text-muted-foreground">
-              Sem aniversários próximos 🎈
-            </p>
-          ) : (
-            birthdays.map((b, i) => (
-              <div key={i} className="flex items-center justify-between gap-2 p-3 text-sm">
-                <span className="truncate">{b.name}</span>
-                <span className="shrink-0 text-muted-foreground">{b.label}</span>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      <BirthdaysSection
+        birthdays={birthdays.map((b) => ({ name: b.name, label: b.label, date: b.date.toISOString() }))}
+      />
     </div>
   );
 }

@@ -8,12 +8,11 @@ const MONTHS = [
 
 const DAY_MS = 86400000;
 
-// Window: [today-7d .. end of current month], plus spillover into the next 7 days.
-// Countdown suffix only within 10 days ahead; tomorrow/today special-cased; past dates show no suffix.
+// Window: [today .. end of current month], plus spillover into the next 7 days.
+// Countdown suffix only within 10 days ahead; tomorrow/today special-cased.
 export function computeUpcomingBirthdays(people: BirthdayPerson[], now = new Date()): UpcomingBirthday[] {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const start = new Date(today);
-  start.setDate(start.getDate() - 7);
+  const start = today;
   const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
   const plus7 = new Date(today);
   plus7.setDate(plus7.getDate() + 7);
