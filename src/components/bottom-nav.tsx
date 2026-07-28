@@ -27,6 +27,24 @@ const NAV_ITEMS: NavItem[] = [
     roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST, Role.SUPPORT],
   },
   {
+    href: "/snacks",
+    label: "Lanches",
+    icon: <Cookie className="h-5 w-5" />,
+    roles: [Role.SUPPORT, Role.RECEPTIONIST],
+  },
+  {
+    href: "/attendance",
+    label: "Presença",
+    icon: <ClipboardCheck className="h-5 w-5" />,
+    roles: [Role.RECEPTIONIST],
+  },
+  {
+    href: "/attendance/view",
+    label: "Presença",
+    icon: <ClipboardCheck className="h-5 w-5" />,
+    roles: [Role.SUPPORT],
+  },
+  {
     href: "/volunteers",
     label: "Voluntários",
     icon: <Users className="h-5 w-5" />,
@@ -43,24 +61,6 @@ const NAV_ITEMS: NavItem[] = [
     label: "Aulas",
     icon: <BookOpen className="h-5 w-5" />,
     roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT],
-  },
-  {
-    href: "/attendance",
-    label: "Presença",
-    icon: <ClipboardCheck className="h-5 w-5" />,
-    roles: [Role.RECEPTIONIST],
-  },
-  {
-    href: "/attendance/view",
-    label: "Presença",
-    icon: <ClipboardCheck className="h-5 w-5" />,
-    roles: [Role.SUPPORT],
-  },
-  {
-    href: "/snacks",
-    label: "Lanches",
-    icon: <Cookie className="h-5 w-5" />,
-    roles: [Role.SUPPORT],
   },
 ];
 

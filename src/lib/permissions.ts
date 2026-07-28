@@ -28,10 +28,10 @@ export function canViewMaterials(role: Role) {
 }
 
 // Snacks stock: management edits everything; Apoio Geral volunteers can also
-// stock/adjust it, even though that's a FunctionType, not a Role. SUPPORT gets
-// Lanches instead of Presença, mirroring RECEPTIONIST's exclusive Presença access.
+// stock/adjust it, even though that's a FunctionType, not a Role. SUPPORT and
+// RECEPTIONIST also get Lanches access.
 export function canManageSnacks(role: Role, hasApoioGeral: boolean) {
-  return canManage(role) || hasApoioGeral || role === Role.SUPPORT;
+  return canManage(role) || hasApoioGeral || role === Role.SUPPORT || role === Role.RECEPTIONIST;
 }
 
 export function canViewAttendanceOverview(role: Role) {
