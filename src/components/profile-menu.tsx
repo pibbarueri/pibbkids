@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { User, LogOut, Pencil, QrCode, AlertTriangle } from "lucide-react";
+import { User, LogOut, Pencil, QrCode, AlertTriangle, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { normalizeUsername } from "@/lib/text";
@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { logoutAction } from "@/lib/actions";
+import { CustomizeDialog, type CustomizeOption } from "@/components/customize-dialog";
 import { formatPhone, phoneDigits } from "@/lib/phone";
 import { formatCpf } from "@/lib/cpf";
 
@@ -32,8 +33,21 @@ type Profile = {
   motherName: string | null;
 };
 
-export function ProfileMenu({ profile, isManager }: { profile: Profile; isManager: boolean }) {
+export function ProfileMenu({
+  profile,
+  isManager,
+  customizeOptions,
+  navIds,
+  dashboardColumns,
+}: {
+  profile: Profile;
+  isManager: boolean;
+  customizeOptions: CustomizeOption[];
+  navIds: string[];
+  dashboardColumns: number;
+}) {
   const [editOpen, setEditOpen] = useState(false);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
   const [form, setForm] = useState({
     username: profile.username ?? "",
     phone: profile.phone ?? "",
@@ -87,6 +101,9 @@ export function ProfileMenu({ profile, isManager }: { profile: Profile; isManage
           <DropdownMenuItem className="px-2 py-2.5" onClick={() => setEditOpen(true)}>
             <Pencil className="h-4 w-4" /> Editar Perfil
           </DropdownMenuItem>
+          <DropdownMenuItem className="px-2 py-2.5" onClick={() => setCustomizeOpen(true)}>
+            <LayoutGrid className="h-4 w-4" /> Personalizar
+          </DropdownMenuItem>
           <DropdownMenuItem className="px-2 py-2.5" render={<Link href="/qrcodes" />}>
             <QrCode className="h-4 w-4" /> QR Codes
           </DropdownMenuItem>
@@ -99,6 +116,14 @@ export function ProfileMenu({ profile, isManager }: { profile: Profile; isManage
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <CustomizeDialog
+        open={customizeOpen}
+        onOpenChange={setCustomizeOpen}
+        options={customizeOptions}
+        initialNavIds={navIds}
+        initialColumns={dashboardColumns}
+      />
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">

@@ -2,13 +2,20 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
-import { ShoppingCart, PartyPopper, ClipboardCheck, Package, BookOpen, AlertTriangle, Cookie } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { EventsCalendar } from "@/components/dashboard/events-calendar";
 import { NextSundaySchedule } from "@/components/dashboard/next-sunday-schedule";
 import { BirthdaysSection } from "@/components/dashboard/birthdays-section";
 import { computeUpcomingBirthdays } from "@/lib/birthdays";
-import { canManage, canManageSnacks } from "@/lib/permissions";
+import { canManage } from "@/lib/permissions";
+import { parseAppSettings, resolveLayout } from "@/lib/navigation";
+
+// Tailwind can't generate a class from an interpolated string, so map them explicitly.
+const GRID_COLS: Record<number, string> = {
+  3: "grid-cols-3",
+  4: "grid-cols-4",
+  5: "grid-cols-5",
+};
 
 // Local-midnight construction, matching how schedule/page.tsx builds slot dates —
 // building this in UTC instead causes a timezone offset that never matches stored slots.
@@ -64,18 +71,12 @@ export default async function DashboardPage() {
       : Promise.resolve([]),
   ]);
 
-  const canAccessSnacks = canManageSnacks(role, !!hasApoioGeral);
-
-  const shortcuts = [
-    { href: "/purchase-requests", label: "Compras", icon: ShoppingCart, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.RECEPTIONIST, Role.SUPPORT] },
-    { href: "/events", label: "Eventos", icon: PartyPopper, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST, Role.SUPPORT] },
-    { href: "/attendance", label: "Presença", icon: ClipboardCheck, roles: [Role.ADMIN, Role.COORDINATOR] },
-    { href: "/materials", label: "Materiais", icon: Package, roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST, Role.SUPPORT] },
-    { href: "/curriculum", label: "Revistas", icon: BookOpen, roles: [Role.ADMIN, Role.COORDINATOR] },
-  ]
-    .filter((s) => s.roles.includes(role))
-    // SUPPORT/RECEPTIONIST already have Lanches as a bottom-nav tab — no need for the dashboard shortcut too.
-    .concat(canAccessSnacks && role !== Role.SUPPORT && role !== Role.RECEPTIONIST ? [{ href: "/snacks", label: "Lanches", icon: Cookie, roles: [] }] : []);
+  const settingsRow = await prisma.userSettings.findUnique({ where: { userId: session.user.id } });
+  const { dashboard: shortcuts, columns } = resolveLayout(
+    role,
+    { hasApoioGeral: !!hasApoioGeral },
+    parseAppSettings(settingsRow?.appSettings)
+  );
 
   const lowSnacksMessage = lowSnacks.length > 0
     ? lowSnacks.map((s) => `Temos ${s.quantity} ${s.unit} de ${s.description}`).join("\n")
@@ -91,15 +92,15 @@ export default async function DashboardPage() {
   return (
     <div className="p-4 space-y-4">
       {shortcuts.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className={`grid ${GRID_COLS[columns]} gap-2`}>
           {shortcuts.map((s) => (
             <Link
-              key={s.href}
+              key={s.id}
               href={s.href}
-              className="flex flex-col items-center gap-1 p-3 border rounded-lg bg-background hover:bg-muted/50 transition-all active:scale-95"
+              className="flex flex-col items-center gap-1 p-2 border rounded-lg bg-background hover:bg-muted/50 transition-all active:scale-95"
             >
-              <s.icon className="h-5 w-5" />
-              <span className="text-xs text-center">{s.label}</span>
+              <s.icon className="h-5 w-5 shrink-0" />
+              <span className="text-xs text-center leading-tight break-words">{s.label}</span>
             </Link>
           ))}
         </div>

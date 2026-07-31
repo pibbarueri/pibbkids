@@ -2,86 +2,33 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Role } from "@prisma/client";
-import { Users, CalendarDays, BookOpen, Home, ClipboardCheck, Cookie, NotebookPen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DESTINATIONS, HOME_DESTINATION } from "@/lib/navigation";
 
-interface NavItem {
+// Icons are functions, so they can't cross the server→client prop boundary.
+// The server sends plain ids/labels and we resolve the icon from the catalog here.
+const ICONS = new Map(
+  [HOME_DESTINATION, ...DESTINATIONS].map((d) => [d.id, d.icon] as const)
+);
+
+type NavItem = {
+  id: string;
   href: string;
   label: string;
-  icon: React.ReactNode;
-  roles: Role[];
-}
+};
 
-const NAV_ITEMS: NavItem[] = [
-  {
-    href: "/dashboard",
-    label: "Início",
-    icon: <Home className="h-5 w-5" />,
-    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST, Role.SUPPORT],
-  },
-  {
-    href: "/children",
-    label: "Crianças",
-    icon: <Users className="h-5 w-5" />,
-    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST, Role.SUPPORT],
-  },
-  {
-    href: "/snacks",
-    label: "Lanches",
-    icon: <Cookie className="h-5 w-5" />,
-    roles: [Role.SUPPORT, Role.RECEPTIONIST],
-  },
-  {
-    href: "/attendance",
-    label: "Presença",
-    icon: <ClipboardCheck className="h-5 w-5" />,
-    roles: [Role.RECEPTIONIST],
-  },
-  {
-    href: "/attendance/view",
-    label: "Presença",
-    icon: <ClipboardCheck className="h-5 w-5" />,
-    roles: [Role.SUPPORT],
-  },
-  {
-    href: "/volunteers",
-    label: "Voluntários",
-    icon: <Users className="h-5 w-5" />,
-    roles: [Role.ADMIN, Role.COORDINATOR],
-  },
-  {
-    href: "/schedule",
-    label: "Escala",
-    icon: <CalendarDays className="h-5 w-5" />,
-    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST, Role.SUPPORT],
-  },
-  {
-    href: "/class-journal",
-    label: "Diário",
-    icon: <NotebookPen className="h-5 w-5" />,
-    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER],
-  },
-  {
-    href: "/curriculum/lessons",
-    label: "Aulas",
-    icon: <BookOpen className="h-5 w-5" />,
-    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT],
-  },
-];
-
-export function BottomNav({ role }: { role: Role }) {
+export function BottomNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
-  const visible = NAV_ITEMS.filter((item) => item.roles.includes(role));
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 border-t bg-background z-50">
       <div className="flex items-center justify-around h-16">
-        {visible.map((item) => {
+        {items.map((item) => {
           const active = pathname.startsWith(item.href);
+          const Icon = ICONS.get(item.id);
           return (
             <Link
-              key={item.href}
+              key={item.id}
               href={item.href}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-3 py-2 text-xs transition-all min-w-[44px] active:scale-90",
@@ -90,7 +37,7 @@ export function BottomNav({ role }: { role: Role }) {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {item.icon}
+              {Icon && <Icon className="h-5 w-5" />}
               <span>{item.label}</span>
             </Link>
           );

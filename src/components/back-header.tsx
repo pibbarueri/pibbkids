@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfileMenu } from "@/components/profile-menu";
+import type { CustomizeOption } from "@/components/customize-dialog";
 
 type Profile = {
   name: string;
@@ -33,7 +34,19 @@ const PAGE_TITLES: [string, string][] = [
   ["/occurrences", "Ocorrências"],
 ];
 
-export function BackHeader({ profile, isManager }: { profile: Profile; isManager: boolean }) {
+export function BackHeader({
+  profile,
+  isManager,
+  customizeOptions,
+  navIds,
+  dashboardColumns,
+}: {
+  profile: Profile;
+  isManager: boolean;
+  customizeOptions: CustomizeOption[];
+  navIds: string[];
+  dashboardColumns: number;
+}) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -59,7 +72,13 @@ export function BackHeader({ profile, isManager }: { profile: Profile; isManager
       </div>
       <span className="text-sm font-bold text-center truncate">{title}</span>
       <div className="flex justify-end">
-        <ProfileMenu profile={profile} isManager={isManager} />
+        <ProfileMenu
+          profile={profile}
+          isManager={isManager}
+          customizeOptions={customizeOptions}
+          navIds={navIds}
+          dashboardColumns={dashboardColumns}
+        />
       </div>
     </header>
   );

@@ -35,6 +35,7 @@ model User {
   occurrencesResolved Occurrence[]      @relation("OccurrenceResolver")
   classJournalEntriesAuthored     ClassJournalEntry[] @relation("ClassJournalAuthor")
   classJournalEntriesAcknowledged ClassJournalEntry[] @relation("ClassJournalAcknowledger")
+  settings          UserSettings?
 
   @@map("users")
 }
@@ -48,6 +49,18 @@ model UserSession {
   expiresAt DateTime  @map("expires_at")
 
   @@map("user_sessions")
+}
+
+// Per-user UI preferences. Kept as jsonb so new preferences don't need a migration;
+// always read/write it through parseAppSettings() in src/lib/navigation.ts.
+model UserSettings {
+  id          String   @id @default(cuid())
+  userId      String   @unique @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appSettings Json     @default("{}") @map("app_settings") @db.JsonB
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("user_settings")
 }
 
 enum Role {
