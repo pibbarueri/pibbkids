@@ -61,7 +61,7 @@ QR Codes de cadastro.
 - **Mudança de schema**: editar `prisma/schema.prisma` + `npx prisma migrate dev --name X`
   (dev local) + `npx prisma generate` + `npx tsc --noEmit`. Reiniciar o dev server depois de
   `prisma generate` (Next.js/Turbopack cacheia o client antigo e quebra em runtime mesmo com
-  tsc limpo).
+  tsc limpo). Sem TTY, ver "Migrations: armadilhas conhecidas" abaixo.
 - **NUNCA truncar ou reimportar nenhum dado.** São dados reais,
   mantidos manualmente por SQL. Um reset por reimport já destruiu ~36
   telefones digitados à mão. Se precisar migrar dado em qualquer tabela, `UPDATE`/`ALTER`
@@ -72,6 +72,54 @@ QR Codes de cadastro.
 - **Nunca alterar credenciais de usuário real pra teste.** Usar só a conta `test` (ver Testes
   abaixo), alternando role via script quando precisar.
 - Não existe mais login `admin/admin` — o usuário admin real foi renomeado para `gustavo`.
+
+### Migrations: armadilhas conhecidas
+
+Todas já aconteceram de verdade, em produção.
+
+- **`prisma migrate dev` é interativo** e trava/falha sem TTY (sessão de agente, CI). Usar
+  `npx prisma migrate dev --create-only --name X`, editar o SQL à mão, depois
+  `npx prisma migrate deploy`.
+- **Coluna `@updatedAt` nova em tabela que já tem linhas** gera `NOT NULL` sem default e
+  estoura `23502`. Passa despercebido no local se a tabela estiver vazia. Padrão correto —
+  adicionar nullable, backfillar, só então travar (ver
+  `prisma/migrations/20260802033851_add_material_details_and_audit/migration.sql`):
+  ```sql
+  ALTER TABLE "t" ADD COLUMN "updated_at" TIMESTAMP(3);
+  UPDATE "t" SET "updated_at" = "created_at" WHERE "updated_at" IS NULL;
+  ALTER TABLE "t" ALTER COLUMN "updated_at" SET NOT NULL;
+  ```
+- **O pooler da Supabase não preserva a transação do arquivo inteiro.** Migration que falha no
+  meio deixa o DDL anterior aplicado — não confiar em rollback automático. Depois de um
+  `P3018`, inspecionar o que sobrou (tipo criado, coluna adicionada) e limpar à mão **antes**
+  de `npm run migration -- migrate resolve --rolled-back <nome>`. Resolver sem limpar faz a
+  tentativa seguinte falhar com `42710 type already exists` ou equivalente.
+- **Migration destrutiva ou de conversão de tipo leva guard.** `DO $$ ... RAISE EXCEPTION`
+  que aborta com mensagem legível em vez de corromper. Referência:
+  `prisma/migrations/20260802042451_schedule_slot_date_as_date/migration.sql`.
+
+### Datas
+
+`ScheduleSlot.date` é coluna `DATE`, não timestamp — um slot pertence a um dia de calendário,
+não a um instante. `src/lib/dates.ts` é a fonte única: `today()`, `nextSunday()`, `addDays()`,
+`sundaysBetween()`, `utcDate()`, com `APP_TIME_ZONE = "America/Sao_Paulo"`.
+
+**Nunca usar `new Date()` direto para dia de calendário.** O bug "Próxima escala só mostra EBD"
+nasceu disso: o mesmo domingo gravado em dois instantes diferentes (meia-noite UTC pelo import,
+meia-noite local pelo app), e o filtro de igualdade pegava só um dos conjuntos.
+
+### Categorias de material
+
+`material_categories` é tabela de lookup, não enum. Adicionar categoria é `INSERT` — sem
+migration, sem deploy:
+
+```sql
+INSERT INTO material_categories (id, name, sort_order) VALUES ('livros', 'Livros', 70);
+```
+
+`active = false` esconde do picker sem quebrar os materiais que ainda apontam pra ela.
+`Material.categoryId` é nullable — material cadastrado antes das categorias aparece como
+"Sem categoria" até alguém editar.
 
 ## Testes manuais / contas
 
@@ -100,5 +148,36 @@ porta 3000) → login → navegar → `read_page`/screenshot pra conferir. Prefe
 
 ## Deploy
 
-Scripts relevantes: `npm run migrate:deploy` (`prisma migrate deploy`), `npm run seed`
-(`prisma/seed.ts`), `postinstall` já roda `prisma generate` automático.
+App na Vercel, buildado automaticamente no push pra `main`. Banco na Supabase.
+
+Migrations em produção:
+
+- `npm run migration:status` — read-only, mostra o que está pendente. **Rodar sempre antes.**
+- `npm run migration` — aplica as pendentes.
+- `npm run migration -- migrate resolve --rolled-back <nome>` — recovery de migration falha.
+
+Os três passam por `scripts/prod-migrate.sh`, que lê `DATABASE_URL` do `.env.prod`, imprime o
+host de destino e se recusa a rodar contra localhost.
+
+**Ordem em deploy que tem migration: migration primeiro, merge depois.** A Vercel builda no
+push; se o app novo subir antes do schema, quebra em runtime.
+
+Outros scripts: `npm run seed` (`prisma/seed.ts`), `postinstall` já roda `prisma generate`.
+
+## Sessões na nuvem (claude.ai/code)
+
+O repo também é trabalhado por sessões rodando em container da Anthropic, despachadas do
+celular. Se você é uma delas, saiba o que não dá:
+
+- **Sem `.env.prod`** (está no `.gitignore`) → `npm run migration` falha com
+  `error: .env.prod not found`. Não contornar, não pedir a credencial. Deixar o SQL da
+  migration commitado e avisar que ela roda no PC.
+- **Sem banco de produção e sem dev server visível** → nada de verificação por
+  `preview_start`. Verificar por `tsc`/lint e descrever o que precisa ser conferido à mão.
+- **Escopo**: código, branch, PR. Push pra `main` dispara o deploy na Vercel — isso funciona
+  normalmente.
+
+## Redesign
+
+Plano aprovado em `docs/redesign-plan.md` (restyle visual completo; temas/dark mode é Fase 2).
+Implementar numa branch `redesign`. Ainda não começou.
