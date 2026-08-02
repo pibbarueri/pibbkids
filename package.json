@@ -9,6 +9,8 @@
     "lint": "eslint",
     "seed": "dotenv -e .env -- tsx prisma/seed.ts",
     "migrate:deploy": "prisma migrate deploy",
+    "migration": "./scripts/prod-migrate.sh",
+    "migration:status": "./scripts/prod-migrate.sh migrate status",
     "postinstall": "prisma generate"
   },
   "dependencies": {
