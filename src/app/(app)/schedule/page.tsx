@@ -6,11 +6,11 @@ import { sortClasses } from "@/lib/classes";
 import { ScheduleClient } from "./schedule-client";
 import { addDays, sundaysBetween, today as getToday, utcDate } from "@/lib/dates";
 
-// All sundays from the current week through Dec 31 of this year — the schedule
-// is rebuilt fresh each January, so there's no need to look further ahead.
-function sundaysThroughYearEnd(): Date[] {
-  const weekStart = addDays(getToday(), -getToday().getUTCDay());
-  return sundaysBetween(weekStart, utcDate(weekStart.getUTCFullYear(), 11, 31));
+// Every sunday of the current year. The schedule is rebuilt fresh each January, so
+// the year is the natural window — and it has to start in January, not at the current
+// week, or nobody can look back at a past sunday.
+function sundaysThisYear(year: number): Date[] {
+  return sundaysBetween(utcDate(year, 0, 1), utcDate(year, 11, 31));
 }
 
 export default async function SchedulePage({
@@ -25,16 +25,21 @@ export default async function SchedulePage({
   const canViewAll = true;
   const canEdit = canManage(role);
 
-  const sundays = sundaysThroughYearEnd();
+  const today = getToday();
+  const sundays = sundaysThisYear(today.getUTCFullYear());
 
   const from = sundays[0];
   const to = sundays[sundays.length - 1];
 
+  const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+  // Land on the coming sunday; the past ones are still reachable by paging back.
+  const thisWeek = addDays(today, -today.getUTCDay());
+  let initialSundayIdx = Math.max(0, sundays.findIndex((s) => dayKey(s) === dayKey(thisWeek)));
+
   const { date } = await searchParams;
-  let initialSundayIdx = 0;
   if (date) {
-    const target = new Date(date).toISOString().slice(0, 10);
-    const found = sundays.findIndex((s) => s.toISOString().slice(0, 10) === target);
+    const target = dayKey(new Date(date));
+    const found = sundays.findIndex((s) => dayKey(s) === target);
     if (found !== -1) initialSundayIdx = found;
   }
 
