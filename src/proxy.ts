@@ -10,6 +10,8 @@ const PUBLIC_PATHS = [
   "/api/first-access",
   "/register/child",
   "/register/volunteer",
+  "/api/register/child",
+  "/api/register/volunteer",
   "/api/auth",
   "/api/classes",
   "/manifest.webmanifest",
