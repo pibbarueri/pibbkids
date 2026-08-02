@@ -21,13 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Minus, Filter, Search, Trash2 } from "lucide-react";
-import { MATERIAL_CATEGORY_LABELS } from "@/lib/materials";
+type Category = { id: string; name: string };
 
 type Material = {
   id: string;
   name: string;
   description: string | null;
-  category: string | null;
+  categoryId: string | null;
+  category: Category | null;
   unit: string;
   quantity: number;
   createdAt: string;
@@ -41,25 +42,20 @@ const NO_CATEGORY = "Sem categoria";
 // Select needs a non-empty value, so "no category" rides as this sentinel and is
 // translated back to null in payloadFrom().
 const NONE = "__none__";
-const CATEGORY_OPTIONS: Record<string, string> = {
-  [NONE]: NO_CATEGORY,
-  ...MATERIAL_CATEGORY_LABELS,
-};
+
+function optionsWith(categories: Category[]): Record<string, string> {
+  return { [NONE]: NO_CATEGORY, ...Object.fromEntries(categories.map((c) => [c.id, c.name])) };
+}
 
 type Form = {
   name: string;
   description: string;
-  category: string;
+  categoryId: string;
   quantity: string;
   unit: string;
 };
 
-const emptyForm: Form = { name: "", description: "", category: NONE, quantity: "0", unit: "" };
-
-function categoryLabel(category: string | null) {
-  if (!category) return NO_CATEGORY;
-  return MATERIAL_CATEGORY_LABELS[category as keyof typeof MATERIAL_CATEGORY_LABELS] ?? category;
-}
+const emptyForm: Form = { name: "", description: "", categoryId: NONE, quantity: "0", unit: "" };
 
 /** "31 de julho às 12h20" */
 function formatAuditDate(iso: string) {
@@ -73,7 +69,7 @@ function payloadFrom(f: Form) {
   return {
     name: f.name,
     description: f.description,
-    category: f.category === NONE ? null : f.category,
+    categoryId: f.categoryId === NONE ? null : f.categoryId,
     unit: f.unit,
     quantity: Number(f.quantity) || 0,
   };
@@ -84,10 +80,18 @@ function payloadFrom(f: Form) {
 function MaterialFields({
   value,
   onChange,
+  categories,
 }: {
   value: Form;
   onChange: (patch: Partial<Form>) => void;
+  categories: Category[];
 }) {
+  // A material can point at a category that was retired since; keep it in the list so
+  // editing anything else doesn't silently reset the category.
+  const options = optionsWith(categories);
+  if (value.categoryId !== NONE && !(value.categoryId in options)) {
+    options[value.categoryId] = value.categoryId;
+  }
   return (
     <>
       <div className="space-y-1">
@@ -106,13 +110,13 @@ function MaterialFields({
       <div className="space-y-1">
         <p className="text-sm font-medium">Categoria</p>
         <Select
-          value={value.category}
-          onValueChange={(v) => onChange({ category: v ?? NONE })}
-          items={CATEGORY_OPTIONS}
+          value={value.categoryId}
+          onValueChange={(v) => onChange({ categoryId: v ?? NONE })}
+          items={options}
         >
           <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {Object.entries(CATEGORY_OPTIONS).map(([v, label]) => (
+            {Object.entries(options).map(([v, label]) => (
               <SelectItem key={v} value={v}>{label}</SelectItem>
             ))}
           </SelectContent>
@@ -144,9 +148,11 @@ function MaterialFields({
 
 export function MaterialsClient({
   initialMaterials,
+  categories,
   isManager,
 }: {
   initialMaterials: Material[];
+  categories: Category[];
   isManager: boolean;
 }) {
   const [materials, setMaterials] = useState(initialMaterials);
@@ -168,7 +174,7 @@ export function MaterialsClient({
 
   const visible = materials
     .filter((m) => m.name.toLowerCase().includes(search.trim().toLowerCase()))
-    .filter((m) => filterCategories.length === 0 || filterCategories.includes(m.category ?? NONE));
+    .filter((m) => filterCategories.length === 0 || filterCategories.includes(m.categoryId ?? NONE));
 
   function toggleFilterCategory(value: string) {
     setFilterCategories((prev) =>
@@ -207,7 +213,7 @@ export function MaterialsClient({
     setEditForm({
       name: m.name,
       description: m.description ?? "",
-      category: m.category ?? NONE,
+      categoryId: m.categoryId ?? NONE,
       quantity: String(m.quantity),
       unit: m.unit,
     });
@@ -273,7 +279,7 @@ export function MaterialsClient({
           <div className="space-y-3">
             <p className="text-sm font-medium">Categoria</p>
             <div className="space-y-2">
-              {Object.entries(CATEGORY_OPTIONS).map(([value, label]) => (
+              {Object.entries(optionsWith(categories)).map(([value, label]) => (
                 <label key={value} className="flex items-center gap-3 py-1 text-sm">
                   <Checkbox
                     checked={filterCategories.includes(value)}
@@ -308,7 +314,11 @@ export function MaterialsClient({
               <DialogTitle>Novo material</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
-              <MaterialFields value={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
+              <MaterialFields
+                value={form}
+                onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+                categories={categories}
+              />
               <Button
                 className="w-full h-12"
                 disabled={!form.name || !form.unit || saving}
@@ -329,7 +339,7 @@ export function MaterialsClient({
           <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openDetail(m)}>
             <p className="font-medium text-sm">{m.name}</p>
             <p className="text-xs text-muted-foreground truncate">
-              {categoryLabel(m.category)} · {m.unit}
+              {m.category?.name ?? NO_CATEGORY} · {m.unit}
             </p>
           </button>
           {isManager ? (
@@ -380,7 +390,7 @@ export function MaterialsClient({
               <div className="grid grid-cols-2 gap-3">
                 <div className="min-w-0">
                   <p className="text-muted-foreground text-xs">Categoria</p>
-                  <p>{categoryLabel(selected.category)}</p>
+                  <p>{selected.category?.name ?? NO_CATEGORY}</p>
                 </div>
                 <div className="min-w-0">
                   <p className="text-muted-foreground text-xs">Quantidade</p>
@@ -424,6 +434,7 @@ export function MaterialsClient({
               <MaterialFields
                 value={editForm}
                 onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))}
+                categories={categories}
               />
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 h-12" onClick={() => setEditing(false)}>

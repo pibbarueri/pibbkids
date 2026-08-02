@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canManage } from "@/lib/permissions";
-import { isMaterialCategory } from "@/lib/materials";
+import { isSelectableCategory } from "@/lib/materials";
 import { MATERIAL_INCLUDE } from "../route";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -13,7 +13,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
-  if (body.category != null && body.category !== "" && !isMaterialCategory(body.category)) {
+  if (body.categoryId && !(await isSelectableCategory(body.categoryId))) {
     return NextResponse.json({ error: "Categoria inválida." }, { status: 422 });
   }
 
@@ -22,7 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data: {
       ...(body.name !== undefined && { name: body.name }),
       ...(body.description !== undefined && { description: body.description || null }),
-      ...(body.category !== undefined && { category: body.category || null }),
+      ...(body.categoryId !== undefined && { categoryId: body.categoryId || null }),
       ...(body.unit !== undefined && { unit: body.unit }),
       ...(body.quantity !== undefined && { quantity: Number(body.quantity) }),
       ...(body.quantityDelta !== undefined && { quantity: { increment: Number(body.quantityDelta) } }),

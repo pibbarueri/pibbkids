@@ -1,14 +1,24 @@
-import { MaterialCategory } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
-export const MATERIAL_CATEGORY_LABELS: Record<MaterialCategory, string> = {
-  PAPELARIA: "Papelaria",
-  DECORACAO: "Decoração",
-  LEMBRANCINHA: "Lembrancinha",
-  TEATRO_FANTOCHES: "Teatro e Fantoches",
-  BRINQUEDOS: "Brinquedos",
-  ELETRONICOS: "Eletrônicos",
-};
+export type MaterialCategoryOption = { id: string; name: string };
 
-export function isMaterialCategory(value: unknown): value is MaterialCategory {
-  return typeof value === "string" && value in MATERIAL_CATEGORY_LABELS;
+/**
+ * Categories offered in the pickers. Retired ones (active = false) stay in the table so
+ * the materials pointing at them keep their label, they just stop being selectable.
+ */
+export function listActiveMaterialCategories(): Promise<MaterialCategoryOption[]> {
+  return prisma.materialCategory.findMany({
+    where: { active: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { id: true, name: true },
+  });
+}
+
+/** Rejects ids that don't exist or were retired, so the picker and the API agree. */
+export async function isSelectableCategory(id: string): Promise<boolean> {
+  const found = await prisma.materialCategory.findFirst({
+    where: { id, active: true },
+    select: { id: true },
+  });
+  return !!found;
 }

@@ -291,7 +291,8 @@ model Material {
   description String?
   // Nullable because materials already registered before categories existed —
   // they show up as "Sem categoria" until someone edits them.
-  category    MaterialCategory?
+  categoryId  String?           @map("category_id")
+  category    MaterialCategory? @relation(fields: [categoryId], references: [id])
   unit        String
   quantity    Int               @default(0)
   requests    PurchaseRequest[]
@@ -303,18 +304,21 @@ model Material {
   updatedById String?  @map("updated_by_id")
   updatedBy   User?    @relation("MaterialUpdater", fields: [updatedById], references: [id])
 
+  @@index([categoryId])
   @@map("materials")
 }
 
-enum MaterialCategory {
-  PAPELARIA
-  DECORACAO
-  LEMBRANCINHA
-  TEATRO_FANTOCHES
-  BRINQUEDOS
-  ELETRONICOS
+// A lookup table rather than an enum: adding or retiring a category is an INSERT/UPDATE
+// by whoever runs the ministry, with no migration and no deploy. `active` hides a
+// category from the pickers without breaking the materials that still reference it.
+model MaterialCategory {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  sortOrder Int        @default(0) @map("sort_order")
+  active    Boolean    @default(true)
+  materials Material[]
 
-  @@map("material_category")
+  @@map("material_categories")
 }
 
 model PurchaseRequest {

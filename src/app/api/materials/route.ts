@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canManage, canViewMaterials } from "@/lib/permissions";
-import { isMaterialCategory } from "@/lib/materials";
+import { isSelectableCategory } from "@/lib/materials";
 
-/** Audit info is shown on the detail dialog, so every read carries the two names. */
+/** Audit info and the category label are shown on the detail dialog. */
 export const MATERIAL_INCLUDE = {
+  category: { select: { id: true, name: true } },
   createdBy: { select: { username: true } },
   updatedBy: { select: { username: true } },
 } as const;
@@ -30,7 +31,8 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  if (body.category != null && !isMaterialCategory(body.category)) {
+  const categoryId = body.categoryId || null;
+  if (categoryId && !(await isSelectableCategory(categoryId))) {
     return NextResponse.json({ error: "Categoria inválida." }, { status: 422 });
   }
 
@@ -38,7 +40,7 @@ export async function POST(req: NextRequest) {
     data: {
       name: body.name,
       description: body.description || null,
-      category: body.category || null,
+      categoryId,
       unit: body.unit,
       quantity: body.quantity ?? 0,
       createdById: session.user.id,
