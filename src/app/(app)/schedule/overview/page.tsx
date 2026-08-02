@@ -4,17 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
 import { sortClasses } from "@/lib/classes";
 import { OverviewClient } from "./overview-client";
-
-function sundaysInRange(start: Date, end: Date): Date[] {
-  const sundays: Date[] = [];
-  const date = new Date(start);
-  while (date.getDay() !== 0) date.setDate(date.getDate() + 1);
-  while (date <= end) {
-    sundays.push(new Date(date));
-    date.setDate(date.getDate() + 7);
-  }
-  return sundays;
-}
+import { sundaysBetween, today as getToday, utcDate } from "@/lib/dates";
 
 export default async function ScheduleOverviewPage() {
   const session = await auth();
@@ -22,12 +12,12 @@ export default async function ScheduleOverviewPage() {
   const role = session.user.role;
   if (!canManage(role)) redirect("/dashboard");
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const semester = now.getMonth() < 6 ? 1 : 2;
-  const start = semester === 1 ? new Date(year, 0, 1) : new Date(year, 6, 1);
-  const end = semester === 1 ? new Date(year, 5, 30) : new Date(year, 11, 31);
-  const sundays = sundaysInRange(start, end);
+  const now = getToday();
+  const year = now.getUTCFullYear();
+  const semester = now.getUTCMonth() < 6 ? 1 : 2;
+  const start = semester === 1 ? utcDate(year, 0, 1) : utcDate(year, 6, 1);
+  const end = semester === 1 ? utcDate(year, 5, 30) : utcDate(year, 11, 31);
+  const sundays = sundaysBetween(start, end);
 
   const [slots, classes] = await Promise.all([
     prisma.scheduleSlot.findMany({

@@ -4,19 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
 import { sortClasses } from "@/lib/classes";
 import { ScheduleClient } from "./schedule-client";
+import { addDays, sundaysBetween, today as getToday, utcDate } from "@/lib/dates";
 
 // All sundays from the current week through Dec 31 of this year — the schedule
 // is rebuilt fresh each January, so there's no need to look further ahead.
-function sundaysThroughYearEnd(now: Date): Date[] {
-  const sundays: Date[] = [];
-  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  date.setDate(date.getDate() - date.getDay());
-  const yearEnd = new Date(now.getFullYear(), 11, 31);
-  while (date <= yearEnd) {
-    sundays.push(new Date(date));
-    date.setDate(date.getDate() + 7);
-  }
-  return sundays;
+function sundaysThroughYearEnd(): Date[] {
+  const weekStart = addDays(getToday(), -getToday().getUTCDay());
+  return sundaysBetween(weekStart, utcDate(weekStart.getUTCFullYear(), 11, 31));
 }
 
 export default async function SchedulePage({
@@ -31,7 +25,7 @@ export default async function SchedulePage({
   const canViewAll = true;
   const canEdit = canManage(role);
 
-  const sundays = sundaysThroughYearEnd(new Date());
+  const sundays = sundaysThroughYearEnd();
 
   const from = sundays[0];
   const to = sundays[sundays.length - 1];

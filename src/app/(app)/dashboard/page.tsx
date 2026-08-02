@@ -9,6 +9,7 @@ import { BirthdaysSection } from "@/components/dashboard/birthdays-section";
 import { computeUpcomingBirthdays } from "@/lib/birthdays";
 import { canManage } from "@/lib/permissions";
 import { parseAppSettings, resolveLayout } from "@/lib/navigation";
+import { addDays, nextSunday as getNextSunday, today as getToday } from "@/lib/dates";
 
 // Tailwind can't generate a class from an interpolated string, so map them explicitly.
 const GRID_COLS: Record<number, string> = {
@@ -17,15 +18,6 @@ const GRID_COLS: Record<number, string> = {
   5: "grid-cols-5",
 };
 
-// Local-midnight construction, matching how schedule/page.tsx builds slot dates —
-// building this in UTC instead causes a timezone offset that never matches stored slots.
-function getNextSunday() {
-  const now = new Date();
-  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diff = date.getDay() === 0 ? 0 : 7 - date.getDay();
-  date.setDate(date.getDate() + diff);
-  return date;
-}
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -35,10 +27,8 @@ export default async function DashboardPage() {
   const nextSunday = getNextSunday();
   const isManager = canManage(role);
 
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const in30Days = new Date(today);
-  in30Days.setDate(in30Days.getDate() + 30);
+  const today = getToday();
+  const in30Days = addDays(today, 30);
 
   const [hasApoioGeral, events, scheduleSlots, upcomingEvents30d, birthdayChildren, birthdayVolunteers, lowSnacks] = await Promise.all([
     prisma.volunteerFunction.findFirst({
@@ -50,7 +40,9 @@ export default async function DashboardPage() {
       select: { id: true, title: true, date: true, endDate: true, description: true },
     }),
     prisma.scheduleSlot.findMany({
+      // date is a DATE column now, so plain equality matches the whole Sunday.
       where: { date: nextSunday, userId: session.user.id },
+      orderBy: { slotType: "asc" },
       include: {
         user: { select: { name: true } },
         classGroup: { select: { name: true } },

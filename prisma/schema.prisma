@@ -233,7 +233,10 @@ enum LessonType {
 
 model ScheduleSlot {
   id           String      @id @default(cuid())
-  date         DateTime
+  // A slot belongs to a calendar day, not an instant. As a timestamp the same Sunday
+  // got written at two different times (UTC midnight by the import, local midnight by
+  // the app), and equality filters then matched only one of the two sets.
+  date         DateTime    @db.Date
   slotType     SlotType    @map("slot_type")
   horario      Frequencia?
   classGroupId String?     @map("class_group_id")
