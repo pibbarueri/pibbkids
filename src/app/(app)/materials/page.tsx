@@ -11,11 +11,24 @@ export default async function MaterialsPage() {
   if (!canViewMaterials(role)) redirect("/dashboard");
   const isManager = canManage(role);
 
-  const materials = await prisma.material.findMany({ orderBy: { name: "asc" } });
+  const materials = await prisma.material.findMany({
+    orderBy: { name: "asc" },
+    include: {
+      createdBy: { select: { username: true } },
+      updatedBy: { select: { username: true } },
+    },
+  });
 
   return (
     <div className="p-4 pb-24 space-y-4">
-      <MaterialsClient initialMaterials={materials} isManager={isManager} />
+      <MaterialsClient
+        initialMaterials={materials.map((m) => ({
+          ...m,
+          createdAt: m.createdAt.toISOString(),
+          updatedAt: m.updatedAt.toISOString(),
+        }))}
+        isManager={isManager}
+      />
     </div>
   );
 }

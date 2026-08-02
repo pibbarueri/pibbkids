@@ -34,7 +34,68 @@ type Snack = {
   unit: string;
 };
 
-const emptyForm = { category: "COMIDA", description: "", quantity: "0", unit: "" };
+type Form = { category: string; description: string; quantity: string; unit: string };
+
+const emptyForm: Form = { category: "COMIDA", description: "", quantity: "0", unit: "" };
+
+// Module scope on purpose: nesting this in SnacksClient would remount the inputs on
+// every keystroke and drop focus.
+function SnackFields({
+  value,
+  onChange,
+}: {
+  value: Form;
+  onChange: (patch: Partial<Form>) => void;
+}) {
+  return (
+    <>
+      <div className="space-y-1">
+        <p className="text-sm font-medium">Categoria</p>
+        <Select
+          value={value.category}
+          onValueChange={(v) => onChange({ category: v ?? "COMIDA" })}
+          items={CATEGORY_LABELS}
+        >
+          <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {Object.entries(CATEGORY_LABELS).map(([v, label]) => (
+              <SelectItem key={v} value={v}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <p className="text-sm font-medium">Descrição</p>
+        <Input
+          className="h-12"
+          placeholder="Suco, biscoito..."
+          value={value.description}
+          onChange={(e) => onChange({ description: e.target.value })}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1 min-w-0">
+          <p className="text-sm font-medium">Quantidade</p>
+          <Input
+            type="number"
+            className="h-12"
+            value={value.quantity}
+            onChange={(e) => onChange({ quantity: e.target.value })}
+          />
+        </div>
+        <div className="space-y-1 min-w-0">
+          <p className="text-sm font-medium">Volume</p>
+          <Input
+            className="h-12"
+            placeholder="saco, caixa, garrafa..."
+            value={value.unit}
+            onChange={(e) => onChange({ unit: e.target.value })}
+          />
+        </div>
+      </div>
+    </>
+  );
+}
 
 export function SnacksClient({ initialSnacks }: { initialSnacks: Snack[] }) {
   const [snacks, setSnacks] = useState(initialSnacks);
@@ -42,6 +103,34 @@ export function SnacksClient({ initialSnacks }: { initialSnacks: Snack[] }) {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [adjusting, setAdjusting] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState(emptyForm);
+
+  function openEdit(s: Snack) {
+    setEditingId(s.id);
+    setEditForm({
+      category: s.category,
+      description: s.description,
+      quantity: String(s.quantity),
+      unit: s.unit,
+    });
+  }
+
+  async function saveEdit() {
+    if (!editingId) return;
+    setSaving(true);
+    const res = await fetch(`/api/snacks/${editingId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...editForm, quantity: Number(editForm.quantity) || 0 }),
+    });
+    const updated = await res.json();
+    setSnacks((prev) =>
+      prev.map((s) => (s.id === updated.id ? updated : s)).sort((a, b) => a.description.localeCompare(b.description))
+    );
+    setSaving(false);
+    setEditingId(null);
+  }
 
   async function create() {
     setSaving(true);
@@ -88,50 +177,7 @@ export function SnacksClient({ initialSnacks }: { initialSnacks: Snack[] }) {
             <DialogTitle>Novo item de lanche</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Categoria</p>
-              <Select
-                value={form.category}
-                onValueChange={(v) => setForm((f) => ({ ...f, category: v ?? "COMIDA" }))}
-                items={CATEGORY_LABELS}
-              >
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Descrição</p>
-              <Input
-                className="h-12"
-                placeholder="Suco, biscoito..."
-                value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Quantidade</p>
-                <Input
-                  type="number"
-                  className="h-12"
-                  value={form.quantity}
-                  onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Volume</p>
-                <Input
-                  className="h-12"
-                  placeholder="saco, caixa, garrafa..."
-                  value={form.unit}
-                  onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
-                />
-              </div>
-            </div>
+            <SnackFields value={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
             <Button
               className="w-full h-12"
               disabled={!form.description || !form.unit || saving}
@@ -144,15 +190,15 @@ export function SnacksClient({ initialSnacks }: { initialSnacks: Snack[] }) {
       </Dialog>
 
       {snacks.map((s) => (
-        <div key={s.id} className="flex items-center justify-between p-4 border rounded-lg bg-background">
-          <div>
+        <div key={s.id} className="flex items-center justify-between gap-3 p-4 border rounded-lg bg-background">
+          <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openEdit(s)}>
             <p className="font-medium text-sm uppercase">{s.description}</p>
             <p className="text-xs text-muted-foreground">
               {s.quantity} {s.unit}
               {s.quantity <= 5 && <span className="text-destructive"> · estoque baixo</span>}
             </p>
-          </div>
-          <div className="flex items-center gap-2">
+          </button>
+          <div className="flex shrink-0 items-center gap-2">
             <Button
               variant="outline"
               size="icon"
@@ -190,6 +236,24 @@ export function SnacksClient({ initialSnacks }: { initialSnacks: Snack[] }) {
       {snacks.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">Nenhum item cadastrado.</p>
       )}
+
+      <Dialog open={!!editingId} onOpenChange={(open) => !open && setEditingId(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar item</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <SnackFields value={editForm} onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))} />
+            <Button
+              className="w-full h-12"
+              disabled={!editForm.description || !editForm.unit || saving}
+              onClick={saveEdit}
+            >
+              Salvar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

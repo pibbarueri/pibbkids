@@ -36,6 +36,8 @@ model User {
   classJournalEntriesAuthored     ClassJournalEntry[] @relation("ClassJournalAuthor")
   classJournalEntriesAcknowledged ClassJournalEntry[] @relation("ClassJournalAcknowledger")
   settings          UserSettings?
+  materialsCreated  Material[]          @relation("MaterialCreator")
+  materialsUpdated  Material[]          @relation("MaterialUpdater")
 
   @@map("users")
 }
@@ -283,11 +285,33 @@ model Attendance {
 model Material {
   id          String            @id @default(cuid())
   name        String
+  description String?
+  // Nullable because materials already registered before categories existed —
+  // they show up as "Sem categoria" until someone edits them.
+  category    MaterialCategory?
   unit        String
   quantity    Int               @default(0)
   requests    PurchaseRequest[]
 
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String?  @map("created_by_id")
+  createdBy   User?    @relation("MaterialCreator", fields: [createdById], references: [id])
+  updatedById String?  @map("updated_by_id")
+  updatedBy   User?    @relation("MaterialUpdater", fields: [updatedById], references: [id])
+
   @@map("materials")
+}
+
+enum MaterialCategory {
+  PAPELARIA
+  DECORACAO
+  LEMBRANCINHA
+  TEATRO_FANTOCHES
+  BRINQUEDOS
+  ELETRONICOS
+
+  @@map("material_category")
 }
 
 model PurchaseRequest {
