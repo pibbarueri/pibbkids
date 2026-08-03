@@ -8,8 +8,6 @@ import { Role } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { LessonsClient } from "./lessons-client";
 
-const CAN_MARK: Role[] = [Role.ADMIN, Role.COORDINATOR, Role.TEACHER];
-
 // Bounded to the school-year calendar: first Sunday of February through the
 // last Sunday of December — matches how classes actually run through the year.
 function sundaysInSchoolYear(year: number): Date[] {
@@ -85,7 +83,6 @@ export default async function LessonsPage() {
         sundays={sundays.map((d) => d.toISOString())}
         initialSundayIdx={initialSundayIdx}
         isManager={isManager}
-        canMark={CAN_MARK.includes(role)}
         myClassIds={myClassIds}
       />
     </div>

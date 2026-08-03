@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Check, Copy } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LESSON_TYPE_LABELS: Record<string, string> = {
@@ -66,7 +66,6 @@ export function LessonsClient({
   sundays,
   initialSundayIdx,
   isManager,
-  canMark,
   myClassIds,
 }: {
   initialPlans: Plan[];
@@ -75,7 +74,6 @@ export function LessonsClient({
   sundays: string[];
   initialSundayIdx: number;
   isManager: boolean;
-  canMark: boolean;
   myClassIds: string[];
 }) {
   const [plans, setPlans] = useState(() =>
@@ -88,15 +86,6 @@ export function LessonsClient({
 
   const selectedSunday = sundays[sundayIdx];
   const dayPlans = plans.filter((p) => p.date.startsWith(selectedSunday.slice(0, 10)));
-
-  // "Marcar dada" only for the current week's sunday.
-  const currentSundayKey = (() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - d.getDay());
-    return d.toISOString().slice(0, 10);
-  })();
-  const canToggleDone = canMark && selectedSunday.slice(0, 10) === currentSundayKey;
 
   const visibleClasses = isManager ? classes : classes.filter((c) => myClassIds.includes(c.id));
 
@@ -141,16 +130,6 @@ export function LessonsClient({
     setEditing(null);
   }
 
-  async function toggleDone(plan: Plan) {
-    const res = await fetch(`/api/sunday-plans/${plan.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ done: !plan.done }),
-    });
-    const updated = await res.json();
-    setPlans((prev) => prev.map((p) => (p.id === plan.id ? updated : p)));
-  }
-
   function copyWhatsApp() {
     const lines = [`📖 *Aulas — ${formatDate(selectedSunday)}*\n`];
     for (const cls of visibleClasses) {
@@ -165,6 +144,9 @@ export function LessonsClient({
   }
 
   const availableJournals = journals.filter((c) => c.classGroupId === editing?.classGroupId);
+  const editingPlan = editing
+    ? dayPlans.find((p) => p.classGroupId === editing.classGroupId && p.tipo === editing.tipo)
+    : null;
 
   return (
     <div className="space-y-4">
@@ -207,11 +189,8 @@ export function LessonsClient({
                 return (
                   <div
                     key={tipo}
-                    className={cn(
-                      "flex items-center justify-between p-2 rounded-md bg-muted/40 cursor-pointer",
-                      isManager && "hover:bg-muted"
-                    )}
-                    onClick={() => isManager && openEdit(cls.id, cls.name, tipo)}
+                    className={cn("flex items-center justify-between p-2 rounded-md bg-muted/40 cursor-pointer hover:bg-muted")}
+                    onClick={() => openEdit(cls.id, cls.name, tipo)}
                   >
                     <div>
                       <p className="text-xs text-muted-foreground">{TIPO_LABELS[tipo]}</p>
@@ -220,17 +199,6 @@ export function LessonsClient({
                         <p className="text-xs text-muted-foreground italic mt-0.5 whitespace-pre-line">{plan.observations}</p>
                       )}
                     </div>
-                    {plan && (canToggleDone || plan.done) && (
-                      <Button
-                        variant={plan.done ? "default" : "outline"}
-                        size="icon"
-                        disabled={!canToggleDone}
-                        className="h-8 w-8"
-                        onClick={(e) => { e.stopPropagation(); toggleDone(plan); }}
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 );
               })}
@@ -244,76 +212,112 @@ export function LessonsClient({
           <DialogHeader>
             <DialogTitle>{editing?.className} — {editing && TIPO_LABELS[editing.tipo]}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Tipo</p>
-              <Select
-                value={form.lessonType}
-                onValueChange={(v) => setForm((f) => ({ ...f, lessonType: v ?? "APOSTILA" }))}
-                items={LESSON_TYPE_LABELS}
-              >
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(LESSON_TYPE_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {isManager ? (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Tipo</p>
+                <Select
+                  value={form.lessonType}
+                  onValueChange={(v) => setForm((f) => ({ ...f, lessonType: v ?? "APOSTILA" }))}
+                  items={LESSON_TYPE_LABELS}
+                >
+                  <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(LESSON_TYPE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {form.lessonType === "APOSTILA" ? (
-              <>
+              {form.lessonType === "APOSTILA" ? (
+                <>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Revista</p>
+                    <Select
+                      value={form.journalId}
+                      onValueChange={(v) => setForm((f) => ({ ...f, journalId: v ?? "" }))}
+                      items={Object.fromEntries(availableJournals.map((c) => [c.id, `${c.title} (${c.edition})`]))}
+                    >
+                      <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        {availableJournals.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.title} ({c.edition})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Nº da lição</p>
+                    <Input
+                      type="number"
+                      className="h-12"
+                      value={form.licaoNumber}
+                      onChange={(e) => setForm((f) => ({ ...f, licaoNumber: e.target.value }))}
+                    />
+                  </div>
+                </>
+              ) : ["SEM_AULA", "TEMA_LIVRE"].includes(form.lessonType) ? null : (
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">Revista</p>
-                  <Select
-                    value={form.journalId}
-                    onValueChange={(v) => setForm((f) => ({ ...f, journalId: v ?? "" }))}
-                    items={Object.fromEntries(availableJournals.map((c) => [c.id, `${c.title} (${c.edition})`]))}
-                  >
-                    <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                    <SelectContent>
-                      {availableJournals.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.title} ({c.edition})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Nº da lição</p>
+                  <p className="text-sm font-medium">Título</p>
                   <Input
-                    type="number"
                     className="h-12"
-                    value={form.licaoNumber}
-                    onChange={(e) => setForm((f) => ({ ...f, licaoNumber: e.target.value }))}
+                    value={form.specialTitle}
+                    onChange={(e) => setForm((f) => ({ ...f, specialTitle: e.target.value }))}
+                    placeholder="Ex: Dia da Bíblia"
                   />
                 </div>
-              </>
-            ) : ["SEM_AULA", "TEMA_LIVRE"].includes(form.lessonType) ? null : (
+              )}
+
               <div className="space-y-1">
-                <p className="text-sm font-medium">Título</p>
-                <Input
-                  className="h-12"
-                  value={form.specialTitle}
-                  onChange={(e) => setForm((f) => ({ ...f, specialTitle: e.target.value }))}
-                  placeholder="Ex: Dia da Bíblia"
+                <p className="text-sm font-medium">Observações</p>
+                <Textarea
+                  rows={2}
+                  value={form.observations}
+                  onChange={(e) => setForm((f) => ({ ...f, observations: e.target.value }))}
+                  placeholder="Anotações para esta aula (opcional)"
                 />
               </div>
-            )}
 
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Observações</p>
-              <Textarea
-                rows={2}
-                value={form.observations}
-                onChange={(e) => setForm((f) => ({ ...f, observations: e.target.value }))}
-                placeholder="Anotações para esta aula (opcional)"
-              />
+              <Button className="w-full h-12" disabled={saving} onClick={save}>
+                Salvar
+              </Button>
             </div>
+          ) : !editingPlan ? (
+            <p className="text-sm text-muted-foreground">Sem plano cadastrado</p>
+          ) : (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Tipo</p>
+                <p className="text-sm">{LESSON_TYPE_LABELS[editingPlan.lessonType]}</p>
+              </div>
 
-            <Button className="w-full h-12" disabled={saving} onClick={save}>
-              Salvar
-            </Button>
-          </div>
+              {editingPlan.lessonType === "APOSTILA" ? (
+                <div className="flex gap-3">
+                  <div className="space-y-1 flex-1">
+                    <p className="text-sm font-medium">Revista</p>
+                    <p className="text-sm">
+                      {editingPlan.journal ? `${editingPlan.journal.title} (${editingPlan.journal.edition})` : "—"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Nº da lição</p>
+                    <p className="text-sm">{editingPlan.licaoNumber ?? "—"}</p>
+                  </div>
+                </div>
+              ) : !["SEM_AULA", "TEMA_LIVRE"].includes(editingPlan.lessonType) ? (
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Título</p>
+                  <p className="text-sm">{editingPlan.specialTitle || "—"}</p>
+                </div>
+              ) : null}
+
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Observações</p>
+                <p className="text-sm whitespace-pre-line">{editingPlan.observations || "—"}</p>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
