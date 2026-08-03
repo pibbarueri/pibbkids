@@ -25,7 +25,7 @@ const FREQ_OPTIONS: { value: Frequencia; label: string }[] = [
 ];
 
 type ClassGroup = { id: string; name: string };
-type VisitorListItem = { id: string; name: string; birthdate: string; classGroup: ClassGroup | null };
+type VisitorListItem = { id: string; name: string; birthdate: string; type: "EBD" | "CULTO"; classGroup: ClassGroup | null };
 type VisitorDetail = VisitorListItem & { createdBy: { username: string | null }; createdAt: string; childId: string | null };
 
 function toDateKey(d: Date) {
@@ -226,7 +226,7 @@ export function VisitorsReportClient({ isManager }: { isManager: boolean }) {
               >
                 <p className="font-medium text-sm">{v.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {ageLabel(new Date(v.birthdate))} · {v.classGroup?.name ?? "Sem turma"}
+                  {ageLabel(new Date(v.birthdate))} · {v.classGroup?.name ?? "Sem turma"} · {v.type === "CULTO" ? "Culto" : "EBD"}
                 </p>
               </button>
             ))}
@@ -248,6 +248,7 @@ export function VisitorsReportClient({ isManager }: { isManager: boolean }) {
                 <Row label="Data de nascimento" value={new Date(detail.birthdate).toLocaleDateString("pt-BR", { timeZone: "UTC" })} />
                 <Row label="Idade" value={ageLabel(new Date(detail.birthdate))} />
                 <Row label="Turma sugerida" value={detail.classGroup?.name ?? "Sem turma"} />
+                <Row label="Horário" value={detail.type === "CULTO" ? "Culto" : "EBD"} />
                 <Row
                   label="Cadastrado por"
                   value={`${detail.createdBy.username ?? "—"}, em ${new Date(detail.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric", timeZone: "America/Sao_Paulo" })} às ${new Date(detail.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}`}

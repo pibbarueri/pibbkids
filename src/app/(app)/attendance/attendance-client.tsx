@@ -25,6 +25,7 @@ type Visitor = {
   id: string;
   name: string;
   birthdate: string;
+  type: "EBD" | "CULTO";
   classGroup: ClassGroup | null;
   childId: string | null;
 };
@@ -44,10 +45,12 @@ function visitorAge(birthdate: string): number {
 function VisitorFab({
   canLogVisitor,
   date,
+  type,
   onCreated,
 }: {
   canLogVisitor: boolean;
   date: string;
+  type: "EBD" | "CULTO";
   onCreated: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -89,7 +92,7 @@ function VisitorFab({
     const res = await fetch("/api/visitors", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), birthdate, date }),
+      body: JSON.stringify({ name: name.trim(), birthdate, date, type }),
     });
     if (res.ok) {
       const created = await res.json();
@@ -269,10 +272,14 @@ export function AttendanceClient({
     };
   }, [selectedDayKey, canLogVisitor, visitorsVersion]);
 
+  // Visitors are logged for a specific horário (EBD/Culto) — only show/count them under
+  // the matching tab.
+  const visitorsForTab = visitors.filter((v) => v.type === horarioTab);
+
   // A child efetivada from a visitor logged on this same day already shows up as that
   // visitor card — skip the regular roster card too, or she'd appear twice.
-  const effectivatedTodayIds = new Set(visitors.filter((v) => v.childId).map((v) => v.childId));
-  const classesWithVisitors = new Set(visitors.filter((v) => v.classGroup).map((v) => v.classGroup!.id));
+  const effectivatedTodayIds = new Set(visitorsForTab.filter((v) => v.childId).map((v) => v.childId));
+  const classesWithVisitors = new Set(visitorsForTab.filter((v) => v.classGroup).map((v) => v.classGroup!.id));
 
   // Only children whose frequency includes the active tab's tipo show up at all.
   const eligibleForTab = children.filter(
@@ -366,9 +373,9 @@ export function AttendanceClient({
         </TabsList>
       </Tabs>
 
-      {canLogVisitor && visitors.length > 0 && (
+      {canLogVisitor && visitorsForTab.length > 0 && (
         <p className="text-xs text-muted-foreground text-center">
-          {totalPresent} crianças presentes + {visitors.length} visitante{visitors.length === 1 ? "" : "s"} = {totalPresent + visitors.length} no total
+          {totalPresent} crianças presentes + {visitorsForTab.length} visitante{visitorsForTab.length === 1 ? "" : "s"} = {totalPresent + visitorsForTab.length} no total
         </p>
       )}
 
@@ -439,10 +446,10 @@ export function AttendanceClient({
         </p>
       )}
 
-      {canLogVisitor && visitors.length > 0 && (
+      {canLogVisitor && visitorsForTab.length > 0 && (
         <div className="space-y-2 pt-2">
-          <p className="text-xs font-medium text-muted-foreground">Visitantes ({visitors.length})</p>
-          {visitors.map((v) => (
+          <p className="text-xs font-medium text-muted-foreground">Visitantes ({visitorsForTab.length})</p>
+          {visitorsForTab.map((v) => (
             <div key={v.id} className="flex items-center gap-2 p-3 border rounded-lg bg-muted/40">
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm truncate">{v.name}</p>
@@ -455,7 +462,7 @@ export function AttendanceClient({
         </div>
       )}
 
-      <VisitorFab canLogVisitor={canLogVisitor} date={selectedDayKey} onCreated={() => setVisitorsVersion((v) => v + 1)} />
+      <VisitorFab canLogVisitor={canLogVisitor} date={selectedDayKey} type={horarioTab} onCreated={() => setVisitorsVersion((v) => v + 1)} />
     </div>
   );
 }

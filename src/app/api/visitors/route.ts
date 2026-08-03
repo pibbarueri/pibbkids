@@ -5,11 +5,13 @@ import { auth } from "@/lib/auth";
 import { canLogVisitor } from "@/lib/permissions";
 import { suggestedClassName, ageInYears } from "@/lib/age";
 import { dayRangeUTC, dateTimeOnDay, dayKey } from "@/lib/dates";
+import { SundayTipo } from "@prisma/client";
 
 const schema = z.object({
   name: z.string().min(2),
   birthdate: z.string().min(1),
   date: z.string().min(1).optional(),
+  type: z.nativeEnum(SundayTipo),
 });
 
 export async function GET(req: NextRequest) {
@@ -71,6 +73,7 @@ export async function POST(req: NextRequest) {
     data: {
       name: parsed.data.name,
       birthdate,
+      type: parsed.data.type,
       classGroupId: classGroup?.id ?? null,
       createdById: session.user.id,
       createdAt: dateTimeOnDay(parsed.data.date ?? dayKey()),

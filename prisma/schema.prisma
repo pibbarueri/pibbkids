@@ -155,6 +155,7 @@ model Visitor {
   id           String      @id @default(cuid())
   name         String
   birthdate    DateTime    @db.Date
+  type         SundayTipo
   classGroupId String?     @map("class_group_id")
   classGroup   ClassGroup? @relation(fields: [classGroupId], references: [id])
   createdById  String      @map("created_by_id")
