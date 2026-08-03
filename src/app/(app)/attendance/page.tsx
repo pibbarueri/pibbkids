@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManage } from "@/lib/permissions";
+import { canManage, canLogVisitor } from "@/lib/permissions";
 import { Role } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { AttendanceClient } from "./attendance-client";
@@ -51,6 +51,7 @@ export default async function AttendancePage() {
         initialAttendance={attendance as any}
         currentSunday={sunday.toISOString()}
         isAdmin={canManage(role)}
+        canLogVisitor={canLogVisitor(role)}
       />
     </div>
   );

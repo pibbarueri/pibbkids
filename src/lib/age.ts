@@ -15,7 +15,7 @@ export function ageLabel(birthdate: Date, now = new Date()): string {
   return parts.join(" e ");
 }
 
-function ageInYears(birthdate: Date, now = new Date()): number {
+export function ageInYears(birthdate: Date, now = new Date()): number {
   let years = now.getUTCFullYear() - birthdate.getUTCFullYear();
   const beforeBirthdayThisYear =
     now.getUTCMonth() < birthdate.getUTCMonth() ||

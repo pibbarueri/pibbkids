@@ -38,6 +38,7 @@ model User {
   settings          UserSettings?
   materialsCreated  Material[]          @relation("MaterialCreator")
   materialsUpdated  Material[]          @relation("MaterialUpdater")
+  visitorsLogged    Visitor[]
 
   @@map("users")
 }
@@ -134,6 +135,7 @@ model Child {
   active       Boolean      @default(true)
   createdAt    DateTime     @default(now()) @map("created_at")
   attendance   Attendance[]
+  visitor      Visitor?
 
   @@map("children")
 }
@@ -144,6 +146,24 @@ enum Frequencia {
   AMBOS
 
   @@map("frequencia")
+}
+
+// Quick same-day check-in for a visiting child (logged by RECEPTIONIST during EBD/Culto).
+// No `date` column: createdAt IS the visit day — truncate with src/lib/dates.ts helpers
+// (APP_TIME_ZONE) when grouping by day, never compare the raw timestamp.
+model Visitor {
+  id           String      @id @default(cuid())
+  name         String
+  birthdate    DateTime    @db.Date
+  classGroupId String?     @map("class_group_id")
+  classGroup   ClassGroup? @relation(fields: [classGroupId], references: [id])
+  createdById  String      @map("created_by_id")
+  createdBy    User        @relation(fields: [createdById], references: [id])
+  childId      String?     @unique @map("child_id")
+  child        Child?      @relation(fields: [childId], references: [id])
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  @@map("visitors")
 }
 
 // ─── Turmas ───────────────────────────────────────────────────────────────────
@@ -158,6 +178,7 @@ model ClassGroup {
   sundayPlans    SundayPlan[]
   preferredBy    UserPreferredClass[]
   journalEntries ClassJournalEntry[]
+  visitors       Visitor[]
 
   @@map("class_groups")
 }

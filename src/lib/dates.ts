@@ -47,3 +47,36 @@ export function sundaysBetween(start: Date, end: Date): Date[] {
 export function utcDate(year: number, monthIndex: number, day: number): Date {
   return new Date(Date.UTC(year, monthIndex, day));
 }
+
+/** The calendar day (YYYY-MM-DD) a timestamp falls on in the app timezone. */
+export function dayKey(date: Date = new Date()): string {
+  return YMD.format(date);
+}
+
+/**
+ * The [start, end) UTC instant range covering one calendar day in the app timezone, for
+ * filtering a timestamp column (e.g. `createdAt >= start && createdAt < end`). Brazil has
+ * had no DST since 2019, so São Paulo is a fixed UTC-3 offset — safe to hardcode here (same
+ * assumption as src/lib/event-time.ts).
+ */
+export function dayRangeUTC(ymd: string): { start: Date; end: Date } {
+  const start = new Date(`${ymd}T00:00:00-03:00`);
+  return { start, end: new Date(start.getTime() + 24 * 60 * 60 * 1000) };
+}
+
+const HMS = new Intl.DateTimeFormat("en-GB", {
+  timeZone: APP_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
+
+/**
+ * A timestamp on the given calendar day, at the current wall-clock time of day (app
+ * timezone) — for backdating a same-day-only record (like a visitor check-in) to whatever
+ * Sunday is selected in the UI, while still showing a real "logged at HH:MM" time.
+ */
+export function dateTimeOnDay(ymd: string, now: Date = new Date()): Date {
+  return new Date(`${ymd}T${HMS.format(now)}-03:00`);
+}

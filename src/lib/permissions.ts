@@ -48,3 +48,8 @@ export function canReportOccurrence(role: Role) {
 export function canWriteClassJournal(role: Role) {
   return role === Role.TEACHER;
 }
+
+// Quick visitor check-in on the attendance screen: same roles allowed to mark attendance.
+export function canLogVisitor(role: Role) {
+  return role === Role.RECEPTIONIST || canManage(role);
+}

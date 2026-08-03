@@ -31,6 +31,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     include: { classGroup: { select: { name: true } } },
   });
 
+  // Approving a pending registration that matches an unlinked visitor check-in: link
+  // instead of leaving two separate records for the same kid.
+  if (body.linkVisitorId !== undefined) {
+    await prisma.visitor.updateMany({
+      where: { id: body.linkVisitorId, childId: null },
+      data: { childId: child.id },
+    });
+  }
+
   return NextResponse.json(child);
 }
 

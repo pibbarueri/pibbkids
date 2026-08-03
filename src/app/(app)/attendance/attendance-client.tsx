@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Search, ChevronLeft, ChevronRight, Lock } from "lucide-react";
+import { Check, Search, ChevronLeft, ChevronRight, Lock, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { sortClasses } from "@/lib/classes";
+import { dayKey } from "@/lib/dates";
 
 type ClassGroup = { id: string; name: string };
 type Child = {
@@ -18,17 +21,179 @@ type Child = {
   classGroup: ClassGroup | null;
 };
 type Attendance = { childId: string; type: string; present: boolean };
+type Visitor = {
+  id: string;
+  name: string;
+  birthdate: string;
+  classGroup: ClassGroup | null;
+  childId: string | null;
+};
+type VisitorSuggestion = { id: string; name: string; birthdate: string };
+
+function visitorAge(birthdate: string): number {
+  const b = new Date(birthdate);
+  const now = new Date();
+  let years = now.getUTCFullYear() - b.getUTCFullYear();
+  const beforeBirthday =
+    now.getUTCMonth() < b.getUTCMonth() ||
+    (now.getUTCMonth() === b.getUTCMonth() && now.getUTCDate() < b.getUTCDate());
+  if (beforeBirthday) years--;
+  return years;
+}
+
+function VisitorFab({
+  canLogVisitor,
+  date,
+  onCreated,
+}: {
+  canLogVisitor: boolean;
+  date: string;
+  onCreated: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [suggestions, setSuggestions] = useState<VisitorSuggestion[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<{ name: string; age: number; className: string } | null>(null);
+
+  useEffect(() => {
+    if (name.trim().length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      fetch(`/api/visitors/search?q=${encodeURIComponent(name.trim())}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (!cancelled) setSuggestions(data);
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [name]);
+
+  function reset() {
+    setName("");
+    setBirthdate("");
+    setSuggestions([]);
+    setResult(null);
+  }
+
+  async function save() {
+    if (!name.trim() || !birthdate) return;
+    setSaving(true);
+    const res = await fetch("/api/visitors", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), birthdate, date }),
+    });
+    if (res.ok) {
+      const created = await res.json();
+      setResult({
+        name: created.name,
+        age: created.age,
+        className: created.classGroup?.name ?? "Sem turma definida",
+      });
+    }
+    setSaving(false);
+  }
+
+  if (!canLogVisitor) return null;
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) reset();
+      }}
+    >
+      <DialogTrigger
+        className={cn(buttonVariants({ size: "icon" }), "fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40")}
+        aria-label="Incluir visitante"
+      >
+        <UserPlus className="h-6 w-6" />
+      </DialogTrigger>
+      <DialogContent>
+        {result ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>{result.name}</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm">
+              Tem <span className="font-bold">{result.age} anos</span> e vai pra sala{" "}
+              <span className="font-bold">{result.className}</span>.
+            </p>
+            <Button
+              className="w-full h-12"
+              onClick={() => {
+                setOpen(false);
+                reset();
+                onCreated();
+              }}
+            >
+              Ok
+            </Button>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Incluir visitante</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1 relative">
+                <p className="text-sm font-medium">Nome *</p>
+                <Input className="h-12" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome da criança" />
+                {suggestions.length > 0 && (
+                  <div className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-lg divide-y">
+                    {suggestions.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                        onClick={() => {
+                          setName(s.name);
+                          setBirthdate(new Date(s.birthdate).toISOString().slice(0, 10));
+                          setSuggestions([]);
+                        }}
+                      >
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Data de nascimento *</p>
+                <Input type="date" className="h-12" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} />
+              </div>
+              <Button className="w-full h-12" disabled={!name.trim() || !birthdate || saving} onClick={save}>
+                Salvar
+              </Button>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export function AttendanceClient({
   children,
   initialAttendance,
   currentSunday,
   isAdmin,
+  canLogVisitor,
 }: {
   children: Child[];
   initialAttendance: Attendance[];
   currentSunday: string;
   isAdmin: boolean;
+  canLogVisitor: boolean;
 }) {
   // weekOffset: 0 = current sunday, -1 = last sunday, +1 = next sunday, ...
   const [weekOffset, setWeekOffset] = useState(0);
@@ -37,6 +202,8 @@ export function AttendanceClient({
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState<string>("all");
   const [horarioTab, setHorarioTab] = useState<"EBD" | "CULTO">("EBD");
+  const [visitors, setVisitors] = useState<Visitor[]>([]);
+  const [visitorsVersion, setVisitorsVersion] = useState(0);
 
   // Distinct turmas present among the children, in canonical order.
   const classOptions = sortClasses(
@@ -87,9 +254,29 @@ export function AttendanceClient({
     };
   }, [selectedISO]);
 
+  const selectedDayKey = dayKey(selectedSunday);
+
+  useEffect(() => {
+    if (!canLogVisitor) return;
+    let cancelled = false;
+    fetch(`/api/visitors?date=${selectedDayKey}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) setVisitors(data);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDayKey, canLogVisitor, visitorsVersion]);
+
+  // A child efetivada from a visitor logged on this same day already shows up as that
+  // visitor card — skip the regular roster card too, or she'd appear twice.
+  const effectivatedTodayIds = new Set(visitors.filter((v) => v.childId).map((v) => v.childId));
+  const classesWithVisitors = new Set(visitors.filter((v) => v.classGroup).map((v) => v.classGroup!.id));
+
   // Only children whose frequency includes the active tab's tipo show up at all.
   const eligibleForTab = children.filter(
-    (c) => c.frequency === "AMBOS" || c.frequency === horarioTab
+    (c) => (c.frequency === "AMBOS" || c.frequency === horarioTab) && !effectivatedTodayIds.has(c.id)
   );
 
   function isPresent(childId: string) {
@@ -179,6 +366,12 @@ export function AttendanceClient({
         </TabsList>
       </Tabs>
 
+      {canLogVisitor && visitors.length > 0 && (
+        <p className="text-xs text-muted-foreground text-center">
+          {totalPresent} crianças presentes + {visitors.length} visitante{visitors.length === 1 ? "" : "s"} = {totalPresent + visitors.length} no total
+        </p>
+      )}
+
       {classOptions.length > 1 && (
         <div className="flex flex-wrap gap-2">
           <button
@@ -199,7 +392,7 @@ export function AttendanceClient({
                 classFilter === c.id ? "border-primary bg-primary text-primary-foreground" : "border-input"
               )}
             >
-              {c.name} ({presentCountByClass.get(c.id) ?? 0})
+              {c.name}{classesWithVisitors.has(c.id) && "*"} ({presentCountByClass.get(c.id) ?? 0})
             </button>
           ))}
         </div>
@@ -245,6 +438,24 @@ export function AttendanceClient({
           {eligibleForTab.length === 0 ? "Nenhuma criança nesse horário." : "Nenhuma criança encontrada."}
         </p>
       )}
+
+      {canLogVisitor && visitors.length > 0 && (
+        <div className="space-y-2 pt-2">
+          <p className="text-xs font-medium text-muted-foreground">Visitantes ({visitors.length})</p>
+          {visitors.map((v) => (
+            <div key={v.id} className="flex items-center gap-2 p-3 border rounded-lg bg-muted/40">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-sm truncate">{v.name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {v.classGroup?.name ?? "Sem turma"} · {visitorAge(v.birthdate)} anos
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <VisitorFab canLogVisitor={canLogVisitor} date={selectedDayKey} onCreated={() => setVisitorsVersion((v) => v + 1)} />
     </div>
   );
 }

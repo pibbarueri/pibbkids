@@ -121,6 +121,8 @@ export function ChildrenClient({
   const [approveTarget, setApproveTarget] = useState<Child | null>(null);
   const [approveClassId, setApproveClassId] = useState("");
   const [approveSaving, setApproveSaving] = useState(false);
+  const [visitorMatch, setVisitorMatch] = useState<{ id: string; createdAt: string } | null>(null);
+  const [linkVisitor, setLinkVisitor] = useState(true);
   const [rejectTarget, setRejectTarget] = useState<Child | null>(null);
   const [rejectSaving, setRejectSaving] = useState(false);
   const [permanentDeleteTarget, setPermanentDeleteTarget] = useState<Child | null>(null);
@@ -229,6 +231,12 @@ export function ChildrenClient({
     const match = classes.find((c) => c.name.toLowerCase() === suggestion.toLowerCase());
     setApproveClassId(child.classGroupId ?? match?.id ?? "");
     setApproveTarget(child);
+    setVisitorMatch(null);
+    setLinkVisitor(true);
+    const birthdate = new Date(child.birthdate).toISOString().slice(0, 10);
+    fetch(`/api/visitors/match?name=${encodeURIComponent(child.name)}&birthdate=${birthdate}`)
+      .then((r) => r.json())
+      .then((data) => setVisitorMatch(data));
   }
 
   async function confirmApprove() {
@@ -237,7 +245,10 @@ export function ChildrenClient({
     const res = await fetch(`/api/children/${approveTarget.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ classGroupId: approveClassId }),
+      body: JSON.stringify({
+        classGroupId: approveClassId,
+        ...(visitorMatch && linkVisitor && { linkVisitorId: visitorMatch.id }),
+      }),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -641,6 +652,15 @@ export function ChildrenClient({
                 value={new Date(approveTarget.birthdate).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
               />
               <Row label="Idade" value={ageLabel(new Date(approveTarget.birthdate))} />
+              {visitorMatch && (
+                <label className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800 cursor-pointer">
+                  <Checkbox checked={linkVisitor} onCheckedChange={(c) => setLinkVisitor(!!c)} />
+                  <span className="text-sm text-blue-800 dark:text-blue-200">
+                    Há um visitante ({new Date(visitorMatch.createdAt).toLocaleDateString("pt-BR")}) com esse nome e
+                    nascimento. São a mesma criança?
+                  </span>
+                </label>
+              )}
               <div className="space-y-1">
                 <p className="text-sm font-medium">Turma *</p>
                 <Select

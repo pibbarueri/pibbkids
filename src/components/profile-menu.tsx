@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { User, LogOut, Pencil, QrCode, AlertTriangle, LayoutGrid } from "lucide-react";
+import { User, LogOut, Pencil, QrCode, AlertTriangle, LayoutGrid, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { normalizeUsername } from "@/lib/text";
@@ -109,6 +109,9 @@ export function ProfileMenu({
           </DropdownMenuItem>
           <DropdownMenuItem className="px-2 py-2.5" render={<Link href="/occurrences" />}>
             <AlertTriangle className="h-4 w-4" /> {isManager ? "Ocorrências" : "Reportar ocorrência"}
+          </DropdownMenuItem>
+          <DropdownMenuItem className="px-2 py-2.5" render={<Link href="/reports" />}>
+            <FileText className="h-4 w-4" /> Relatórios
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="px-2 py-2.5" onClick={() => logoutAction()}>
