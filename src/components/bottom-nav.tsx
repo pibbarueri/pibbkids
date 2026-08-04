@@ -17,7 +17,7 @@ type NavItem = {
   label: string;
 };
 
-export function BottomNav({ items }: { items: NavItem[] }) {
+export function BottomNav({ items, dots }: { items: NavItem[]; dots?: Record<string, boolean> }) {
   const pathname = usePathname();
 
   return (
@@ -37,7 +37,12 @@ export function BottomNav({ items }: { items: NavItem[] }) {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {Icon && <Icon className="h-5 w-5" />}
+              <span className="relative">
+                {Icon && <Icon className="h-5 w-5" />}
+                {dots?.[item.id] && (
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-500" />
+                )}
+              </span>
               <span>{item.label}</span>
             </Link>
           );

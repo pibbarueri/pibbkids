@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -88,6 +89,7 @@ export function OccurrencesClient({
   initialOccurrences: Occurrence[];
   isManager: boolean;
 }) {
+  const router = useRouter();
   const [occurrences, setOccurrences] = useState(initialOccurrences);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -100,6 +102,13 @@ export function OccurrencesClient({
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteSaving, setDeleteSaving] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // The page already marked this visit as "seen" server-side, but that ran in the same
+  // request that rendered the (now stale) nav dot — refresh once so the dot reflects it.
+  useEffect(() => {
+    router.refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const valid = form.occurredAt && form.context && form.details.trim();
 
@@ -116,6 +125,7 @@ export function OccurrencesClient({
       setOccurrences((prev) => [created, ...prev]);
       setOpen(false);
       setForm(emptyForm);
+      router.refresh();
     }
     setSaving(false);
   }
@@ -131,6 +141,7 @@ export function OccurrencesClient({
       const updated = await res.json();
       setOccurrences((prev) => prev.map((o) => (o.id === id ? updated : o)));
       setSelected(updated);
+      router.refresh();
     }
     setResolving(false);
   }

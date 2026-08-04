@@ -11,12 +11,20 @@ export default async function PurchaseRequestsPage() {
   if (!canRequestPurchase(role)) redirect("/dashboard");
   const isManager = isLeadership(role);
 
-  const requests = await prisma.purchaseRequest.findMany({
-    include: {
-      requester: { select: { id: true, name: true } },
-    },
-    orderBy: [{ createdAt: "desc" }],
-  });
+  const [requests] = await Promise.all([
+    prisma.purchaseRequest.findMany({
+      include: {
+        requester: { select: { id: true, name: true } },
+      },
+      orderBy: [{ createdAt: "desc" }],
+    }),
+    // Visiting this screen clears the "available in stock" dot for the requester.
+    prisma.notification.upsert({
+      where: { userId_key: { userId: session.user.id, key: "purchase-requests" } },
+      update: { seenAt: new Date() },
+      create: { userId: session.user.id, key: "purchase-requests" },
+    }),
+  ]);
 
   return (
     <div className="p-4 pb-24 space-y-4">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -113,6 +114,7 @@ export function VolunteersClient({
   classes: ClassGroup[];
   isLeadership: boolean;
 }) {
+  const router = useRouter();
   const [volunteers, setVolunteers] = useState(initialVolunteers);
   const [selected, setSelected] = useState<Volunteer | null>(null);
   const [saving, setSaving] = useState(false);
@@ -229,6 +231,7 @@ export function VolunteersClient({
     });
     const updated = await res.json();
     setVolunteers((prev) => prev.map((x) => (x.id === id ? updated : x)));
+    router.refresh();
   }
 
   async function deactivate(v: Volunteer) {
@@ -262,6 +265,7 @@ export function VolunteersClient({
       const updated = await res.json();
       setVolunteers((prev) => prev.map((x) => (x.id === approveTarget.id ? updated : x)));
       setApproveTarget(null);
+      router.refresh();
     } else {
       const body = await res.json();
       setApproveError(body.error ?? "Erro ao aprovar.");

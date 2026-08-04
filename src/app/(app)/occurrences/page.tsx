@@ -10,14 +10,22 @@ export default async function OccurrencesPage() {
   const role = session.user.role;
   const isManager = canManage(role);
 
-  const occurrences = await prisma.occurrence.findMany({
-    where: isManager ? {} : { reporterId: session.user.id },
-    include: {
-      reporter: { select: { name: true, username: true } },
-      resolvedBy: { select: { name: true, username: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [occurrences] = await Promise.all([
+    prisma.occurrence.findMany({
+      where: isManager ? {} : { reporterId: session.user.id },
+      include: {
+        reporter: { select: { name: true, username: true } },
+        resolvedBy: { select: { name: true, username: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    // Visiting this screen clears the "resolved/reopened" dot for the reporter.
+    prisma.notification.upsert({
+      where: { userId_key: { userId: session.user.id, key: "occurrences" } },
+      update: { seenAt: new Date() },
+      create: { userId: session.user.id, key: "occurrences" },
+    }),
+  ]);
 
   return (
     <div className="p-4 pb-24 space-y-4">

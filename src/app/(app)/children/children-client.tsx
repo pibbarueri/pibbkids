@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Frequencia } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
@@ -109,6 +110,7 @@ export function ChildrenClient({
   classes: ClassGroup[];
   isManager: boolean;
 }) {
+  const router = useRouter();
   const [children, setChildren] = useState(initialChildren);
   const [selected, setSelected] = useState<Child | null>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -260,6 +262,7 @@ export function ChildrenClient({
       const updated = await res.json();
       setChildren((prev) => prev.map((c) => (c.id === approveTarget.id ? updated : c)));
       setApproveTarget(null);
+      router.refresh();
     }
     setApproveSaving(false);
   }
@@ -272,6 +275,7 @@ export function ChildrenClient({
       // Soft delete: mark inactive so it moves to the Inativos tab (can be restored or hard-deleted later).
       setChildren((prev) => prev.map((c) => (c.id === rejectTarget.id ? { ...c, active: false } : c)));
       setRejectTarget(null);
+      router.refresh();
     }
     setRejectSaving(false);
   }

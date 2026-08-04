@@ -39,6 +39,7 @@ model User {
   materialsCreated  Material[]          @relation("MaterialCreator")
   materialsUpdated  Material[]          @relation("MaterialUpdater")
   visitorsLogged    Visitor[]
+  notifications     Notification[]
 
   @@map("users")
 }
@@ -64,6 +65,19 @@ model UserSettings {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("user_settings")
+}
+
+// Per-user "last seen" marker for a notification category (e.g. "occurrences",
+// "purchase-requests") — lets a nav dot clear when the user visits the relevant screen,
+// without a full notification inbox.
+model Notification {
+  userId String   @map("user_id")
+  key    String
+  seenAt DateTime @default(now()) @map("seen_at")
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, key])
+  @@map("notifications")
 }
 
 enum Role {
@@ -356,6 +370,7 @@ model PurchaseRequest {
   status        RequestStatus @default(PENDENTE)
   rejectionReason String?     @map("rejection_reason")
   createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
 
   @@map("purchase_requests")
 }
@@ -439,6 +454,7 @@ model Occurrence {
   resolvedBy   User?             @relation("OccurrenceResolver", fields: [resolvedById], references: [id])
   resolvedAt   DateTime?         @map("resolved_at")
   createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
 
   @@map("occurrences")
 }

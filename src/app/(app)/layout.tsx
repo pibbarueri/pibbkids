@@ -5,6 +5,7 @@ import { canManage } from "@/lib/permissions";
 import { BottomNav } from "@/components/bottom-nav";
 import { BackHeader } from "@/components/back-header";
 import { parseAppSettings, resolveLayout } from "@/lib/navigation";
+import { getNotificationDots } from "@/lib/notifications";
 
 export default async function AppLayout({
   children,
@@ -39,6 +40,7 @@ export default async function AppLayout({
   const settings = parseAppSettings(settingsRow?.appSettings);
   const roleOpts = { hasApoioGeral: !!hasApoioGeral };
   const { nav, dashboard } = resolveLayout(session.user.role, roleOpts, settings);
+  const dots = await getNotificationDots(session.user.id, session.user.role, !!hasApoioGeral);
 
   // Customize dialog lists every destination the role allows, in display order:
   // the ones currently in the nav (minus the fixed Início) followed by the rest.
@@ -52,9 +54,10 @@ export default async function AppLayout({
         customizeOptions={customizeOptions}
         navIds={nav.slice(1).map((d) => d.id)}
         dashboardColumns={settings.dashboard_columns}
+        hasOccurrenceNotification={dots.occurrences}
       />
       <main className="flex-1 pb-20">{children}</main>
-      <BottomNav items={nav.map(({ id, href, label }) => ({ id, href, label }))} />
+      <BottomNav items={nav.map(({ id, href, label }) => ({ id, href, label }))} dots={dots} />
     </div>
   );
 }

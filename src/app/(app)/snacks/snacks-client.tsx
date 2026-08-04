@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,6 +99,7 @@ function SnackFields({
 }
 
 export function SnacksClient({ initialSnacks }: { initialSnacks: Snack[] }) {
+  const router = useRouter();
   const [snacks, setSnacks] = useState(initialSnacks);
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -130,6 +132,7 @@ export function SnacksClient({ initialSnacks }: { initialSnacks: Snack[] }) {
     );
     setSaving(false);
     setEditingId(null);
+    router.refresh();
   }
 
   async function create() {
@@ -156,6 +159,7 @@ export function SnacksClient({ initialSnacks }: { initialSnacks: Snack[] }) {
       body: JSON.stringify({ quantityDelta: delta }),
     });
     setAdjusting(null);
+    router.refresh();
   }
 
   async function remove(id: string) {

@@ -40,12 +40,14 @@ export function BackHeader({
   customizeOptions,
   navIds,
   dashboardColumns,
+  hasOccurrenceNotification,
 }: {
   profile: Profile;
   isManager: boolean;
   customizeOptions: CustomizeOption[];
   navIds: string[];
   dashboardColumns: number;
+  hasOccurrenceNotification: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -78,6 +80,7 @@ export function BackHeader({
           customizeOptions={customizeOptions}
           navIds={navIds}
           dashboardColumns={dashboardColumns}
+          hasOccurrenceNotification={hasOccurrenceNotification}
         />
       </div>
     </header>

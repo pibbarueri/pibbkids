@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -28,7 +29,7 @@ function statusBadgeClass(status: string): string {
     case "APROVADO":
       return "bg-yellow-400 text-yellow-950 hover:bg-yellow-400";
     case "REJEITADO":
-      return "bg-destructive text-destructive-foreground hover:bg-destructive";
+      return "bg-muted text-muted-foreground hover:bg-muted";
     case "COMPRADO":
       return "bg-blue-500 text-white hover:bg-blue-500";
     case "EM_ESTOQUE":
@@ -109,6 +110,7 @@ export function PurchaseRequestsClient({
   initialRequests: PurchaseRequest[];
   isManager: boolean;
 }) {
+  const router = useRouter();
   const [requests, setRequests] = useState(initialRequests);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ freeTextItem: "", quantity: "1", unit: "", justification: "" });
@@ -117,6 +119,13 @@ export function PurchaseRequestsClient({
   // Details modal
   const [selected, setSelected] = useState<PurchaseRequest | null>(null);
   const [rejecting, setRejecting] = useState(false);
+
+  // The page already marked this visit as "seen" server-side, but that ran in the same
+  // request that rendered the (now stale) nav dot — refresh once so the dot reflects it.
+  useEffect(() => {
+    router.refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [rejectReason, setRejectReason] = useState("");
 
   async function create() {
@@ -136,6 +145,7 @@ export function PurchaseRequestsClient({
     setSaving(false);
     setOpen(false);
     setForm({ freeTextItem: "", quantity: "1", unit: "", justification: "" });
+    router.refresh();
   }
 
   async function setStatus(id: string, status: string, reason?: string) {
@@ -149,6 +159,7 @@ export function PurchaseRequestsClient({
     setSelected(updated);
     setRejecting(false);
     setRejectReason("");
+    router.refresh();
   }
 
   const valid = form.freeTextItem.trim() && Number(form.quantity) > 0;

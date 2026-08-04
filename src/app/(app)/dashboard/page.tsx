@@ -10,6 +10,7 @@ import { computeUpcomingBirthdays } from "@/lib/birthdays";
 import { canManage } from "@/lib/permissions";
 import { parseAppSettings, resolveLayout } from "@/lib/navigation";
 import { addDays, nextSunday as getNextSunday, today as getToday } from "@/lib/dates";
+import { getNotificationDots } from "@/lib/notifications";
 
 // Tailwind can't generate a class from an interpolated string, so map them explicitly.
 const GRID_COLS: Record<number, string> = {
@@ -69,6 +70,7 @@ export default async function DashboardPage() {
     { hasApoioGeral: !!hasApoioGeral },
     parseAppSettings(settingsRow?.appSettings)
   );
+  const dots = await getNotificationDots(session.user.id, role, !!hasApoioGeral);
 
   const lowSnacksMessage = lowSnacks.length > 0
     ? lowSnacks.map((s) => `Temos ${s.quantity} ${s.unit} de ${s.description}`).join("\n")
@@ -91,7 +93,12 @@ export default async function DashboardPage() {
               href={s.href}
               className="flex flex-col items-center gap-1 p-2 border rounded-lg bg-background hover:bg-muted/50 transition-all active:scale-95"
             >
-              <s.icon className="h-5 w-5 shrink-0" />
+              <span className="relative">
+                <s.icon className="h-5 w-5 shrink-0" />
+                {dots[s.id as keyof typeof dots] && (
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-500" />
+                )}
+              </span>
               <span className="text-xs text-center leading-tight break-words">{s.label}</span>
             </Link>
           ))}

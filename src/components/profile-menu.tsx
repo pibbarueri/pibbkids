@@ -39,12 +39,14 @@ export function ProfileMenu({
   customizeOptions,
   navIds,
   dashboardColumns,
+  hasOccurrenceNotification,
 }: {
   profile: Profile;
   isManager: boolean;
   customizeOptions: CustomizeOption[];
   navIds: string[];
   dashboardColumns: number;
+  hasOccurrenceNotification: boolean;
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
@@ -92,10 +94,13 @@ export function ProfileMenu({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="flex h-9 w-9 items-center justify-center rounded-full border bg-background hover:bg-muted transition-transform active:scale-90"
+          className="relative flex h-9 w-9 items-center justify-center rounded-full border bg-background hover:bg-muted transition-transform active:scale-90"
           aria-label="Perfil"
         >
           <User className="h-5 w-5" />
+          {hasOccurrenceNotification && (
+            <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-orange-500" />
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 p-2">
           <DropdownMenuItem className="px-2 py-2.5" onClick={() => setEditOpen(true)}>
@@ -108,7 +113,13 @@ export function ProfileMenu({
             <QrCode className="h-4 w-4" /> QR Codes
           </DropdownMenuItem>
           <DropdownMenuItem className="px-2 py-2.5" render={<Link href="/occurrences" />}>
-            <AlertTriangle className="h-4 w-4" /> {isManager ? "Ocorrências" : "Reportar ocorrência"}
+            <span className="relative">
+              <AlertTriangle className="h-4 w-4" />
+              {hasOccurrenceNotification && (
+                <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-orange-500" />
+              )}
+            </span>
+            {isManager ? "Ocorrências" : "Reportar ocorrência"}
           </DropdownMenuItem>
           <DropdownMenuItem className="px-2 py-2.5" render={<Link href="/reports" />}>
             <FileText className="h-4 w-4" /> Relatórios
