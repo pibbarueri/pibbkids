@@ -34,6 +34,12 @@ const FREQUENCIA_LABELS: Record<string, string> = {
   AMBOS: "EBD e Culto",
 };
 
+const FREQUENCIA_SHORT_LABELS: Record<string, string> = {
+  EBD: "EBD",
+  CULTO: "CULTO",
+  AMBOS: "EBD e CULTO",
+};
+
 const FREQ_OPTIONS: { value: Frequencia; label: string }[] = [
   { value: "EBD", label: "EBD" },
   { value: "CULTO", label: "Culto" },
@@ -799,7 +805,7 @@ function ChildCard({
         <div>
           <p className="font-medium">{child.name}</p>
           <p className="text-xs text-muted-foreground">
-            {child.classGroup?.name ?? "Sem turma"} · {child.frequency}
+            {ageLabel(new Date(child.birthdate))} · {child.classGroup?.name ?? "Sem turma"} · {FREQUENCIA_SHORT_LABELS[child.frequency] ?? child.frequency}
           </p>
         </div>
         <div className="flex items-center gap-2">
