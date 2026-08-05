@@ -353,6 +353,7 @@ model MaterialCategory {
   sortOrder Int        @default(0) @map("sort_order")
   active    Boolean    @default(true)
   materials Material[]
+  purchaseRequests PurchaseRequest[]
 
   @@map("material_categories")
 }
@@ -363,7 +364,10 @@ model PurchaseRequest {
   requester     User          @relation(fields: [requesterId], references: [id])
   materialId    String?       @map("material_id")
   material      Material?     @relation(fields: [materialId], references: [id])
+  categoryId    String?       @map("category_id")
+  category      MaterialCategory? @relation(fields: [categoryId], references: [id])
   freeTextItem  String?       @map("free_text_item")
+  description   String?
   quantity      Int
   unit          String?
   justification String?

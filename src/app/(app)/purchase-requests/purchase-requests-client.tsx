@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Check } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Check, X } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDENTE: "Solicitado",
@@ -48,10 +50,16 @@ const FLOW_LABELS: Record<string, string> = {
   EM_ESTOQUE: "Em estoque",
 };
 
+type MaterialOption = { id: string; name: string; unit: string; categoryId: string | null };
+type CategoryOption = { id: string; name: string };
+
 type PurchaseRequest = {
   id: string;
   requester: { id: string; name: string };
+  material: { id: string; name: string; unit: string; categoryId: string | null } | null;
+  category: { id: string; name: string } | null;
   freeTextItem: string | null;
+  description: string | null;
   quantity: number;
   unit: string | null;
   justification: string | null;
@@ -59,6 +67,10 @@ type PurchaseRequest = {
   rejectionReason: string | null;
   createdAt: string;
 };
+
+function itemName(r: PurchaseRequest): string {
+  return r.material?.name ?? r.freeTextItem ?? "Item";
+}
 
 function formatWhen(iso: string): string {
   const d = new Date(iso);
@@ -103,18 +115,38 @@ function Breadcrumb({ status }: { status: string }) {
   );
 }
 
+const emptyForm = {
+  query: "",
+  materialId: null as string | null,
+  categoryId: "",
+  unit: "",
+  description: "",
+  quantity: "1",
+  justification: "",
+};
+
 export function PurchaseRequestsClient({
   initialRequests,
   isManager,
+  materials,
+  categories,
 }: {
   initialRequests: PurchaseRequest[];
   isManager: boolean;
+  materials: MaterialOption[];
+  categories: CategoryOption[];
 }) {
   const router = useRouter();
   const [requests, setRequests] = useState(initialRequests);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ freeTextItem: "", quantity: "1", unit: "", justification: "" });
+  const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+
+  const suggestions =
+    !form.materialId && form.query.trim().length >= 2
+      ? materials.filter((m) => m.name.toLowerCase().includes(form.query.trim().toLowerCase())).slice(0, 5)
+      : [];
+  const pickedMaterial = form.materialId ? materials.find((m) => m.id === form.materialId) : null;
 
   // Details modal
   const [selected, setSelected] = useState<PurchaseRequest | null>(null);
@@ -134,9 +166,12 @@ export function PurchaseRequestsClient({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        freeTextItem: form.freeTextItem,
+        materialId: form.materialId,
+        freeTextItem: form.materialId ? null : form.query.trim(),
+        categoryId: form.materialId ? null : form.categoryId,
+        unit: form.materialId ? null : form.unit || null,
+        description: form.description || null,
         quantity: Number(form.quantity) || 1,
-        unit: form.unit || null,
         justification: form.justification,
       }),
     });
@@ -144,7 +179,7 @@ export function PurchaseRequestsClient({
     setRequests((prev) => [saved, ...prev]);
     setSaving(false);
     setOpen(false);
-    setForm({ freeTextItem: "", quantity: "1", unit: "", justification: "" });
+    setForm(emptyForm);
     router.refresh();
   }
 
@@ -162,7 +197,9 @@ export function PurchaseRequestsClient({
     router.refresh();
   }
 
-  const valid = form.freeTextItem.trim() && Number(form.quantity) > 0;
+  const valid =
+    Number(form.quantity) > 0 &&
+    (form.materialId ? true : form.query.trim() && form.categoryId);
 
   return (
     <div className="space-y-3">
@@ -178,35 +215,93 @@ export function PurchaseRequestsClient({
             <DialogTitle>Nova solicitação</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1">
+            <div className="space-y-1 relative">
               <p className="text-sm font-medium">Item</p>
+              {pickedMaterial ? (
+                <div className="flex items-center justify-between h-12 px-3 rounded-md border bg-muted/40">
+                  <span className="text-sm">
+                    {pickedMaterial.name} · {pickedMaterial.unit}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Trocar item"
+                    className="text-muted-foreground"
+                    onClick={() => setForm((f) => ({ ...f, materialId: null, query: "" }))}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Input
+                    className="h-12"
+                    value={form.query}
+                    onChange={(e) => setForm((f) => ({ ...f, query: e.target.value }))}
+                    placeholder="Buscar material existente ou digitar novo"
+                  />
+                  {suggestions.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-lg divide-y">
+                      {suggestions.map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                          onClick={() => setForm((f) => ({ ...f, materialId: m.id, query: m.name }))}
+                        >
+                          {m.name} <span className="text-muted-foreground">· {m.unit}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {!pickedMaterial && (
+              <div className="flex gap-3">
+                <div className="space-y-1 flex-1">
+                  <p className="text-sm font-medium">Categoria *</p>
+                  <Select
+                    value={form.categoryId}
+                    onValueChange={(v) => setForm((f) => ({ ...f, categoryId: v ?? "" }))}
+                    items={Object.fromEntries(categories.map((c) => [c.id, c.name]))}
+                  >
+                    <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                    <SelectContent>
+                      {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 w-28">
+                  <p className="text-sm font-medium">Unidade</p>
+                  <Input
+                    className="h-12"
+                    value={form.unit}
+                    onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
+                    placeholder="cx, rolo, etc"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1 w-24">
+              <p className="text-sm font-medium">Qtde</p>
               <Input
+                type="number"
                 className="h-12"
-                value={form.freeTextItem}
-                onChange={(e) => setForm((f) => ({ ...f, freeTextItem: e.target.value }))}
-                placeholder="Ex: Caneta vermelha Pilot"
+                value={form.quantity}
+                onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
               />
             </div>
 
-            <div className="flex gap-3">
-              <div className="space-y-1 w-24">
-                <p className="text-sm font-medium">Qtde</p>
-                <Input
-                  type="number"
-                  className="h-12"
-                  value={form.quantity}
-                  onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1 flex-1">
-                <p className="text-sm font-medium">Unidade</p>
-                <Input
-                  className="h-12"
-                  value={form.unit}
-                  onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
-                  placeholder="cx, rolo, etc"
-                />
-              </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Descrição</p>
+              <Textarea
+                rows={2}
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Detalhes opcionais do item"
+              />
             </div>
 
             <div className="space-y-1">
@@ -237,7 +332,7 @@ export function PurchaseRequestsClient({
           <div>
             <p className="font-medium text-sm">
               {r.quantity}
-              {r.unit ? ` ${r.unit}` : "x"} {r.freeTextItem}
+              {r.unit ? ` ${r.unit}` : "x"} {itemName(r)}
             </p>
             <p className="text-xs text-muted-foreground">{r.requester.name}</p>
           </div>
@@ -257,12 +352,21 @@ export function PurchaseRequestsClient({
               <DialogHeader>
                 <DialogTitle>
                   {selected.quantity}
-                  {selected.unit ? ` ${selected.unit}` : "x"} {selected.freeTextItem}
+                  {selected.unit ? ` ${selected.unit}` : "x"} {itemName(selected)}
                 </DialogTitle>
               </DialogHeader>
 
               <div className="space-y-4">
                 <Breadcrumb status={selected.status} />
+
+                {(selected.category || selected.description) && (
+                  <div className="space-y-1">
+                    {selected.category && (
+                      <p className="text-xs text-muted-foreground">Categoria: {selected.category.name}</p>
+                    )}
+                    {selected.description && <p className="text-sm">{selected.description}</p>}
+                  </div>
+                )}
 
                 {selected.justification && (
                   <div>
