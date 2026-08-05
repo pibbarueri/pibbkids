@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { Frequencia } from "@prisma/client";
+import { Frequency } from "@prisma/client";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -10,7 +10,7 @@ const schema = z.object({
   motherName: z.string().optional(),
   fatherPhone: z.string().min(8),
   motherPhone: z.string().optional(),
-  frequency: z.nativeEnum(Frequencia),
+  frequency: z.nativeEnum(Frequency),
   allergies: z.string().optional(),
   restrictions: z.string().optional(),
 });

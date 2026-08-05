@@ -23,8 +23,8 @@ function Row({ label, value }: { label: string; value: string | null | undefined
   );
 }
 
-// Read-only event detail, shared by the dashboard (Próxima escala + calendário) and
-// the Eventos list — one source of truth so "Ver detalhes" never opens an edit form.
+// Read-only event detail, shared by the dashboard (next schedule + calendar) and
+// the events list — one source of truth so "View details" never opens an edit form.
 export function EventDetailDialog({
   eventId,
   onOpenChange,

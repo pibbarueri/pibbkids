@@ -49,15 +49,15 @@ export async function getNotificationDots(
       ? prisma.snack.count({ where: { quantity: { lte: 5 } } })
       : Promise.resolve(0),
     isLeadership(role)
-      ? prisma.purchaseRequest.count({ where: { status: "PENDENTE" } })
+      ? prisma.purchaseRequest.count({ where: { status: "PENDING" } })
       : Promise.resolve(0),
     canRequestPurchase(role)
       ? prisma.purchaseRequest.count({
-          where: { requesterId: userId, status: "EM_ESTOQUE", updatedAt: { gt: seenAt("purchase-requests") } },
+          where: { requesterId: userId, status: "IN_STOCK", updatedAt: { gt: seenAt("purchase-requests") } },
         })
       : Promise.resolve(0),
     canManage(role)
-      ? prisma.occurrence.count({ where: { status: "EM_ANALISE" } })
+      ? prisma.occurrence.count({ where: { status: "UNDER_REVIEW" } })
       : Promise.resolve(0),
     !canManage(role)
       ? prisma.occurrence.findMany({

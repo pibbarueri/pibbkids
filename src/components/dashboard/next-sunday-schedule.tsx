@@ -7,24 +7,24 @@ import { eventTimeRange, eventDateShort } from "@/lib/event-time";
 import { EventDetailDialog } from "@/components/events/event-detail-dialog";
 
 const SLOT_LABELS: Record<string, string> = {
-  COORDENACAO: "Coordenação",
-  SALA_PLUS: "Sala Plus",
-  RECEPCAO: "Recepção",
-  LANCHE: "Lanche",
-  INCLUSAO: "Inclusão",
+  COORDINATOR: "Coordenação",
+  ROOM_PLUS: "Sala Plus",
+  RECEPTION: "Recepção",
+  SNACK: "Lanche",
+  INCLUSION: "Inclusão",
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  PROFESSOR: "Professor",
-  AUXILIAR: "Auxiliar",
+  TEACHER: "Professor",
+  ASSISTANT: "Auxiliar",
 };
 
-const HORARIO_LABELS: Record<string, string> = { EBD: "EBD", CULTO: "Culto" };
+const TIME_SLOT_LABELS: Record<string, string> = { EBD: "EBD", CULTO: "Culto" };
 
 type Slot = {
   id: string;
   slotType: string;
-  horario: string | null;
+  timeSlot: string | null;
   role: string | null;
   user: { name: string };
   classGroup: { name: string } | null;
@@ -34,8 +34,8 @@ type EventItem = { id: string; title: string; date: string; endDate: string | nu
 
 function slotDescription(slot: Slot) {
   if (slot.classGroup) {
-    const cargo = slot.role ? ROLE_LABELS[slot.role] : null;
-    return cargo ? `${cargo} - ${slot.classGroup.name}` : slot.classGroup.name;
+    const role = slot.role ? ROLE_LABELS[slot.role] : null;
+    return role ? `${role} - ${slot.classGroup.name}` : slot.classGroup.name;
   }
   return SLOT_LABELS[slot.slotType] ?? slot.slotType;
 }
@@ -48,10 +48,10 @@ export function NextSundaySchedule({ date, slots, events }: { date: string; slot
     timeZone: "UTC",
   });
 
-  // Group by horário (EBD/Culto) instead of turma — Sala Plus has no horário, gets its own bucket.
+  // Group by time slot (EBD/Culto) instead of class — Sala Plus has no time slot, gets its own bucket.
   const byGroup = new Map<string, Slot[]>();
   for (const slot of slots) {
-    const key = slot.horario ? HORARIO_LABELS[slot.horario] : SLOT_LABELS[slot.slotType] ?? slot.slotType;
+    const key = slot.timeSlot ? TIME_SLOT_LABELS[slot.timeSlot] : SLOT_LABELS[slot.slotType] ?? slot.slotType;
     if (!byGroup.has(key)) byGroup.set(key, []);
     byGroup.get(key)!.push(slot);
   }

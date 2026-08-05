@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { ageLabel, suggestedClassName } from "@/lib/age";
 import { formatPhone, phoneDigits } from "@/lib/phone";
-import { Frequencia } from "@prisma/client";
+import { Frequency } from "@prisma/client";
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 const MONTH_LABELS = [
@@ -18,7 +18,7 @@ const MONTH_LABELS = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-const FREQ_OPTIONS: { value: Frequencia; label: string }[] = [
+const FREQ_OPTIONS: { value: Frequency; label: string }[] = [
   { value: "EBD", label: "EBD" },
   { value: "CULTO", label: "Culto" },
   { value: "AMBOS", label: "Ambos" },
@@ -39,7 +39,7 @@ const emptyPromoteForm = {
   motherName: "",
   fatherPhone: "",
   motherPhone: "",
-  frequency: "" as Frequencia | "",
+  frequency: "" as Frequency | "",
   allergies: "",
   restrictions: "",
   classGroupId: "",

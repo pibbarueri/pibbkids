@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Frequencia } from "@prisma/client";
+import { Frequency } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,25 +29,25 @@ import { formatPhone, phoneDigits, whatsappChatLink } from "@/lib/phone";
 import { ageLabel, suggestedClassName } from "@/lib/age";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 
-const FREQUENCIA_LABELS: Record<string, string> = {
+const FREQUENCY_LABELS: Record<string, string> = {
   EBD: "Escola Dominical (EBD)",
   CULTO: "Culto Infantil",
   AMBOS: "EBD e Culto",
 };
 
-const FREQUENCIA_SHORT_LABELS: Record<string, string> = {
+const FREQUENCY_SHORT_LABELS: Record<string, string> = {
   EBD: "EBD",
   CULTO: "CULTO",
   AMBOS: "EBD e CULTO",
 };
 
-const FREQ_OPTIONS: { value: Frequencia; label: string }[] = [
+const FREQ_OPTIONS: { value: Frequency; label: string }[] = [
   { value: "EBD", label: "EBD" },
   { value: "CULTO", label: "Culto" },
   { value: "AMBOS", label: "Ambos" },
 ];
 
-function FrequencyRadio({ value, onChange }: { value: string; onChange: (v: Frequencia) => void }) {
+function FrequencyRadio({ value, onChange }: { value: string; onChange: (v: Frequency) => void }) {
   return (
     <div className="grid grid-cols-3 gap-2" role="radiogroup">
       {FREQ_OPTIONS.map((o) => (
@@ -78,7 +78,7 @@ const emptyChildForm = {
   motherName: "",
   fatherPhone: "",
   motherPhone: "",
-  frequency: "" as Frequencia | "",
+  frequency: "" as Frequency | "",
   allergies: "",
   restrictions: "",
   classGroupId: "",
@@ -185,7 +185,7 @@ export function ChildrenClient({
       motherName: child.motherName ?? "",
       fatherPhone: child.fatherPhone ?? "",
       motherPhone: child.motherPhone ?? "",
-      frequency: child.frequency as Frequencia,
+      frequency: child.frequency as Frequency,
       allergies: child.allergies ?? "",
       restrictions: child.restrictions ?? "",
       classGroupId: child.classGroupId ?? "",
@@ -529,7 +529,7 @@ export function ChildrenClient({
               <Row label="Turma" value={selected.classGroup?.name ?? "Sem turma"} />
               <Row label="Data de nascimento" value={new Date(selected.birthdate).toLocaleDateString("pt-BR", { timeZone: "UTC" })} />
               <Row label="Idade" value={ageLabel(new Date(selected.birthdate))} />
-              <Row label="Frequência" value={FREQUENCIA_LABELS[selected.frequency] ?? selected.frequency} />
+              <Row label="Frequência" value={FREQUENCY_LABELS[selected.frequency] ?? selected.frequency} />
               <Row label="Pai" value={selected.fatherName} />
               <Row label="Mãe" value={selected.motherName} />
               <PhoneRow label="Telefone Pai" phone={selected.fatherPhone} />
@@ -809,7 +809,7 @@ function ChildCard({
         <div>
           <p className="font-medium">{child.name}</p>
           <p className="text-xs text-muted-foreground">
-            {ageLabel(new Date(child.birthdate))} · {child.classGroup?.name ?? "Sem turma"} · {FREQUENCIA_SHORT_LABELS[child.frequency] ?? child.frequency}
+            {ageLabel(new Date(child.birthdate))} · {child.classGroup?.name ?? "Sem turma"} · {FREQUENCY_SHORT_LABELS[child.frequency] ?? child.frequency}
           </p>
         </div>
         <div className="flex items-center gap-2">

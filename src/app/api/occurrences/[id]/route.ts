@@ -18,7 +18,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
-  const resolving = body.status === "RESOLVIDO";
+  const resolving = body.status === "RESOLVED";
 
   const occurrence = await prisma.occurrence.update({
     where: { id },

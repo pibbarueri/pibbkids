@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { canManage } from "@/lib/permissions";
 import { Role } from "@prisma/client";
 
-// Sunday (local 00:00) of the week containing today — the "aula atual".
+// Sunday (local 00:00) of the week containing today — the current lesson.
 function currentSunday(): Date {
   const now = new Date();
   const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -26,7 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!onlyTogglingDone && !canManage(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  // Marking done: Professor/Coord/Admin, and only for the current sunday's lesson.
+  // Marking done: Teacher/Coord/Admin, and only for the current sunday's lesson.
   if (onlyTogglingDone) {
     if (!CAN_MARK.includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -46,7 +46,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data: {
       ...(body.done !== undefined && { done: body.done }),
       ...(body.journalId !== undefined && { journalId: body.journalId }),
-      ...(body.licaoNumber !== undefined && { licaoNumber: body.licaoNumber }),
+      ...(body.lessonNumber !== undefined && { lessonNumber: body.lessonNumber }),
       ...(body.lessonType !== undefined && { lessonType: body.lessonType }),
       ...(body.specialTitle !== undefined && { specialTitle: body.specialTitle }),
     },

@@ -21,31 +21,31 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, Copy, Pencil, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Sala Plus has no horário (17h-18h, before EBD/Culto) — always shows in both tabs.
-function inHorario(slot: { slotType: string; horario: string | null }, tab: "EBD" | "CULTO") {
-  if (slot.slotType === "SALA_PLUS") return true;
-  return slot.horario === tab;
+// Sala Plus has no time slot (17h-18h, before EBD/Culto) — always shows in both tabs.
+function inTimeSlot(slot: { slotType: string; timeSlot: string | null }, tab: "EBD" | "CULTO") {
+  if (slot.slotType === "ROOM_PLUS") return true;
+  return slot.timeSlot === tab;
 }
 
 const SLOT_LABELS: Record<string, string> = {
-  COORDENACAO: "Coordenação",
-  SALA_PLUS: "Sala Plus",
-  RECEPCAO: "Recepção",
-  LANCHE: "Lanche",
-  INCLUSAO: "Inclusão",
+  COORDINATOR: "Coordenação",
+  ROOM_PLUS: "Sala Plus",
+  RECEPTION: "Recepção",
+  SNACK: "Lanche",
+  INCLUSION: "Inclusão",
 };
 
-// Pseudo "turma" options that aren't real ClassGroups — support slots not tied to a class.
-const PSEUDO_TURMAS: Record<string, string> = {
-  COORDENACAO: "Coordenação",
-  SALA_PLUS: "Sala Plus",
-  RECEPCAO: "Recepção",
-  LANCHE: "Lanche",
-  INCLUSAO: "Inclusão",
+// Pseudo class options that aren't real ClassGroups — support slots not tied to a class.
+const PSEUDO_CLASSES: Record<string, string> = {
+  COORDINATOR: "Coordenação",
+  ROOM_PLUS: "Sala Plus",
+  RECEPTION: "Recepção",
+  SNACK: "Lanche",
+  INCLUSION: "Inclusão",
 };
 
 function slotLabel(slot: Pick<Slot, "slotType" | "role">) {
-  if (slot.slotType === "TURMA") return slot.role === "AUXILIAR" ? "Auxiliar" : "Professor";
+  if (slot.slotType === "CLASS") return slot.role === "ASSISTANT" ? "Auxiliar" : "Professor";
   return SLOT_LABELS[slot.slotType] ?? slot.slotType;
 }
 
@@ -53,7 +53,7 @@ type Slot = {
   id: string;
   date: string;
   slotType: string;
-  horario: string | null;
+  timeSlot: string | null;
   role: string | null;
   classGroupId: string | null;
   user: { id: string; name: string };
@@ -78,7 +78,7 @@ function formatDate(iso: string) {
   });
 }
 
-const CARGO_SHORT: Record<string, string> = { PROFESSOR: "prof", AUXILIAR: "aux" };
+const ROLE_SHORT: Record<string, string> = { TEACHER: "prof", ASSISTANT: "aux" };
 
 function formatWhatsApp(sunday: string, slots: Slot[], classes: ClassGroup[]) {
   const date = formatDate(sunday);
@@ -86,25 +86,25 @@ function formatWhatsApp(sunday: string, slots: Slot[], classes: ClassGroup[]) {
 
   const daySlots = slots.filter((s) => s.date.startsWith(sunday.slice(0, 10)));
 
-  // Coordenação and Sala Plus aren't split by horário in the summary — Sala Plus has no
-  // horário at all, and coordenação reads clearer as one line even when it covers both.
-  const coord = daySlots.find((s) => s.slotType === "COORDENACAO");
+  // Coordenação and Sala Plus aren't split by time slot in the summary — Sala Plus has no
+  // time slot at all, and coordenação reads clearer as one line even when it covers both.
+  const coord = daySlots.find((s) => s.slotType === "COORDINATOR");
   lines.push(`Coordenação: ${coord?.user.name}`);
 
-  const salaPlus = daySlots.filter((s) => s.slotType === "SALA_PLUS");
+  const salaPlus = daySlots.filter((s) => s.slotType === "ROOM_PLUS");
   for (const s of salaPlus) {
     lines.push(`Sala Plus: ${s.user.name}`);
   }
 
-  for (const horario of ["EBD", "CULTO"] as const) {
+  for (const timeSlot of ["EBD", "CULTO"] as const) {
     const bucket = daySlots.filter(
-      (s) => s.horario === horario && s.slotType !== "COORDENACAO" && s.slotType !== "SALA_PLUS"
+      (s) => s.timeSlot === timeSlot && s.slotType !== "COORDINATOR" && s.slotType !== "ROOM_PLUS"
     );
     if (bucket.length === 0) continue;
 
-    lines.push("", `*${horario === "EBD" ? "EBD" : "Culto"}*`);
+    lines.push("", `*${timeSlot === "EBD" ? "EBD" : "Culto"}*`);
 
-    const special = bucket.filter((s) => s.slotType !== "TURMA");
+    const special = bucket.filter((s) => s.slotType !== "CLASS");
     for (const s of special) {
       lines.push(`${slotLabel(s)}: ${s.user.name}`);
     }
@@ -114,8 +114,8 @@ function formatWhatsApp(sunday: string, slots: Slot[], classes: ClassGroup[]) {
       if (classSlots.length === 0) continue;
       lines.push(`*${cls.name}*`);
       for (const s of classSlots) {
-        const cargo = CARGO_SHORT[s.role ?? ""] ?? slotLabel(s);
-        lines.push(`  ${s.user.name} (${cargo})`);
+        const role = ROLE_SHORT[s.role ?? ""] ?? slotLabel(s);
+        lines.push(`  ${s.user.name} (${role})`);
       }
     }
   }
@@ -147,11 +147,11 @@ export function ScheduleClient({
     initialSlots.map((s) => ({ ...s, date: new Date(s.date).toISOString() }))
   );
   const [sundayIdx, setSundayIdx] = useState(initialSundayIdx);
-  const [horarioTab, setHorarioTab] = useState<"EBD" | "CULTO">("EBD");
+  const [timeSlotTab, setTimeSlotTab] = useState<"EBD" | "CULTO">("EBD");
   const [addOpen, setAddOpen] = useState(false);
   const [editingSlot, setEditingSlot] = useState<Slot | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Slot | null>(null);
-  const emptyForm = { horarios: [] as ("EBD" | "CULTO")[], turma: "", userId: "", cargo: "" as "PROFESSOR" | "AUXILIAR" | "" };
+  const emptyForm = { timeSlots: [] as ("EBD" | "CULTO")[], classId: "", userId: "", role: "" as "TEACHER" | "ASSISTANT" | "" };
   const [form, setForm] = useState(emptyForm);
   const [repeatDates, setRepeatDates] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -159,7 +159,7 @@ export function ScheduleClient({
   const selectedSunday = sundays[sundayIdx];
   const daySlots = slots.filter((s) => s.date.startsWith(selectedSunday.slice(0, 10)));
 
-  // Bulk "Repetir em": the 4 sundays after the currently viewed one — the viewed
+  // Bulk "repeat on": the 4 sundays after the currently viewed one — the viewed
   // sunday itself is always included separately, so it's excluded here.
   const repeatSundays = useMemo(() => {
     const d = new Date(selectedSunday);
@@ -170,22 +170,22 @@ export function ScheduleClient({
     });
   }, [selectedSunday]);
 
-  const tabSlots = daySlots.filter((s) => inHorario(s, horarioTab));
+  const tabSlots = daySlots.filter((s) => inTimeSlot(s, timeSlotTab));
 
-  const isRealClass = !!form.turma && !(form.turma in PSEUDO_TURMAS);
+  const isRealClass = !!form.classId && !(form.classId in PSEUDO_CLASSES);
 
-  const eligibleVolunteers = !form.turma
+  const eligibleVolunteers = !form.classId
     ? []
     : isRealClass
-    ? volunteers.filter((v) => v.preferredClasses.some((c) => c.classGroupId === form.turma))
-    : form.turma === "COORDENACAO"
+    ? volunteers.filter((v) => v.preferredClasses.some((c) => c.classGroupId === form.classId))
+    : form.classId === "COORDINATOR"
     ? volunteers.filter((v) => v.role === "ADMIN" || v.role === "COORDINATOR")
-    : form.turma === "RECEPCAO"
-    ? volunteers.filter((v) => v.functions.some((f) => f.function === "RECEPCAO"))
-    : form.turma === "INCLUSAO"
+    : form.classId === "RECEPTION"
+    ? volunteers.filter((v) => v.functions.some((f) => f.function === "RECEPTION"))
+    : form.classId === "INCLUSION"
     ? volunteers.filter((v) => v.inclusionEnabled)
-    : form.turma === "LANCHE"
-    ? volunteers.filter((v) => v.functions.some((f) => f.function === "APOIO_GERAL"))
+    : form.classId === "SNACK"
+    ? volunteers.filter((v) => v.functions.some((f) => f.function === "SUPPORT"))
     : volunteers;
 
   function openAdd() {
@@ -197,56 +197,56 @@ export function ScheduleClient({
 
   function openEdit(slot: Slot) {
     setEditingSlot(slot);
-    const turma = slot.classGroupId ?? slot.slotType;
+    const classId = slot.classGroupId ?? slot.slotType;
     setForm({
-      horarios: slot.horario ? [slot.horario as "EBD" | "CULTO"] : [],
-      turma,
+      timeSlots: slot.timeSlot ? [slot.timeSlot as "EBD" | "CULTO"] : [],
+      classId,
       userId: slot.user.id,
-      cargo: (slot.role as "PROFESSOR" | "AUXILIAR" | null) ?? "",
+      role: (slot.role as "TEACHER" | "ASSISTANT" | null) ?? "",
     });
     setAddOpen(true);
   }
 
-  function toggleHorario(h: "EBD" | "CULTO") {
+  function toggleTimeSlot(h: "EBD" | "CULTO") {
     setForm((f) => ({
       ...f,
-      horarios: editingSlot
+      timeSlots: editingSlot
         ? [h]
-        : f.horarios.includes(h)
-        ? f.horarios.filter((x) => x !== h)
-        : [...f.horarios, h],
+        : f.timeSlots.includes(h)
+        ? f.timeSlots.filter((x) => x !== h)
+        : [...f.timeSlots, h],
       userId: "",
-      cargo: "",
+      role: "",
     }));
   }
 
-  // Default cargo from the volunteer's own function (Professor vs Auxiliar) when picked.
-  function cargoForVolunteer(userId: string): "PROFESSOR" | "AUXILIAR" | "" {
+  // Default role from the volunteer's own function (Teacher vs Assistant) when picked.
+  function roleForVolunteer(userId: string): "TEACHER" | "ASSISTANT" | "" {
     const v = volunteers.find((vol) => vol.id === userId);
     if (!v) return "";
-    const hasProfessor = v.functions.some((f) => f.function === "PROFESSOR");
-    const hasAuxiliar = v.functions.some((f) => f.function === "AUXILIAR");
-    if (hasProfessor && !hasAuxiliar) return "PROFESSOR";
-    if (hasAuxiliar && !hasProfessor) return "AUXILIAR";
+    const hasProfessor = v.functions.some((f) => f.function === "TEACHER");
+    const hasAuxiliar = v.functions.some((f) => f.function === "ASSISTANT");
+    if (hasProfessor && !hasAuxiliar) return "TEACHER";
+    if (hasAuxiliar && !hasProfessor) return "ASSISTANT";
     return "";
   }
 
-  function slotTypeFor(turma: string) {
-    if (turma in PSEUDO_TURMAS) return turma;
-    return "TURMA"; // real class
+  function slotTypeFor(classId: string) {
+    if (classId in PSEUDO_CLASSES) return classId;
+    return "CLASS"; // real class
   }
 
-  // SALA_PLUS has no horário at all; LANCHE is always CULTO — both skip the horário
+  // ROOM_PLUS has no time slot at all; SNACK is always CULTO — both skip the time slot
   // picker. Everything else lets EBD and CULTO both be checked to create 2 slots at once.
-  const horarioList: (string | null)[] =
-    form.turma === "SALA_PLUS" ? [null] : form.turma === "LANCHE" ? ["CULTO"] : form.horarios;
+  const timeSlotList: (string | null)[] =
+    form.classId === "ROOM_PLUS" ? [null] : form.classId === "SNACK" ? ["CULTO"] : form.timeSlots;
 
   async function saveSlot() {
     setSaving(true);
     const basePayload = {
-      slotType: slotTypeFor(form.turma),
-      classGroupId: isRealClass ? form.turma : null,
-      role: isRealClass ? (form.cargo || null) : null,
+      slotType: slotTypeFor(form.classId),
+      classGroupId: isRealClass ? form.classId : null,
+      role: isRealClass ? (form.role || null) : null,
       userId: form.userId,
     };
 
@@ -254,18 +254,18 @@ export function ScheduleClient({
       const res = await fetch(`/api/schedule/${editingSlot.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...basePayload, horario: horarioList[0] ?? null }),
+        body: JSON.stringify({ ...basePayload, timeSlot: timeSlotList[0] ?? null }),
       });
       const updated = await res.json();
       setSlots((prev) => prev.map((s) => (s.id === editingSlot.id ? updated : s)));
     } else {
       const dates = repeatDates.length > 0 ? repeatDates : [selectedSunday];
       const createdAll: Slot[] = [];
-      for (const horario of horarioList) {
+      for (const timeSlot of timeSlotList) {
         const res = await fetch("/api/schedule/bulk", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dates, horario, ...basePayload }),
+          body: JSON.stringify({ dates, timeSlot, ...basePayload }),
         });
         const created = await res.json();
         createdAll.push(...created);
@@ -297,10 +297,10 @@ export function ScheduleClient({
   }
 
   const shownSlots = canViewAll ? tabSlots : tabSlots.filter((s) => s.user.id === currentUserId);
-  const coordSlots = tabSlots.filter((s) => s.slotType === "COORDENACAO");
-  const salaPlusSlots = tabSlots.filter((s) => s.slotType === "SALA_PLUS");
-  const specialSlots = tabSlots.filter((s) => s.slotType !== "TURMA" && s.slotType !== "COORDENACAO" && s.slotType !== "SALA_PLUS");
-  const classSlots = tabSlots.filter((s) => s.slotType === "TURMA");
+  const coordSlots = tabSlots.filter((s) => s.slotType === "COORDINATOR");
+  const salaPlusSlots = tabSlots.filter((s) => s.slotType === "ROOM_PLUS");
+  const specialSlots = tabSlots.filter((s) => s.slotType !== "CLASS" && s.slotType !== "COORDINATOR" && s.slotType !== "ROOM_PLUS");
+  const classSlots = tabSlots.filter((s) => s.slotType === "CLASS");
 
   return (
     <div className="space-y-4">
@@ -340,7 +340,7 @@ export function ScheduleClient({
       )}
 
       {/* EBD / Culto tabs */}
-      <Tabs value={horarioTab} onValueChange={(v) => setHorarioTab(v as "EBD" | "CULTO")}>
+      <Tabs value={timeSlotTab} onValueChange={(v) => setTimeSlotTab(v as "EBD" | "CULTO")}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="EBD">EBD</TabsTrigger>
           <TabsTrigger value="CULTO">Culto</TabsTrigger>
@@ -410,42 +410,42 @@ export function ScheduleClient({
             <div className="space-y-1">
               <p className="text-sm font-medium">Turma</p>
               <Select
-                value={form.turma}
+                value={form.classId}
                 onValueChange={(v) => setForm((f) => ({
                   ...f,
-                  turma: v ?? "",
+                  classId: v ?? "",
                   userId: "",
-                  horarios: v === "SALA_PLUS" || v === "LANCHE" ? [] : f.horarios,
+                  timeSlots: v === "ROOM_PLUS" || v === "SNACK" ? [] : f.timeSlots,
                 }))}
-                items={{ ...Object.fromEntries(classes.map((c) => [c.id, c.name])), ...PSEUDO_TURMAS }}
+                items={{ ...Object.fromEntries(classes.map((c) => [c.id, c.name])), ...PSEUDO_CLASSES }}
               >
                 <SelectTrigger className="h-12"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
                   {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  {Object.entries(PSEUDO_TURMAS).map(([value, label]) => (
+                  {Object.entries(PSEUDO_CLASSES).map(([value, label]) => (
                     <SelectItem key={value} value={value}>{label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {form.turma && form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && (
+            {form.classId && form.classId !== "ROOM_PLUS" && form.classId !== "SNACK" && (
               <div className="space-y-1">
                 <p className="text-sm font-medium">Horário {!editingSlot && "(selecione um ou ambos)"}</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     type="button"
-                    variant={form.horarios.includes("EBD") ? "default" : "outline"}
+                    variant={form.timeSlots.includes("EBD") ? "default" : "outline"}
                     className="h-12"
-                    onClick={() => toggleHorario("EBD")}
+                    onClick={() => toggleTimeSlot("EBD")}
                   >
                     EBD
                   </Button>
                   <Button
                     type="button"
-                    variant={form.horarios.includes("CULTO") ? "default" : "outline"}
+                    variant={form.timeSlots.includes("CULTO") ? "default" : "outline"}
                     className="h-12"
-                    onClick={() => toggleHorario("CULTO")}
+                    onClick={() => toggleTimeSlot("CULTO")}
                   >
                     Culto
                   </Button>
@@ -457,12 +457,12 @@ export function ScheduleClient({
               <p className="text-sm font-medium">Voluntário</p>
               <Select
                 value={form.userId}
-                onValueChange={(v) => setForm((f) => ({ ...f, userId: v ?? "", cargo: v ? cargoForVolunteer(v) : "" }))}
+                onValueChange={(v) => setForm((f) => ({ ...f, userId: v ?? "", role: v ? roleForVolunteer(v) : "" }))}
                 items={Object.fromEntries(eligibleVolunteers.map((v) => [v.id, v.name]))}
-                disabled={!form.turma || (form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && form.horarios.length === 0)}
+                disabled={!form.classId || (form.classId !== "ROOM_PLUS" && form.classId !== "SNACK" && form.timeSlots.length === 0)}
               >
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder={form.turma ? "Selecione..." : "Selecione a turma primeiro"} />
+                  <SelectValue placeholder={form.classId ? "Selecione..." : "Selecione a classId primeiro"} />
                 </SelectTrigger>
                 <SelectContent>
                   {eligibleVolunteers.length === 0 ? (
@@ -480,17 +480,17 @@ export function ScheduleClient({
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     type="button"
-                    variant={form.cargo === "PROFESSOR" ? "default" : "outline"}
+                    variant={form.role === "TEACHER" ? "default" : "outline"}
                     className="h-12"
-                    onClick={() => setForm((f) => ({ ...f, cargo: "PROFESSOR" }))}
+                    onClick={() => setForm((f) => ({ ...f, role: "TEACHER" }))}
                   >
                     Professor
                   </Button>
                   <Button
                     type="button"
-                    variant={form.cargo === "AUXILIAR" ? "default" : "outline"}
+                    variant={form.role === "ASSISTANT" ? "default" : "outline"}
                     className="h-12"
-                    onClick={() => setForm((f) => ({ ...f, cargo: "AUXILIAR" }))}
+                    onClick={() => setForm((f) => ({ ...f, role: "ASSISTANT" }))}
                   >
                     Auxiliar
                   </Button>
@@ -520,16 +520,16 @@ export function ScheduleClient({
             <Button
               className="w-full h-12"
               disabled={
-                !form.turma ||
+                !form.classId ||
                 !form.userId ||
-                (form.turma !== "SALA_PLUS" && form.turma !== "LANCHE" && form.horarios.length === 0) ||
-                (isRealClass && !form.cargo) ||
+                (form.classId !== "ROOM_PLUS" && form.classId !== "SNACK" && form.timeSlots.length === 0) ||
+                (isRealClass && !form.role) ||
                 saving
               }
               onClick={saveSlot}
             >
               Salvar{!editingSlot && repeatDates.length > 1 ? ` (${repeatDates.length} domingos)` : ""}
-              {!editingSlot && horarioList.length > 1 ? ` × ${horarioList.length} horários` : ""}
+              {!editingSlot && timeSlotList.length > 1 ? ` × ${timeSlotList.length} horários` : ""}
             </Button>
           </div>
         </DialogContent>

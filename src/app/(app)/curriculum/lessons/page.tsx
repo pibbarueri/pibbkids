@@ -46,7 +46,7 @@ export default async function LessonsPage() {
         classGroup: { select: { id: true, name: true } },
         journal: { select: { id: true, title: true, series: true, edition: true } },
       },
-      orderBy: [{ date: "asc" }, { tipo: "asc" }],
+      orderBy: [{ date: "asc" }, { type: "asc" }],
     }),
     prisma.classGroup.findMany({
       orderBy: { name: "asc" },

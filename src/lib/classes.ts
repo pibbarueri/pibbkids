@@ -1,4 +1,4 @@
-// Canonical turma order used everywhere turmas are listed (filters, dropdowns, lists).
+// Canonical class order used everywhere classes are listed (filters, dropdowns, lists).
 export const CLASS_ORDER = [
   "Berçário",
   "Primeiros Passos",

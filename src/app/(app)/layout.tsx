@@ -34,7 +34,7 @@ export default async function AppLayout({
   const [settingsRow, hasApoioGeral] = await Promise.all([
     prisma.userSettings.findUnique({ where: { userId: session.user.id } }),
     prisma.volunteerFunction.findFirst({
-      where: { userId: session.user.id, function: "APOIO_GERAL" },
+      where: { userId: session.user.id, function: "SUPPORT" },
     }),
   ]);
   const settings = parseAppSettings(settingsRow?.appSettings);

@@ -23,12 +23,12 @@ const CONTEXT_LABELS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  EM_ANALISE: "Em análise",
-  RESOLVIDO: "Resolvido",
+  UNDER_REVIEW: "Em análise",
+  RESOLVED: "Resolvido",
 };
 
 function statusBadgeClass(status: string): string {
-  return status === "RESOLVIDO"
+  return status === "RESOLVED"
     ? "bg-green-600 text-white hover:bg-green-600"
     : "bg-primary text-primary-foreground hover:bg-primary";
 }
@@ -272,7 +272,7 @@ export function OccurrencesClient({
                   <p className="text-muted-foreground text-xs">Detalhes</p>
                   <p className="whitespace-pre-wrap break-words">{selected.details}</p>
                 </div>
-                {selected.status === "RESOLVIDO" && selected.resolvedBy && selected.resolvedAt && (
+                {selected.status === "RESOLVED" && selected.resolvedBy && selected.resolvedAt && (
                   <div>
                     <p className="text-muted-foreground text-xs">Resolvido por</p>
                     <p>{selected.resolvedBy.username ?? selected.resolvedBy.name}, {formatWhen(selected.resolvedAt)}</p>
@@ -284,17 +284,17 @@ export function OccurrencesClient({
                     <Button variant="outline" className="flex-1 h-12" onClick={() => setSelected(null)}>
                       Fechar
                     </Button>
-                    {selected.status === "RESOLVIDO" ? (
+                    {selected.status === "RESOLVED" ? (
                       <Button
                         variant="outline"
                         className="flex-1 h-12"
                         disabled={resolving}
-                        onClick={() => setStatus(selected.id, "EM_ANALISE")}
+                        onClick={() => setStatus(selected.id, "UNDER_REVIEW")}
                       >
                         Reabrir
                       </Button>
                     ) : (
-                      <Button className="flex-1 h-12" disabled={resolving} onClick={() => setStatus(selected.id, "RESOLVIDO")}>
+                      <Button className="flex-1 h-12" disabled={resolving} onClick={() => setStatus(selected.id, "RESOLVED")}>
                         Resolvido ✓
                       </Button>
                     )}

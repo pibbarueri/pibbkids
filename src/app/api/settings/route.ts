@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const hasApoioGeral = await prisma.volunteerFunction.findFirst({
-    where: { userId: session.user.id, function: "APOIO_GERAL" },
+    where: { userId: session.user.id, function: "SUPPORT" },
   });
   const allowedIds = new Set(
     destinationsForRole(session.user.role, { hasApoioGeral: !!hasApoioGeral }).map((d) => d.id)

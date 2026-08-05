@@ -18,12 +18,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json();
 
-  if (body.status !== "EM_ESTOQUE") {
+  if (body.status !== "IN_STOCK") {
     const request = await prisma.purchaseRequest.update({
       where: { id },
       data: {
         status: body.status,
-        rejectionReason: body.status === "REJEITADO" ? body.rejectionReason || null : null,
+        rejectionReason: body.status === "REJECTED" ? body.rejectionReason || null : null,
       },
       include: INCLUDE,
     });
@@ -76,7 +76,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     return tx.purchaseRequest.update({
       where: { id },
-      data: { status: "EM_ESTOQUE", materialId, rejectionReason: null },
+      data: { status: "IN_STOCK", materialId, rejectionReason: null },
       include: INCLUDE,
     });
   });
