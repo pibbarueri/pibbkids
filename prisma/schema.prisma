@@ -109,14 +109,14 @@ model VolunteerFunction {
 }
 
 enum FunctionType {
-  PROFESSOR
-  AUXILIAR
-  APOIO_GERAL
-  LOUVOR
-  RECEPCAO
+  TEACHER
+  ASSISTANT
+  SUPPORT
+  WORSHIP
+  RECEPTION
   EVENTS
   IDE_KIDS
-  MIDIAS_DESIGN
+  MEDIA_DESIGN
 
   @@map("function_type")
 }
@@ -131,7 +131,7 @@ model UserPreferredClass {
   @@map("user_preferred_classes")
 }
 
-// ─── Crianças ─────────────────────────────────────────────────────────────────
+// ─── Children ─────────────────────────────────────────────────────────────────
 
 model Child {
   id           String       @id @default(cuid())
@@ -139,7 +139,7 @@ model Child {
   birthdate    DateTime     @db.Date
   classGroupId String?      @map("class_group_id")
   classGroup   ClassGroup?  @relation(fields: [classGroupId], references: [id])
-  frequency    Frequencia
+  frequency    Frequency
   fatherName   String?      @map("father_name")
   motherName   String?      @map("mother_name")
   fatherPhone  String?      @map("father_phone")
@@ -154,12 +154,12 @@ model Child {
   @@map("children")
 }
 
-enum Frequencia {
+enum Frequency {
   EBD
   CULTO
   AMBOS
 
-  @@map("frequencia")
+  @@map("frequency")
 }
 
 // Quick same-day check-in for a visiting child (logged by RECEPTIONIST during EBD/Culto).
@@ -169,7 +169,7 @@ model Visitor {
   id           String      @id @default(cuid())
   name         String
   birthdate    DateTime    @db.Date
-  type         SundayTipo
+  type         SundayType
   classGroupId String?     @map("class_group_id")
   classGroup   ClassGroup? @relation(fields: [classGroupId], references: [id])
   createdById  String      @map("created_by_id")
@@ -181,7 +181,7 @@ model Visitor {
   @@map("visitors")
 }
 
-// ─── Turmas ───────────────────────────────────────────────────────────────────
+// ─── Classes ──────────────────────────────────────────────────────────────────
 
 model ClassGroup {
   id             String               @id @default(cuid())
@@ -198,9 +198,9 @@ model ClassGroup {
   @@map("class_groups")
 }
 
-// ─── Currículos e Revistas ────────────────────────────────────────────────────
+// ─── Curriculum & Journals ──────────────────────────────────────────────────────
 
-// A revista: série + edição, adotada por uma turma para EBD, Culto ou ambos.
+// A journal: series + edition, adopted by a class for EBD, Culto, or both.
 model Journal {
   id                 String       @id @default(cuid())
   title              String
@@ -209,7 +209,7 @@ model Journal {
   totalWeeks         Int?         @map("total_weeks")
   classGroupId       String       @map("class_group_id")
   classGroup         ClassGroup   @relation(fields: [classGroupId], references: [id])
-  usage              Frequencia
+  usage              Frequency
   teacherCopies      Int          @default(0) @map("teacher_copies")
   studentCopies      Int          @default(0) @map("student_copies")
   hasVisualResources Boolean      @default(false) @map("has_visual_resources")
@@ -228,44 +228,44 @@ enum SeriesType {
   @@map("series_type")
 }
 
-// Plano por domingo: EBD e Culto são entradas separadas para a mesma turma
+// Plan per Sunday: EBD and Culto are separate entries for the same class
 model SundayPlan {
   id            String      @id @default(cuid())
   date          DateTime
   classGroupId  String      @map("class_group_id")
   classGroup    ClassGroup  @relation(fields: [classGroupId], references: [id])
-  tipo          SundayTipo
+  type          SundayType
   journalId     String?     @map("journal_id")
   journal       Journal?    @relation(fields: [journalId], references: [id])
-  licaoNumber   Int?        @map("licao_number")
-  lessonType    LessonType  @default(APOSTILA) @map("lesson_type")
+  lessonNumber  Int?        @map("lesson_number")
+  lessonType    LessonType  @default(WORKBOOK) @map("lesson_type")
   specialTitle  String?     @map("special_title")
   observations  String?
   done          Boolean     @default(false)
 
-  @@unique([date, classGroupId, tipo])
+  @@unique([date, classGroupId, type])
   @@map("sunday_plans")
 }
 
-enum SundayTipo {
+enum SundayType {
   EBD
   CULTO
 
-  @@map("sunday_tipo")
+  @@map("sunday_type")
 }
 
 enum LessonType {
-  APOSTILA
-  AULA_EXTRA
+  WORKBOOK
+  EXTRA_CLASS
   REVIEW
-  QUIZ_GINCANA
-  SEM_AULA
-  TEMA_LIVRE
+  QUIZ_GAME
+  NO_CLASS
+  FREE_TOPIC
 
   @@map("lesson_type")
 }
 
-// ─── Escala ───────────────────────────────────────────────────────────────────
+// ─── Schedule ─────────────────────────────────────────────────────────────────
 
 model ScheduleSlot {
   id           String      @id @default(cuid())
@@ -274,36 +274,36 @@ model ScheduleSlot {
   // the app), and equality filters then matched only one of the two sets.
   date         DateTime    @db.Date
   slotType     SlotType    @map("slot_type")
-  horario      Frequencia?
+  timeSlot     Frequency?  @map("time_slot")
   classGroupId String?     @map("class_group_id")
   classGroup   ClassGroup? @relation(fields: [classGroupId], references: [id])
   role         SlotRole?
   userId       String      @map("user_id")
   user         User        @relation(fields: [userId], references: [id])
 
-  @@unique([date, slotType, horario, classGroupId, role, userId])
+  @@unique([date, slotType, timeSlot, classGroupId, role, userId])
   @@map("schedule_slots")
 }
 
 enum SlotType {
-  COORDENACAO
-  SALA_PLUS
-  RECEPCAO
-  LANCHE
-  INCLUSAO
-  TURMA
+  COORDINATOR
+  ROOM_PLUS
+  RECEPTION
+  SNACK
+  INCLUSION
+  CLASS
 
   @@map("slot_type")
 }
 
 enum SlotRole {
-  PROFESSOR
-  AUXILIAR
+  TEACHER
+  ASSISTANT
 
   @@map("slot_role")
 }
 
-// ─── Presença ─────────────────────────────────────────────────────────────────
+// ─── Attendance ───────────────────────────────────────────────────────────────
 
 model Attendance {
   id      String     @id @default(cuid())
@@ -312,14 +312,14 @@ model Attendance {
   userId  String     @map("user_id")
   user    User       @relation(fields: [userId], references: [id])
   date    DateTime
-  type    SundayTipo
+  type    SundayType
   present Boolean
 
   @@unique([childId, date, type])
   @@map("attendance")
 }
 
-// ─── Materiais e Compras ──────────────────────────────────────────────────────
+// ─── Materials & Purchases ──────────────────────────────────────────────────────
 
 model Material {
   id          String            @id @default(cuid())
@@ -371,7 +371,7 @@ model PurchaseRequest {
   quantity      Int
   unit          String?
   justification String?
-  status        RequestStatus @default(PENDENTE)
+  status        RequestStatus @default(PENDING)
   rejectionReason String?     @map("rejection_reason")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
@@ -380,16 +380,16 @@ model PurchaseRequest {
 }
 
 enum RequestStatus {
-  PENDENTE
-  APROVADO
-  REJEITADO
-  COMPRADO
-  EM_ESTOQUE
+  PENDING
+  APPROVED
+  REJECTED
+  PURCHASED
+  IN_STOCK
 
   @@map("request_status")
 }
 
-// ─── Eventos ──────────────────────────────────────────────────────────────────
+// ─── Events ───────────────────────────────────────────────────────────────────
 
 // Events are for everyone — no per-volunteer assignment.
 model Event {
@@ -403,7 +403,7 @@ model Event {
   @@map("events")
 }
 
-// ─── Lanches ──────────────────────────────────────────────────────────────────
+// ─── Snacks ───────────────────────────────────────────────────────────────────
 
 model Snack {
   id          String        @id @default(cuid())
@@ -418,14 +418,14 @@ model Snack {
 }
 
 enum SnackCategory {
-  COMIDA
-  BEBIDA
-  OUTROS
+  FOOD
+  DRINK
+  OTHER
 
   @@map("snack_category")
 }
 
-// ─── Diário de Sala ─────────────────────────────────────────────────────────────
+// ─── Class Journal ──────────────────────────────────────────────────────────────
 
 model ClassJournalEntry {
   id               String     @id @default(cuid())
@@ -444,7 +444,7 @@ model ClassJournalEntry {
   @@map("class_journal_entries")
 }
 
-// ─── Ocorrências ──────────────────────────────────────────────────────────────
+// ─── Occurrences ──────────────────────────────────────────────────────────────
 
 model Occurrence {
   id           String            @id @default(cuid())
@@ -453,7 +453,7 @@ model Occurrence {
   occurredAt   DateTime          @db.Date @map("occurred_at")
   context      OccurrenceContext
   details      String
-  status       OccurrenceStatus  @default(EM_ANALISE)
+  status       OccurrenceStatus  @default(UNDER_REVIEW)
   resolvedById String?           @map("resolved_by_id")
   resolvedBy   User?             @relation("OccurrenceResolver", fields: [resolvedById], references: [id])
   resolvedAt   DateTime?         @map("resolved_at")
@@ -472,8 +472,8 @@ enum OccurrenceContext {
 }
 
 enum OccurrenceStatus {
-  EM_ANALISE
-  RESOLVIDO
+  UNDER_REVIEW
+  RESOLVED
 
   @@map("occurrence_status")
 }

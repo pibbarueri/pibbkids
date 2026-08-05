@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
       classGroup: { select: { id: true, name: true } },
       journal: { select: { id: true, title: true, series: true, edition: true } },
     },
-    orderBy: [{ date: "asc" }, { tipo: "asc" }],
+    orderBy: [{ date: "asc" }, { type: "asc" }],
   });
 
   return NextResponse.json(plans);
@@ -38,24 +38,24 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { date, classGroupId, tipo, journalId, licaoNumber, lessonType, specialTitle, observations } = body;
+  const { date, classGroupId, type, journalId, lessonNumber, lessonType, specialTitle, observations } = body;
 
   const plan = await prisma.sundayPlan.upsert({
-    where: { date_classGroupId_tipo: { date: new Date(date), classGroupId, tipo } },
+    where: { date_classGroupId_type: { date: new Date(date), classGroupId, type } },
     update: {
       journalId: journalId ?? null,
-      licaoNumber: licaoNumber ?? null,
-      lessonType: lessonType ?? "APOSTILA",
+      lessonNumber: lessonNumber ?? null,
+      lessonType: lessonType ?? "WORKBOOK",
       specialTitle: specialTitle ?? null,
       observations: observations ?? null,
     },
     create: {
       date: new Date(date),
       classGroupId,
-      tipo,
+      type,
       journalId: journalId ?? null,
-      licaoNumber: licaoNumber ?? null,
-      lessonType: lessonType ?? "APOSTILA",
+      lessonNumber: lessonNumber ?? null,
+      lessonType: lessonType ?? "WORKBOOK",
       specialTitle: specialTitle ?? null,
       observations: observations ?? null,
     },

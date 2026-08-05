@@ -18,23 +18,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Check, X } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDENTE: "Solicitado",
-  APROVADO: "Aprovado para compra",
-  REJEITADO: "Rejeitado",
-  COMPRADO: "Compra realizada",
-  EM_ESTOQUE: "Em estoque",
+  PENDING: "Solicitado",
+  APPROVED: "Aprovado para compra",
+  REJECTED: "Rejeitado",
+  PURCHASED: "Compra realizada",
+  IN_STOCK: "Em estoque",
 };
 
-// Badge visual per status. APROVADO uses a yellow badge for the requester.
+// Badge visual per status. APPROVED uses a yellow badge for the requester.
 function statusBadgeClass(status: string): string {
   switch (status) {
-    case "APROVADO":
+    case "APPROVED":
       return "bg-yellow-400 text-yellow-950 hover:bg-yellow-400";
-    case "REJEITADO":
+    case "REJECTED":
       return "bg-muted text-muted-foreground hover:bg-muted";
-    case "COMPRADO":
+    case "PURCHASED":
       return "bg-blue-500 text-white hover:bg-blue-500";
-    case "EM_ESTOQUE":
+    case "IN_STOCK":
       return "bg-green-600 text-white hover:bg-green-600";
     default:
       return "bg-secondary text-secondary-foreground hover:bg-secondary";
@@ -42,12 +42,12 @@ function statusBadgeClass(status: string): string {
 }
 
 // Ordered breadcrumb steps for the happy path; rejection is handled separately.
-const FLOW = ["PENDENTE", "APROVADO", "COMPRADO", "EM_ESTOQUE"];
+const FLOW = ["PENDING", "APPROVED", "PURCHASED", "IN_STOCK"];
 const FLOW_LABELS: Record<string, string> = {
-  PENDENTE: "Solicitado",
-  APROVADO: "Aprovado (aguardando compra)",
-  COMPRADO: "Compra realizada",
-  EM_ESTOQUE: "Em estoque",
+  PENDING: "Solicitado",
+  APPROVED: "Aprovado (aguardando compra)",
+  PURCHASED: "Compra realizada",
+  IN_STOCK: "Em estoque",
 };
 
 type MaterialOption = { id: string; name: string; unit: string; categoryId: string | null };
@@ -82,7 +82,7 @@ function formatWhen(iso: string): string {
 }
 
 function Breadcrumb({ status }: { status: string }) {
-  if (status === "REJEITADO") {
+  if (status === "REJECTED") {
     return (
       <div className="flex items-center gap-2 text-xs">
         <span className="font-medium text-foreground">Solicitado</span>
@@ -375,7 +375,7 @@ export function PurchaseRequestsClient({
                   </div>
                 )}
 
-                {selected.status === "REJEITADO" && selected.rejectionReason && (
+                {selected.status === "REJECTED" && selected.rejectionReason && (
                   <div>
                     <p className="text-xs font-medium text-destructive">Motivo da rejeição</p>
                     <p className="text-sm">{selected.rejectionReason}</p>
@@ -385,9 +385,9 @@ export function PurchaseRequestsClient({
                 {/* Admin actions */}
                 {isManager && !rejecting && (
                   <div className="flex flex-col gap-2">
-                    {selected.status === "PENDENTE" && (
+                    {selected.status === "PENDING" && (
                       <div className="flex gap-2">
-                        <Button size="sm" className="flex-1" onClick={() => setStatus(selected.id, "APROVADO")}>
+                        <Button size="sm" className="flex-1" onClick={() => setStatus(selected.id, "APPROVED")}>
                           Aprovar
                         </Button>
                         <Button
@@ -400,13 +400,13 @@ export function PurchaseRequestsClient({
                         </Button>
                       </div>
                     )}
-                    {selected.status === "APROVADO" && (
-                      <Button size="sm" onClick={() => setStatus(selected.id, "COMPRADO")}>
+                    {selected.status === "APPROVED" && (
+                      <Button size="sm" onClick={() => setStatus(selected.id, "PURCHASED")}>
                         Marcar compra realizada
                       </Button>
                     )}
-                    {selected.status === "COMPRADO" && (
-                      <Button size="sm" onClick={() => setStatus(selected.id, "EM_ESTOQUE")}>
+                    {selected.status === "PURCHASED" && (
+                      <Button size="sm" onClick={() => setStatus(selected.id, "IN_STOCK")}>
                         Marcar em estoque
                       </Button>
                     )}
@@ -432,7 +432,7 @@ export function PurchaseRequestsClient({
                         variant="destructive"
                         className="flex-1"
                         disabled={!rejectReason.trim()}
-                        onClick={() => setStatus(selected.id, "REJEITADO", rejectReason)}
+                        onClick={() => setStatus(selected.id, "REJECTED", rejectReason)}
                       >
                         Confirmar rejeição
                       </Button>

@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { dates, slotType, horario, classGroupId, role, userId } = body;
+  const { dates, slotType, timeSlot, classGroupId, role, userId } = body;
 
   if (!Array.isArray(dates) || dates.length === 0) {
     return NextResponse.json({ error: "dates required" }, { status: 422 });
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const created = [];
   for (const date of dates) {
     const existing = await prisma.scheduleSlot.findFirst({
-      where: { date: new Date(date), slotType, horario: horario ?? null, classGroupId: classGroupId ?? null, role: role ?? null, userId },
+      where: { date: new Date(date), slotType, timeSlot: timeSlot ?? null, classGroupId: classGroupId ?? null, role: role ?? null, userId },
     });
     if (existing) continue;
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       data: {
         date: new Date(date),
         slotType,
-        horario: horario ?? null,
+        timeSlot: timeSlot ?? null,
         classGroupId: classGroupId ?? null,
         role: role ?? null,
         userId,

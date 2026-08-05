@@ -30,14 +30,14 @@ import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { normalizeUsername } from "@/lib/text";
 
 const FUNCTION_OPTIONS = [
-  { value: "PROFESSOR", label: "Professor" },
-  { value: "AUXILIAR", label: "Auxiliar" },
-  { value: "APOIO_GERAL", label: "Apoio Geral" },
-  { value: "LOUVOR", label: "Louvor" },
-  { value: "RECEPCAO", label: "Recepção" },
+  { value: "TEACHER", label: "Professor" },
+  { value: "ASSISTANT", label: "Auxiliar" },
+  { value: "SUPPORT", label: "Apoio Geral" },
+  { value: "WORSHIP", label: "Louvor" },
+  { value: "RECEPTION", label: "Recepção" },
   { value: "EVENTS", label: "Eventos" },
   { value: "IDE_KIDS", label: "Ide Kids" },
-  { value: "MIDIAS_DESIGN", label: "Mídias e Design" },
+  { value: "MEDIA_DESIGN", label: "Mídias e Design" },
 ];
 
 const emptyVolunteerForm = {
@@ -77,14 +77,14 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const FUNCTION_LABELS: Record<string, string> = {
-  PROFESSOR: "Professor",
-  AUXILIAR: "Auxiliar",
-  APOIO_GERAL: "Apoio Geral",
-  LOUVOR: "Louvor",
-  RECEPCAO: "Recepção",
+  TEACHER: "Professor",
+  ASSISTANT: "Auxiliar",
+  SUPPORT: "Apoio Geral",
+  WORSHIP: "Louvor",
+  RECEPTION: "Recepção",
   EVENTS: "Eventos",
   IDE_KIDS: "Ide Kids",
-  MIDIAS_DESIGN: "Mídias e Design",
+  MEDIA_DESIGN: "Mídias e Design",
 };
 
 type ClassGroup = { id: string; name: string };

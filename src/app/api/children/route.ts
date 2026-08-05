@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canManage } from "@/lib/permissions";
-import { Frequencia } from "@prisma/client";
+import { Frequency } from "@prisma/client";
 
 const createSchema = z.object({
   name: z.string().min(2),
@@ -12,7 +12,7 @@ const createSchema = z.object({
   motherName: z.string().optional(),
   fatherPhone: z.string().optional(),
   motherPhone: z.string().optional(),
-  frequency: z.nativeEnum(Frequencia),
+  frequency: z.nativeEnum(Frequency),
   allergies: z.string().optional(),
   restrictions: z.string().optional(),
   classGroupId: z.string().min(1),
@@ -30,7 +30,7 @@ export async function GET() {
     return NextResponse.json(children);
   }
 
-  // PROFESSOR/AUXILIAR/RECEPCAO: only approved children in their assigned classes
+  // TEACHER/ASSISTANT/RECEPTION: only approved children in their assigned classes
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: { preferredClasses: true },

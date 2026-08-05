@@ -30,7 +30,7 @@ export function AttendanceViewClient({
   const [weekOffset, setWeekOffset] = useState(0);
   const [attendance, setAttendance] = useState(initialAttendance);
   const [classFilter, setClassFilter] = useState<string>("all");
-  const [horarioTab, setHorarioTab] = useState<"EBD" | "CULTO">("EBD");
+  const [timeSlotTab, setTimeSlotTab] = useState<"EBD" | "CULTO">("EBD");
 
   const selectedSunday = new Date(currentSunday);
   selectedSunday.setDate(selectedSunday.getDate() + weekOffset * 7);
@@ -71,11 +71,11 @@ export function AttendanceViewClient({
   );
 
   const eligibleForTab = children.filter(
-    (c) => c.frequency === "AMBOS" || c.frequency === horarioTab
+    (c) => c.frequency === "AMBOS" || c.frequency === timeSlotTab
   );
 
   function isPresent(childId: string) {
-    return attendance.some((a) => a.childId === childId && a.type === horarioTab && a.present);
+    return attendance.some((a) => a.childId === childId && a.type === timeSlotTab && a.present);
   }
 
   const presentChildren = eligibleForTab.filter((c) => isPresent(c.id));
@@ -107,7 +107,7 @@ export function AttendanceViewClient({
         </Button>
       </div>
 
-      <Tabs value={horarioTab} onValueChange={(v) => setHorarioTab(v as "EBD" | "CULTO")}>
+      <Tabs value={timeSlotTab} onValueChange={(v) => setTimeSlotTab(v as "EBD" | "CULTO")}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="EBD">EBD</TabsTrigger>
           <TabsTrigger value="CULTO">Culto</TabsTrigger>

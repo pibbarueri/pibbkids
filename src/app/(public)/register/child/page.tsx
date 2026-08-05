@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Frequencia } from "@prisma/client";
+import { Frequency } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,14 +26,14 @@ const schema = z.object({
   motherName: z.string().optional(),
   fatherPhone: z.string().min(8, "Telefone obrigatório"),
   motherPhone: z.string().optional(),
-  frequency: z.nativeEnum(Frequencia),
+  frequency: z.nativeEnum(Frequency),
   allergies: z.string().optional(),
   restrictions: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
-const FREQUENCIA_LABELS: Record<Frequencia, string> = {
+const FREQUENCY_LABELS: Record<Frequency, string> = {
   EBD: "Escola Dominical (EBD)",
   CULTO: "Culto Infantil",
   AMBOS: "EBD e Culto",
@@ -104,12 +104,12 @@ export default function RegisterChildPage() {
           </Field>
 
           <Field label="Frequência *" error={errors.frequency?.message}>
-            <Select onValueChange={(v) => setValue("frequency", v as Frequencia)}>
+            <Select onValueChange={(v) => setValue("frequency", v as Frequency)}>
               <SelectTrigger className="h-12">
                 <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(FREQUENCIA_LABELS).map(([value, label]) => (
+                {Object.entries(FREQUENCY_LABELS).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}
                   </SelectItem>

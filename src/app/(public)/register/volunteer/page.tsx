@@ -18,14 +18,14 @@ import { formatPhone, phoneDigits } from "@/lib/phone";
 import { formatCpf, cpfDigits } from "@/lib/cpf";
 
 const FUNCTION_LABELS: Record<FunctionType, string> = {
-  PROFESSOR: "Professor(a)",
-  AUXILIAR: "Auxiliar",
-  APOIO_GERAL: "Apoio geral",
-  LOUVOR: "Louvor",
-  RECEPCAO: "Recepção",
+  TEACHER: "Professor(a)",
+  ASSISTANT: "Auxiliar",
+  SUPPORT: "Apoio geral",
+  WORSHIP: "Louvor",
+  RECEPTION: "Recepção",
   EVENTS: "Eventos",
   IDE_KIDS: "Ide Kids",
-  MIDIAS_DESIGN: "Mídias e Design",
+  MEDIA_DESIGN: "Mídias e Design",
 };
 
 const schema = z.object({
@@ -69,7 +69,7 @@ export default function RegisterVolunteerPage() {
       const next = prev.includes(fn) ? prev.filter((f) => f !== fn) : [...prev, fn];
       setValue("functions", next);
       // Turma selection only makes sense for Professor/Auxiliar — clear it otherwise.
-      if (!next.includes("PROFESSOR") && !next.includes("AUXILIAR")) {
+      if (!next.includes("TEACHER") && !next.includes("ASSISTANT")) {
         setSelectedClasses([]);
         setValue("preferredClassIds", []);
       }
@@ -175,7 +175,7 @@ export default function RegisterVolunteerPage() {
             )}
           </div>
 
-          {classes.length > 0 && (selectedFunctions.includes("PROFESSOR") || selectedFunctions.includes("AUXILIAR")) && (
+          {classes.length > 0 && (selectedFunctions.includes("TEACHER") || selectedFunctions.includes("ASSISTANT")) && (
             <div className="space-y-2">
               <Label>Turma(s) desejada(s)</Label>
               <div className="grid grid-cols-1 gap-2">
