@@ -8,6 +8,7 @@ export type NotificationDots = {
   snacks: boolean;
   "purchase-requests": boolean;
   occurrences: boolean;
+  "class-journal": boolean;
 };
 
 const EPOCH = new Date(0);
@@ -38,6 +39,7 @@ export async function getNotificationDots(
     myAvailablePurchaseRequest,
     pendingOccurrences,
     myChangedOccurrence,
+    unackedJournalEntries,
   ] = await Promise.all([
     canManage(role)
       ? prisma.child.count({ where: { active: true, classGroupId: null } })
@@ -65,6 +67,9 @@ export async function getNotificationDots(
           select: { createdAt: true, updatedAt: true },
         })
       : Promise.resolve([]),
+    canManage(role)
+      ? prisma.classJournalEntry.count({ where: { acknowledgedAt: null } })
+      : Promise.resolve(0),
   ]);
 
   return {
@@ -75,5 +80,6 @@ export async function getNotificationDots(
     occurrences:
       pendingOccurrences > 0 ||
       myChangedOccurrence.some((o) => o.updatedAt.getTime() !== o.createdAt.getTime()),
+    "class-journal": unackedJournalEntries > 0,
   };
 }
