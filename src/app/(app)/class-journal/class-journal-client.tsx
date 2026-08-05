@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -69,8 +70,15 @@ export function ClassJournalClient({
   isManager: boolean;
   currentUserId: string;
 }) {
+  const router = useRouter();
   const [entries, setEntries] = useState(initialEntries);
   const [activeRoomId, setActiveRoomId] = useState(rooms[0]?.id ?? "");
+
+  // Derived from entries so a badge clears immediately after "Marcar como visto".
+  const unackedByRoom = entries.reduce<Record<string, number>>((acc, e) => {
+    if (!e.acknowledgedAt) acc[e.classGroupId] = (acc[e.classGroupId] ?? 0) + 1;
+    return acc;
+  }, {});
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -102,6 +110,7 @@ export function ClassJournalClient({
       setEntries((prev) => [created, ...prev]);
       setOpen(false);
       setForm(emptyForm);
+      router.refresh();
     }
     setSaving(false);
   }
@@ -135,6 +144,7 @@ export function ClassJournalClient({
       const updated = await res.json();
       setEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
       setSelected(updated);
+      router.refresh();
     }
     setAcking(false);
   }
@@ -149,6 +159,7 @@ export function ClassJournalClient({
       setSelected(null);
       setDeleteTarget(null);
       setDeleteConfirmText("");
+      router.refresh();
     } else {
       const body = await res.json();
       setDeleteError(body.error ?? "Erro ao excluir.");
@@ -165,11 +176,21 @@ export function ClassJournalClient({
               key={r.id}
               onClick={() => setActiveRoomId(r.id)}
               className={cn(
-                "shrink-0 h-9 px-3 rounded-full border text-sm font-medium transition-all active:scale-95",
+                "shrink-0 h-9 px-3 rounded-full border text-sm font-medium transition-all active:scale-95 flex items-center gap-1.5",
                 activeRoomId === r.id ? "border-primary bg-primary text-primary-foreground" : "border-input bg-transparent"
               )}
             >
               {r.name}
+              {isManager && unackedByRoom[r.id] > 0 && (
+                <Badge
+                  className={cn(
+                    "h-5 min-w-5 px-1 justify-center",
+                    activeRoomId === r.id ? "bg-primary-foreground text-primary hover:bg-primary-foreground" : undefined
+                  )}
+                >
+                  {unackedByRoom[r.id]}
+                </Badge>
+              )}
             </button>
           ))}
         </div>
