@@ -139,6 +139,9 @@ porta 3000) → login → navegar → `read_page`/screenshot pra conferir. Prefe
 
 ## Git / commits
 
+- **Feature branches + PR.** Todo trabalho em branch própria, nunca commit direto em `main`.
+  Abrir PR (`gh pr create`) pra revisão/merge — merge de `main` costuma ser feito pelo
+  usuário no GitHub, não pelo agente (push direto pra `main` é ação bloqueada pro agente).
 - Commits pequenos, um por mudança lógica (ex: uma tabela por commit num refactor de DB).
 - Mensagem minúscula, direta, sem atribuição de IA.
 - Usar Conventional Commit messages (sempre em inglês)
@@ -158,6 +161,11 @@ Migrations em produção:
 
 Os três passam por `scripts/prod-migrate.sh`, que lê `DATABASE_URL` do `.env.prod`, imprime o
 host de destino e se recusa a rodar contra localhost.
+
+**`npm run migration` só roda quando pedido explicitamente.** Com feature branches, o normal é
+rodar a migration na hora do merge do PR (pouco antes), não durante o desenvolvimento na
+branch — senão prod fica com schema novo e código velho (deployado) incompatível entre si,
+gerando erro em produção até o merge acontecer.
 
 **Ordem em deploy que tem migration: migration primeiro, merge depois.** A Vercel builda no
 push; se o app novo subir antes do schema, quebra em runtime.
