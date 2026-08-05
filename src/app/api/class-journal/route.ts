@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canManage, canWriteClassJournal } from "@/lib/permissions";
 import { getTeacherRoomIds } from "@/lib/class-journal";
+import { OccurrenceContext } from "@prisma/client";
 
 const INCLUDE = {
   author: { select: { name: true, username: true } },
@@ -35,8 +36,15 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { classGroupId, title, entryDate, description } = body;
-  if (!classGroupId || !title?.trim() || !entryDate || !description?.trim()) {
+  const { classGroupId, title, entryDate, context, description } = body;
+  if (
+    !classGroupId ||
+    !title?.trim() ||
+    !entryDate ||
+    !context ||
+    !Object.values(OccurrenceContext).includes(context) ||
+    !description?.trim()
+  ) {
     return NextResponse.json({ error: "Preencha todos os campos obrigatórios." }, { status: 422 });
   }
 
@@ -50,6 +58,7 @@ export async function POST(req: NextRequest) {
       classGroupId,
       title,
       entryDate: new Date(entryDate),
+      context,
       description,
       authorId: session.user.id,
     },

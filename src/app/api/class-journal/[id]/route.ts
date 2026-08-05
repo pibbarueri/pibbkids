@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canManage } from "@/lib/permissions";
+import { OccurrenceContext } from "@prisma/client";
 
 const INCLUDE = {
   author: { select: { name: true, username: true } },
@@ -41,14 +42,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Não é mais possível editar." }, { status: 403 });
   }
 
-  const { title, entryDate, description } = body;
-  if (!title?.trim() || !entryDate || !description?.trim()) {
+  const { title, entryDate, context, description } = body;
+  if (
+    !title?.trim() ||
+    !entryDate ||
+    !context ||
+    !Object.values(OccurrenceContext).includes(context) ||
+    !description?.trim()
+  ) {
     return NextResponse.json({ error: "Preencha todos os campos obrigatórios." }, { status: 422 });
   }
 
   const updated = await prisma.classJournalEntry.update({
     where: { id },
-    data: { title, entryDate: new Date(entryDate), description },
+    data: { title, entryDate: new Date(entryDate), context, description },
     include: INCLUDE,
   });
   return NextResponse.json(updated);
