@@ -11,13 +11,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
-  const { slotType, horario, classGroupId, role, userId } = body;
+  const { slotType, timeSlot, classGroupId, role, userId } = body;
 
   const slot = await prisma.scheduleSlot.update({
     where: { id },
     data: {
       ...(slotType !== undefined && { slotType }),
-      ...(horario !== undefined && { horario }),
+      ...(timeSlot !== undefined && { timeSlot }),
       ...(classGroupId !== undefined && { classGroupId }),
       ...(role !== undefined && { role }),
       ...(userId !== undefined && { userId }),

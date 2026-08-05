@@ -10,7 +10,7 @@ export default async function SnacksPage() {
   const role = session.user.role;
 
   const hasApoioGeral = await prisma.volunteerFunction.findFirst({
-    where: { userId: session.user.id, function: "APOIO_GERAL" },
+    where: { userId: session.user.id, function: "SUPPORT" },
   });
   if (!canManageSnacks(role, !!hasApoioGeral)) redirect("/dashboard");
 

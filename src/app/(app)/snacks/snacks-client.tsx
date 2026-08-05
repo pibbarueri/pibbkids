@@ -22,9 +22,9 @@ import {
 import { Plus, Minus, Trash2 } from "lucide-react";
 
 const CATEGORY_LABELS: Record<string, string> = {
-  COMIDA: "Comida",
-  BEBIDA: "Bebida",
-  OUTROS: "Outros",
+  FOOD: "Comida",
+  DRINK: "Bebida",
+  OTHER: "Outros",
 };
 
 type Snack = {
@@ -37,7 +37,7 @@ type Snack = {
 
 type Form = { category: string; description: string; quantity: string; unit: string };
 
-const emptyForm: Form = { category: "COMIDA", description: "", quantity: "0", unit: "" };
+const emptyForm: Form = { category: "FOOD", description: "", quantity: "0", unit: "" };
 
 // Module scope on purpose: nesting this in SnacksClient would remount the inputs on
 // every keystroke and drop focus.
@@ -54,7 +54,7 @@ function SnackFields({
         <p className="text-sm font-medium">Categoria</p>
         <Select
           value={value.category}
-          onValueChange={(v) => onChange({ category: v ?? "COMIDA" })}
+          onValueChange={(v) => onChange({ category: v ?? "FOOD" })}
           items={CATEGORY_LABELS}
         >
           <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>

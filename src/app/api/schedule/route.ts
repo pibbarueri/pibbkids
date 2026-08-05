@@ -38,13 +38,13 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { date, slotType, horario, classGroupId, role, userId } = body;
+  const { date, slotType, timeSlot, classGroupId, role, userId } = body;
 
   const slot = await prisma.scheduleSlot.create({
     data: {
       date: new Date(date),
       slotType,
-      horario: horario ?? null,
+      timeSlot: timeSlot ?? null,
       classGroupId: classGroupId ?? null,
       role: role ?? null,
       userId,

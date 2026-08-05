@@ -5,7 +5,7 @@ import { canManageSnacks } from "@/lib/permissions";
 
 async function hasApoioGeral(userId: string) {
   const f = await prisma.volunteerFunction.findFirst({
-    where: { userId, function: "APOIO_GERAL" },
+    where: { userId, function: "SUPPORT" },
   });
   return !!f;
 }

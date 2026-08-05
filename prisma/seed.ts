@@ -48,7 +48,7 @@ async function main() {
       role: Role.ADMIN,
       status: "APPROVED",
       functions: {
-        create: [{ function: FunctionType.PROFESSOR }],
+        create: [{ function: FunctionType.TEACHER }],
       },
     },
   });

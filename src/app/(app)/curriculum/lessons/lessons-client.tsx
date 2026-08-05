@@ -22,15 +22,15 @@ import { ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LESSON_TYPE_LABELS: Record<string, string> = {
-  APOSTILA: "Apostila",
-  AULA_EXTRA: "Aula Extra",
+  WORKBOOK: "Apostila",
+  EXTRA_CLASS: "Aula Extra",
   REVIEW: "Revisão",
-  QUIZ_GINCANA: "Quiz/Gincana",
-  SEM_AULA: "Sem aula",
-  TEMA_LIVRE: "Tema Livre",
+  QUIZ_GAME: "Quiz/Gincana",
+  NO_CLASS: "Sem aula",
+  FREE_TOPIC: "Tema Livre",
 };
 
-const TIPO_LABELS: Record<string, string> = { EBD: "EBD", CULTO: "Culto" };
+const TYPE_LABELS: Record<string, string> = { EBD: "EBD", CULTO: "Culto" };
 
 type ClassGroup = { id: string; name: string };
 type Journal = { id: string; title: string; series: string; edition: number; classGroupId: string; usage: string };
@@ -39,10 +39,10 @@ type Plan = {
   date: string;
   classGroupId: string;
   classGroup: ClassGroup;
-  tipo: string;
+  type: string;
   journalId: string | null;
   journal: { id: string; title: string; series: string; edition: number } | null;
-  licaoNumber: number | null;
+  lessonNumber: number | null;
   lessonType: string;
   specialTitle: string | null;
   observations: string | null;
@@ -54,8 +54,8 @@ function formatDate(iso: string) {
 }
 
 function planLabel(p: Plan) {
-  if (p.lessonType !== "APOSTILA") return p.specialTitle || LESSON_TYPE_LABELS[p.lessonType];
-  if (p.journal) return `${p.journal.title} — lição ${p.licaoNumber ?? "?"}`;
+  if (p.lessonType !== "WORKBOOK") return p.specialTitle || LESSON_TYPE_LABELS[p.lessonType];
+  if (p.journal) return `${p.journal.title} — lição ${p.lessonNumber ?? "?"}`;
   return "Sem plano";
 }
 
@@ -80,8 +80,8 @@ export function LessonsClient({
     initialPlans.map((p) => ({ ...p, date: new Date(p.date).toISOString() }))
   );
   const [sundayIdx, setSundayIdx] = useState(initialSundayIdx);
-  const [editing, setEditing] = useState<{ classGroupId: string; className: string; tipo: string } | null>(null);
-  const [form, setForm] = useState({ lessonType: "APOSTILA", journalId: "", licaoNumber: "", specialTitle: "", observations: "" });
+  const [editing, setEditing] = useState<{ classGroupId: string; className: string; type: string } | null>(null);
+  const [form, setForm] = useState({ lessonType: "WORKBOOK", journalId: "", lessonNumber: "", specialTitle: "", observations: "" });
   const [saving, setSaving] = useState(false);
 
   const selectedSunday = sundays[sundayIdx];
@@ -89,16 +89,16 @@ export function LessonsClient({
 
   const visibleClasses = isManager ? classes : classes.filter((c) => myClassIds.includes(c.id));
 
-  function openEdit(classGroupId: string, className: string, tipo: string) {
-    const existing = dayPlans.find((p) => p.classGroupId === classGroupId && p.tipo === tipo);
+  function openEdit(classGroupId: string, className: string, type: string) {
+    const existing = dayPlans.find((p) => p.classGroupId === classGroupId && p.type === type);
     setForm({
-      lessonType: existing?.lessonType ?? "APOSTILA",
+      lessonType: existing?.lessonType ?? "WORKBOOK",
       journalId: existing?.journalId ?? "",
-      licaoNumber: existing?.licaoNumber ? String(existing.licaoNumber) : "",
+      lessonNumber: existing?.lessonNumber ? String(existing.lessonNumber) : "",
       specialTitle: existing?.specialTitle ?? "",
       observations: existing?.observations ?? "",
     });
-    setEditing({ classGroupId, className, tipo });
+    setEditing({ classGroupId, className, type });
   }
 
   async function save() {
@@ -110,17 +110,17 @@ export function LessonsClient({
       body: JSON.stringify({
         date: selectedSunday,
         classGroupId: editing.classGroupId,
-        tipo: editing.tipo,
+        type: editing.type,
         lessonType: form.lessonType,
-        journalId: form.lessonType === "APOSTILA" ? form.journalId || null : null,
-        licaoNumber: form.lessonType === "APOSTILA" ? Number(form.licaoNumber) || null : null,
-        specialTitle: ["AULA_EXTRA", "REVIEW", "QUIZ_GINCANA"].includes(form.lessonType) ? form.specialTitle || null : null,
+        journalId: form.lessonType === "WORKBOOK" ? form.journalId || null : null,
+        lessonNumber: form.lessonType === "WORKBOOK" ? Number(form.lessonNumber) || null : null,
+        specialTitle: ["EXTRA_CLASS", "REVIEW", "QUIZ_GAME"].includes(form.lessonType) ? form.specialTitle || null : null,
         observations: form.observations || null,
       }),
     });
     const saved = await res.json();
     setPlans((prev) => {
-      const idx = prev.findIndex((p) => p.classGroupId === saved.classGroupId && p.tipo === saved.tipo && p.date.startsWith(selectedSunday.slice(0, 10)));
+      const idx = prev.findIndex((p) => p.classGroupId === saved.classGroupId && p.type === saved.type && p.date.startsWith(selectedSunday.slice(0, 10)));
       if (idx === -1) return [...prev, saved];
       const copy = [...prev];
       copy[idx] = saved;
@@ -133,8 +133,8 @@ export function LessonsClient({
   function copyWhatsApp() {
     const lines = [`📖 *Aulas — ${formatDate(selectedSunday)}*\n`];
     for (const cls of visibleClasses) {
-      const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.tipo === "EBD");
-      const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.tipo === "CULTO");
+      const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "EBD");
+      const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "CULTO");
       if (!ebd && !culto) continue;
       lines.push(`*${cls.name}*`);
       if (ebd) lines.push(`  EBD: ${planLabel(ebd)}`);
@@ -145,7 +145,7 @@ export function LessonsClient({
 
   const availableJournals = journals.filter((c) => c.classGroupId === editing?.classGroupId);
   const editingPlan = editing
-    ? dayPlans.find((p) => p.classGroupId === editing.classGroupId && p.tipo === editing.tipo)
+    ? dayPlans.find((p) => p.classGroupId === editing.classGroupId && p.type === editing.type)
     : null;
 
   return (
@@ -179,21 +179,21 @@ export function LessonsClient({
 
       <div className="space-y-3">
         {visibleClasses.map((cls) => {
-          const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.tipo === "EBD");
-          const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.tipo === "CULTO");
+          const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "EBD");
+          const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "CULTO");
           return (
             <div key={cls.id} className="border rounded-lg p-3 space-y-2">
               <p className="font-medium text-sm">{cls.name}</p>
-              {(["EBD", "CULTO"] as const).map((tipo) => {
-                const plan = tipo === "EBD" ? ebd : culto;
+              {(["EBD", "CULTO"] as const).map((type) => {
+                const plan = type === "EBD" ? ebd : culto;
                 return (
                   <div
-                    key={tipo}
+                    key={type}
                     className={cn("flex items-center justify-between p-2 rounded-md bg-muted/40 cursor-pointer hover:bg-muted")}
-                    onClick={() => openEdit(cls.id, cls.name, tipo)}
+                    onClick={() => openEdit(cls.id, cls.name, type)}
                   >
                     <div>
-                      <p className="text-xs text-muted-foreground">{TIPO_LABELS[tipo]}</p>
+                      <p className="text-xs text-muted-foreground">{TYPE_LABELS[type]}</p>
                       <p className="text-sm">{plan ? planLabel(plan) : "Sem plano"}</p>
                       {plan?.observations && (
                         <p className="text-xs text-muted-foreground italic mt-0.5 whitespace-pre-line">{plan.observations}</p>
@@ -210,7 +210,7 @@ export function LessonsClient({
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing?.className} — {editing && TIPO_LABELS[editing.tipo]}</DialogTitle>
+            <DialogTitle>{editing?.className} — {editing && TYPE_LABELS[editing.type]}</DialogTitle>
           </DialogHeader>
           {isManager ? (
             <div className="space-y-3">
@@ -218,7 +218,7 @@ export function LessonsClient({
                 <p className="text-sm font-medium">Tipo</p>
                 <Select
                   value={form.lessonType}
-                  onValueChange={(v) => setForm((f) => ({ ...f, lessonType: v ?? "APOSTILA" }))}
+                  onValueChange={(v) => setForm((f) => ({ ...f, lessonType: v ?? "WORKBOOK" }))}
                   items={LESSON_TYPE_LABELS}
                 >
                   <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
@@ -230,7 +230,7 @@ export function LessonsClient({
                 </Select>
               </div>
 
-              {form.lessonType === "APOSTILA" ? (
+              {form.lessonType === "WORKBOOK" ? (
                 <>
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Revista</p>
@@ -252,12 +252,12 @@ export function LessonsClient({
                     <Input
                       type="number"
                       className="h-12"
-                      value={form.licaoNumber}
-                      onChange={(e) => setForm((f) => ({ ...f, licaoNumber: e.target.value }))}
+                      value={form.lessonNumber}
+                      onChange={(e) => setForm((f) => ({ ...f, lessonNumber: e.target.value }))}
                     />
                   </div>
                 </>
-              ) : ["SEM_AULA", "TEMA_LIVRE"].includes(form.lessonType) ? null : (
+              ) : ["NO_CLASS", "FREE_TOPIC"].includes(form.lessonType) ? null : (
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Título</p>
                   <Input
@@ -292,7 +292,7 @@ export function LessonsClient({
                 <p className="text-sm">{LESSON_TYPE_LABELS[editingPlan.lessonType]}</p>
               </div>
 
-              {editingPlan.lessonType === "APOSTILA" ? (
+              {editingPlan.lessonType === "WORKBOOK" ? (
                 <div className="flex gap-3">
                   <div className="space-y-1 flex-1">
                     <p className="text-sm font-medium">Revista</p>
@@ -302,10 +302,10 @@ export function LessonsClient({
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Nº da lição</p>
-                    <p className="text-sm">{editingPlan.licaoNumber ?? "—"}</p>
+                    <p className="text-sm">{editingPlan.lessonNumber ?? "—"}</p>
                   </div>
                 </div>
-              ) : !["SEM_AULA", "TEMA_LIVRE"].includes(editingPlan.lessonType) ? (
+              ) : !["NO_CLASS", "FREE_TOPIC"].includes(editingPlan.lessonType) ? (
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Título</p>
                   <p className="text-sm">{editingPlan.specialTitle || "—"}</p>

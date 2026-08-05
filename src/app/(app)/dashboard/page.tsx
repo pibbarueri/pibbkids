@@ -33,7 +33,7 @@ export default async function DashboardPage() {
 
   const [hasApoioGeral, events, scheduleSlots, upcomingEvents30d, birthdayChildren, birthdayVolunteers, lowSnacks] = await Promise.all([
     prisma.volunteerFunction.findFirst({
-      where: { userId: session.user.id, function: "APOIO_GERAL" },
+      where: { userId: session.user.id, function: "SUPPORT" },
     }),
     prisma.event.findMany({
       where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },

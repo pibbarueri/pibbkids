@@ -204,11 +204,11 @@ export function AttendanceClient({
   const [saving, setSaving] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState<string>("all");
-  const [horarioTab, setHorarioTab] = useState<"EBD" | "CULTO">("EBD");
+  const [timeSlotTab, setTimeSlotTab] = useState<"EBD" | "CULTO">("EBD");
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [visitorsVersion, setVisitorsVersion] = useState(0);
 
-  // Distinct turmas present among the children, in canonical order.
+  // Distinct classes present among the children, in canonical order.
   const classOptions = sortClasses(
     Array.from(
       new Map(
@@ -274,7 +274,7 @@ export function AttendanceClient({
 
   // Visitors are logged for a specific horário (EBD/Culto) — only show/count them under
   // the matching tab.
-  const visitorsForTab = visitors.filter((v) => v.type === horarioTab);
+  const visitorsForTab = visitors.filter((v) => v.type === timeSlotTab);
 
   // A child efetivada from a visitor logged on this same day already shows up as that
   // visitor card — skip the regular roster card too, or she'd appear twice.
@@ -283,14 +283,14 @@ export function AttendanceClient({
 
   // Only children whose frequency includes the active tab's tipo show up at all.
   const eligibleForTab = children.filter(
-    (c) => (c.frequency === "AMBOS" || c.frequency === horarioTab) && !effectivatedTodayIds.has(c.id)
+    (c) => (c.frequency === "AMBOS" || c.frequency === timeSlotTab) && !effectivatedTodayIds.has(c.id)
   );
 
   function isPresent(childId: string) {
-    return attendance.some((a) => a.childId === childId && a.type === horarioTab && a.present);
+    return attendance.some((a) => a.childId === childId && a.type === timeSlotTab && a.present);
   }
 
-  // Count of present children per turma, for the active tab — shown next to each filter chip.
+  // Count of present children per class, for the active tab — shown next to each filter chip.
   const presentCountByClass = new Map<string, number>();
   for (const c of eligibleForTab) {
     if (!c.classGroupId || !isPresent(c.id)) continue;
@@ -311,12 +311,12 @@ export function AttendanceClient({
     const res = await fetch("/api/attendance", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ childId, date: selectedISO, type: horarioTab, present }),
+      body: JSON.stringify({ childId, date: selectedISO, type: timeSlotTab, present }),
     });
     if (res.ok) {
       const saved = await res.json();
       setAttendance((prev) => {
-        const idx = prev.findIndex((a) => a.childId === childId && a.type === horarioTab);
+        const idx = prev.findIndex((a) => a.childId === childId && a.type === timeSlotTab);
         if (idx === -1) return [...prev, saved];
         const copy = [...prev];
         copy[idx] = saved;
@@ -366,7 +366,7 @@ export function AttendanceClient({
         </div>
       )}
 
-      <Tabs value={horarioTab} onValueChange={(v) => setHorarioTab(v as "EBD" | "CULTO")}>
+      <Tabs value={timeSlotTab} onValueChange={(v) => setTimeSlotTab(v as "EBD" | "CULTO")}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="EBD">EBD</TabsTrigger>
           <TabsTrigger value="CULTO">Culto</TabsTrigger>
@@ -462,7 +462,7 @@ export function AttendanceClient({
         </div>
       )}
 
-      <VisitorFab canLogVisitor={canLogVisitor} date={selectedDayKey} type={horarioTab} onCreated={() => setVisitorsVersion((v) => v + 1)} />
+      <VisitorFab canLogVisitor={canLogVisitor} date={selectedDayKey} type={timeSlotTab} onCreated={() => setVisitorsVersion((v) => v + 1)} />
     </div>
   );
 }

@@ -5,21 +5,21 @@ import { Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LESSON_TYPE_LABELS: Record<string, string> = {
-  APOSTILA: "Apostila",
-  AULA_EXTRA: "Aula Extra",
+  WORKBOOK: "Apostila",
+  EXTRA_CLASS: "Aula Extra",
   REVIEW: "Revisão",
-  QUIZ_GINCANA: "Quiz/Gincana",
-  SEM_AULA: "Sem aula",
-  TEMA_LIVRE: "Tema Livre",
+  QUIZ_GAME: "Quiz/Gincana",
+  NO_CLASS: "Sem aula",
+  FREE_TOPIC: "Tema Livre",
 };
 
 type ClassGroup = { id: string; name: string };
 type Plan = {
   date: string;
   classGroupId: string;
-  tipo: string;
+  type: string;
   journal: { id: string; title: string; edition: number } | null;
-  licaoNumber: number | null;
+  lessonNumber: number | null;
   lessonType: string;
   specialTitle: string | null;
   done: boolean;
@@ -31,8 +31,8 @@ function formatDate(iso: string) {
 
 function planLabel(p: Plan | undefined) {
   if (!p) return "—";
-  if (p.lessonType !== "APOSTILA") return p.specialTitle || LESSON_TYPE_LABELS[p.lessonType];
-  if (p.journal) return `L${p.licaoNumber ?? "?"} — ${p.journal.title}`;
+  if (p.lessonType !== "WORKBOOK") return p.specialTitle || LESSON_TYPE_LABELS[p.lessonType];
+  if (p.journal) return `L${p.lessonNumber ?? "?"} — ${p.journal.title}`;
   return "Sem plano";
 }
 
@@ -55,8 +55,8 @@ export function OverviewClient({
       if (dayPlans.length === 0) continue;
       lines.push(`*${formatDate(sunday)}*`);
       for (const cls of classes) {
-        const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.tipo === "EBD");
-        const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.tipo === "CULTO");
+        const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "EBD");
+        const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "CULTO");
         if (!ebd && !culto) continue;
         lines.push(`  ${cls.name}: EBD ${planLabel(ebd)} · Culto ${planLabel(culto)}`);
       }
@@ -91,8 +91,8 @@ export function OverviewClient({
                     {formatDate(sunday)}
                   </td>
                   {classes.map((cls) => {
-                    const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.tipo === "EBD");
-                    const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.tipo === "CULTO");
+                    const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "EBD");
+                    const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "CULTO");
                     return (
                       <td key={cls.id} className="p-2 border-r align-top">
                         <p className={cn("text-xs", ebd?.done && "text-muted-foreground line-through")}>

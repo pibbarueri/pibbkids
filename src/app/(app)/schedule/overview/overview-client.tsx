@@ -8,18 +8,18 @@ type Slot = {
   date: string;
   slotType: string;
   classGroupId: string | null;
-  horario: string | null;
+  timeSlot: string | null;
   role: string | null;
   user: { name: string; username: string | null };
 };
 
 // Non-class slot types, in display order — coordenação first.
 const SPECIAL_COLUMNS: { slotType: string; label: string }[] = [
-  { slotType: "COORDENACAO", label: "Coordenação" },
-  { slotType: "RECEPCAO", label: "Recepção" },
-  { slotType: "LANCHE", label: "Lanche" },
-  { slotType: "SALA_PLUS", label: "Sala Plus" },
-  { slotType: "INCLUSAO", label: "Inclusão" },
+  { slotType: "COORDINATOR", label: "Coordenação" },
+  { slotType: "RECEPTION", label: "Recepção" },
+  { slotType: "SNACK", label: "Lanche" },
+  { slotType: "ROOM_PLUS", label: "Sala Plus" },
+  { slotType: "INCLUSION", label: "Inclusão" },
 ];
 
 function formatDate(iso: string) {
@@ -31,8 +31,8 @@ function volunteerLabel(u: { name: string; username: string | null }) {
 }
 
 function slotLabel(s: Slot) {
-  const cargo = s.role === "AUXILIAR" ? "Aux" : s.role === "PROFESSOR" ? "Prof" : null;
-  return cargo ? `${volunteerLabel(s.user)} (${cargo})` : volunteerLabel(s.user);
+  const role = s.role === "ASSISTANT" ? "Aux" : s.role === "TEACHER" ? "Prof" : null;
+  return role ? `${volunteerLabel(s.user)} (${role})` : volunteerLabel(s.user);
 }
 
 function groupLabel(slots: Slot[]) {
@@ -60,17 +60,17 @@ export function OverviewClient({
       for (const col of SPECIAL_COLUMNS) {
         const colSlots = daySlots.filter((s) => s.slotType === col.slotType);
         if (colSlots.length === 0) continue;
-        const ebd = colSlots.filter((s) => s.horario === "EBD");
-        const culto = colSlots.filter((s) => s.horario === "CULTO");
-        const none = colSlots.filter((s) => !s.horario);
+        const ebd = colSlots.filter((s) => s.timeSlot === "EBD");
+        const culto = colSlots.filter((s) => s.timeSlot === "CULTO");
+        const none = colSlots.filter((s) => !s.timeSlot);
         if (none.length > 0) lines.push(`  ${col.label}: ${groupLabel(none)}`);
         if (ebd.length > 0 || culto.length > 0) {
           lines.push(`  ${col.label}: EBD ${groupLabel(ebd)} · Culto ${groupLabel(culto)}`);
         }
       }
       for (const cls of classes) {
-        const ebd = daySlots.filter((s) => s.slotType === "TURMA" && s.classGroupId === cls.id && s.horario === "EBD");
-        const culto = daySlots.filter((s) => s.slotType === "TURMA" && s.classGroupId === cls.id && s.horario === "CULTO");
+        const ebd = daySlots.filter((s) => s.slotType === "CLASS" && s.classGroupId === cls.id && s.timeSlot === "EBD");
+        const culto = daySlots.filter((s) => s.slotType === "CLASS" && s.classGroupId === cls.id && s.timeSlot === "CULTO");
         if (ebd.length === 0 && culto.length === 0) continue;
         lines.push(`  ${cls.name}: EBD ${groupLabel(ebd)} · Culto ${groupLabel(culto)}`);
       }
@@ -109,9 +109,9 @@ export function OverviewClient({
                   </td>
                   {SPECIAL_COLUMNS.map((col) => {
                     const colSlots = daySlots.filter((s) => s.slotType === col.slotType);
-                    const ebd = colSlots.filter((s) => s.horario === "EBD");
-                    const culto = colSlots.filter((s) => s.horario === "CULTO");
-                    const none = colSlots.filter((s) => !s.horario);
+                    const ebd = colSlots.filter((s) => s.timeSlot === "EBD");
+                    const culto = colSlots.filter((s) => s.timeSlot === "CULTO");
+                    const none = colSlots.filter((s) => !s.timeSlot);
                     return (
                       <td key={col.slotType} className="p-2 border-r align-top">
                         {none.length > 0 ? (
@@ -126,8 +126,8 @@ export function OverviewClient({
                     );
                   })}
                   {classes.map((cls) => {
-                    const ebd = daySlots.filter((s) => s.slotType === "TURMA" && s.classGroupId === cls.id && s.horario === "EBD");
-                    const culto = daySlots.filter((s) => s.slotType === "TURMA" && s.classGroupId === cls.id && s.horario === "CULTO");
+                    const ebd = daySlots.filter((s) => s.slotType === "CLASS" && s.classGroupId === cls.id && s.timeSlot === "EBD");
+                    const culto = daySlots.filter((s) => s.slotType === "CLASS" && s.classGroupId === cls.id && s.timeSlot === "CULTO");
                     return (
                       <td key={cls.id} className="p-2 border-r align-top">
                         <p className="text-xs">EBD: {groupLabel(ebd)}</p>
