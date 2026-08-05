@@ -10,47 +10,47 @@ datasource db {
 // ─── Auth & Users ─────────────────────────────────────────────────────────────
 
 model User {
-  id                String              @id @default(cuid())
-  name              String
-  username          String?             @unique
-  password          String?
-  requirePasswordChange Boolean         @default(false) @map("require_password_change")
-  role              Role
-  cpf               String?
-  birthdate         DateTime? @db.Date
-  motherName        String?             @map("mother_name")
-  phone             String?
-  documentUrl       String?             @map("document_url")
-  status            VolunteerStatus     @default(APPROVED) @map("status")
-  active            Boolean             @default(true)
-  inclusionEnabled  Boolean             @default(false) @map("inclusion_enabled")
-  createdAt         DateTime            @default(now()) @map("created_at")
-  preferredClasses  UserPreferredClass[]
-  functions         VolunteerFunction[]
-  scheduleSlots     ScheduleSlot[]
-  purchaseRequests  PurchaseRequest[]
-  attendance        Attendance[]
-  sessions          UserSession[]
-  occurrencesReported Occurrence[]      @relation("OccurrenceReporter")
-  occurrencesResolved Occurrence[]      @relation("OccurrenceResolver")
-  classJournalEntriesAuthored     ClassJournalEntry[] @relation("ClassJournalAuthor")
-  classJournalEntriesAcknowledged ClassJournalEntry[] @relation("ClassJournalAcknowledger")
-  settings          UserSettings?
-  materialsCreated  Material[]          @relation("MaterialCreator")
-  materialsUpdated  Material[]          @relation("MaterialUpdater")
-  visitorsLogged    Visitor[]
-  notifications     Notification[]
+  id                              String               @id @default(cuid())
+  name                            String
+  username                        String?              @unique
+  password                        String?
+  requirePasswordChange           Boolean              @default(false) @map("require_password_change")
+  role                            Role
+  cpf                             String?
+  birthdate                       DateTime?            @db.Date
+  motherName                      String?              @map("mother_name")
+  phone                           String?
+  documentUrl                     String?              @map("document_url")
+  status                          VolunteerStatus      @default(APPROVED) @map("status")
+  active                          Boolean              @default(true)
+  inclusionEnabled                Boolean              @default(false) @map("inclusion_enabled")
+  createdAt                       DateTime             @default(now()) @map("created_at")
+  preferredClasses                UserPreferredClass[]
+  functions                       VolunteerFunction[]
+  scheduleSlots                   ScheduleSlot[]
+  purchaseRequests                PurchaseRequest[]
+  attendance                      Attendance[]
+  sessions                        UserSession[]
+  occurrencesReported             Occurrence[]         @relation("OccurrenceReporter")
+  occurrencesResolved             Occurrence[]         @relation("OccurrenceResolver")
+  classJournalEntriesAuthored     ClassJournalEntry[]  @relation("ClassJournalAuthor")
+  classJournalEntriesAcknowledged ClassJournalEntry[]  @relation("ClassJournalAcknowledger")
+  settings                        UserSettings?
+  materialsCreated                Material[]           @relation("MaterialCreator")
+  materialsUpdated                Material[]           @relation("MaterialUpdater")
+  visitorsLogged                  Visitor[]
+  notifications                   Notification[]
 
   @@map("users")
 }
 
 model UserSession {
-  id        String    @id @default(cuid())
-  userId    String    @map("user_id")
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token     String    @unique
-  createdAt DateTime  @default(now()) @map("created_at")
-  expiresAt DateTime  @map("expires_at")
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
 
   @@map("user_sessions")
 }
@@ -230,18 +230,18 @@ enum SeriesType {
 
 // Plan per Sunday: EBD and Culto are separate entries for the same class
 model SundayPlan {
-  id            String      @id @default(cuid())
-  date          DateTime
-  classGroupId  String      @map("class_group_id")
-  classGroup    ClassGroup  @relation(fields: [classGroupId], references: [id])
-  type          SundayType
-  journalId     String?     @map("journal_id")
-  journal       Journal?    @relation(fields: [journalId], references: [id])
-  lessonNumber  Int?        @map("lesson_number")
-  lessonType    LessonType  @default(WORKBOOK) @map("lesson_type")
-  specialTitle  String?     @map("special_title")
-  observations  String?
-  done          Boolean     @default(false)
+  id           String     @id @default(cuid())
+  date         DateTime
+  classGroupId String     @map("class_group_id")
+  classGroup   ClassGroup @relation(fields: [classGroupId], references: [id])
+  type         SundayType
+  journalId    String?    @map("journal_id")
+  journal      Journal?   @relation(fields: [journalId], references: [id])
+  lessonNumber Int?       @map("lesson_number")
+  lessonType   LessonType @default(WORKBOOK) @map("lesson_type")
+  specialTitle String?    @map("special_title")
+  observations String?
+  done         Boolean    @default(false)
 
   @@unique([date, classGroupId, type])
   @@map("sunday_plans")
@@ -348,33 +348,33 @@ model Material {
 // by whoever runs the ministry, with no migration and no deploy. `active` hides a
 // category from the pickers without breaking the materials that still reference it.
 model MaterialCategory {
-  id        String     @id @default(cuid())
-  name      String     @unique
-  sortOrder Int        @default(0) @map("sort_order")
-  active    Boolean    @default(true)
-  materials Material[]
+  id               String            @id @default(cuid())
+  name             String            @unique
+  sortOrder        Int               @default(0) @map("sort_order")
+  active           Boolean           @default(true)
+  materials        Material[]
   purchaseRequests PurchaseRequest[]
 
   @@map("material_categories")
 }
 
 model PurchaseRequest {
-  id            String        @id @default(cuid())
-  requesterId   String        @map("requester_id")
-  requester     User          @relation(fields: [requesterId], references: [id])
-  materialId    String?       @map("material_id")
-  material      Material?     @relation(fields: [materialId], references: [id])
-  categoryId    String?       @map("category_id")
-  category      MaterialCategory? @relation(fields: [categoryId], references: [id])
-  freeTextItem  String?       @map("free_text_item")
-  description   String?
-  quantity      Int
-  unit          String?
-  justification String?
-  status        RequestStatus @default(PENDING)
-  rejectionReason String?     @map("rejection_reason")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
+  id              String            @id @default(cuid())
+  requesterId     String            @map("requester_id")
+  requester       User              @relation(fields: [requesterId], references: [id])
+  materialId      String?           @map("material_id")
+  material        Material?         @relation(fields: [materialId], references: [id])
+  categoryId      String?           @map("category_id")
+  category        MaterialCategory? @relation(fields: [categoryId], references: [id])
+  freeTextItem    String?           @map("free_text_item")
+  description     String?
+  quantity        Int
+  unit            String?
+  justification   String?
+  status          RequestStatus     @default(PENDING)
+  rejectionReason String?           @map("rejection_reason")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
 
   @@map("purchase_requests")
 }
@@ -428,18 +428,19 @@ enum SnackCategory {
 // ─── Class Journal ──────────────────────────────────────────────────────────────
 
 model ClassJournalEntry {
-  id               String     @id @default(cuid())
-  classGroupId     String     @map("class_group_id")
-  classGroup       ClassGroup @relation(fields: [classGroupId], references: [id])
+  id               String            @id @default(cuid())
+  classGroupId     String            @map("class_group_id")
+  classGroup       ClassGroup        @relation(fields: [classGroupId], references: [id])
   title            String
-  entryDate        DateTime   @db.Date @map("entry_date")
+  entryDate        DateTime          @map("entry_date") @db.Date
+  context          OccurrenceContext @default(OUTRO)
   description      String
-  authorId         String     @map("author_id")
-  author           User       @relation("ClassJournalAuthor", fields: [authorId], references: [id])
-  acknowledgedById String?    @map("acknowledged_by_id")
-  acknowledgedBy   User?      @relation("ClassJournalAcknowledger", fields: [acknowledgedById], references: [id])
-  acknowledgedAt   DateTime?  @map("acknowledged_at")
-  createdAt        DateTime   @default(now()) @map("created_at")
+  authorId         String            @map("author_id")
+  author           User              @relation("ClassJournalAuthor", fields: [authorId], references: [id])
+  acknowledgedById String?           @map("acknowledged_by_id")
+  acknowledgedBy   User?             @relation("ClassJournalAcknowledger", fields: [acknowledgedById], references: [id])
+  acknowledgedAt   DateTime?         @map("acknowledged_at")
+  createdAt        DateTime          @default(now()) @map("created_at")
 
   @@map("class_journal_entries")
 }
@@ -450,7 +451,7 @@ model Occurrence {
   id           String            @id @default(cuid())
   reporterId   String            @map("reporter_id")
   reporter     User              @relation("OccurrenceReporter", fields: [reporterId], references: [id])
-  occurredAt   DateTime          @db.Date @map("occurred_at")
+  occurredAt   DateTime          @map("occurred_at") @db.Date
   context      OccurrenceContext
   details      String
   status       OccurrenceStatus  @default(UNDER_REVIEW)

@@ -18,12 +18,15 @@ import { Plus, Trash2, Pencil } from "lucide-react";
 
 type Person = { name: string; username: string | null };
 
+type JournalContext = "EBD" | "CULTO" | "OUTRO";
+
 type Entry = {
   id: string;
   classGroupId: string;
   authorId: string;
   title: string;
   entryDate: string;
+  context: JournalContext;
   description: string;
   createdAt: string;
   author: Person;
@@ -33,6 +36,13 @@ type Entry = {
 };
 
 type Room = { id: string; name: string };
+
+const CONTEXT_OPTIONS: { value: JournalContext; label: string }[] = [
+  { value: "EBD", label: "EBD" },
+  { value: "CULTO", label: "Culto" },
+  { value: "OUTRO", label: "Outro" },
+];
+const CONTEXT_LABELS: Record<JournalContext, string> = { EBD: "EBD", CULTO: "Culto", OUTRO: "Outro" };
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
@@ -57,7 +67,7 @@ function statusBadgeClass(acked: boolean): string {
     : "bg-primary text-primary-foreground hover:bg-primary";
 }
 
-const emptyForm = { title: "", entryDate: "", description: "" };
+const emptyForm = { title: "", entryDate: "", context: "" as JournalContext | "", description: "" };
 
 export function ClassJournalClient({
   initialEntries,
@@ -95,7 +105,7 @@ export function ClassJournalClient({
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const visibleEntries = entries.filter((e) => !activeRoomId || e.classGroupId === activeRoomId);
-  const valid = form.title.trim() && form.entryDate && form.description.trim();
+  const valid = form.title.trim() && form.entryDate && form.context && form.description.trim();
 
   async function create() {
     if (!valid || !activeRoomId) return;
@@ -116,7 +126,7 @@ export function ClassJournalClient({
   }
 
   async function saveEdit() {
-    if (!selected || !editForm.title.trim() || !editForm.entryDate || !editForm.description.trim()) return;
+    if (!selected || !editForm.title.trim() || !editForm.entryDate || !editForm.context || !editForm.description.trim()) return;
     setSaving(true);
     const res = await fetch(`/api/class-journal/${selected.id}`, {
       method: "PATCH",
@@ -223,6 +233,22 @@ export function ClassJournalClient({
                 />
               </div>
               <div className="space-y-1">
+                <p className="text-sm font-medium">Contexto *</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {CONTEXT_OPTIONS.map((o) => (
+                    <Button
+                      key={o.value}
+                      type="button"
+                      variant={form.context === o.value ? "default" : "outline"}
+                      className="h-11"
+                      onClick={() => setForm((f) => ({ ...f, context: o.value }))}
+                    >
+                      {o.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1">
                 <p className="text-sm font-medium">Descrição *</p>
                 <Textarea
                   rows={5}
@@ -247,7 +273,10 @@ export function ClassJournalClient({
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-sm">{e.title}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="font-medium text-sm truncate">{e.title}</p>
+                <Badge variant="outline" className="shrink-0">{CONTEXT_LABELS[e.context]}</Badge>
+              </div>
               <p className="text-xs text-muted-foreground">{formatDate(e.entryDate)}</p>
               <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{e.description}</p>
             </div>
@@ -284,6 +313,10 @@ export function ClassJournalClient({
                   </div>
                 </div>
                 <div>
+                  <p className="text-muted-foreground text-xs">Contexto</p>
+                  <Badge variant="outline" className="mt-0.5">{CONTEXT_LABELS[selected.context]}</Badge>
+                </div>
+                <div>
                   <p className="text-muted-foreground text-xs">Descrição</p>
                   <p className="whitespace-pre-wrap break-words">{selected.description}</p>
                 </div>
@@ -318,7 +351,7 @@ export function ClassJournalClient({
                       variant="outline"
                       className="h-12 px-4"
                       onClick={() => {
-                        setEditForm({ title: selected.title, entryDate: selected.entryDate.slice(0, 10), description: selected.description });
+                        setEditForm({ title: selected.title, entryDate: selected.entryDate.slice(0, 10), context: selected.context, description: selected.description });
                         setEditing(true);
                       }}
                     >
@@ -357,6 +390,22 @@ export function ClassJournalClient({
                     value={editForm.entryDate}
                     onChange={(e) => setEditForm((f) => ({ ...f, entryDate: e.target.value }))}
                   />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Contexto *</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {CONTEXT_OPTIONS.map((o) => (
+                      <Button
+                        key={o.value}
+                        type="button"
+                        variant={editForm.context === o.value ? "default" : "outline"}
+                        className="h-11"
+                        onClick={() => setEditForm((f) => ({ ...f, context: o.value }))}
+                      >
+                        {o.label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Descrição *</p>
