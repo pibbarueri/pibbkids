@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus, Trash2 } from "lucide-react";
+import { LinkifiedText } from "@/components/ui/linkified-text";
 
 const CONTEXT_LABELS: Record<string, string> = {
   EBD: "EBD",
@@ -270,7 +271,9 @@ export function OccurrencesClient({
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs">Detalhes</p>
-                  <p className="whitespace-pre-wrap break-words">{selected.details}</p>
+                  <p className="whitespace-pre-wrap wrap-anywhere">
+                    <LinkifiedText text={selected.details} />
+                  </p>
                 </div>
                 {selected.status === "RESOLVED" && selected.resolvedBy && selected.resolvedAt && (
                   <div>

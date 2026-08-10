@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus, Trash2, Pencil } from "lucide-react";
+import { LinkifiedText } from "@/components/ui/linkified-text";
 
 type Person = { name: string; username: string | null };
 
@@ -299,7 +300,7 @@ export function ClassJournalClient({
           {selected && !editing && (
             <>
               <DialogHeader>
-                <DialogTitle>{selected.title}</DialogTitle>
+                <DialogTitle className="wrap-anywhere">{selected.title}</DialogTitle>
               </DialogHeader>
               <div className="space-y-3 text-sm">
                 <div className="flex items-start justify-between gap-3">
@@ -318,7 +319,9 @@ export function ClassJournalClient({
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs">Descrição</p>
-                  <p className="whitespace-pre-wrap break-words">{selected.description}</p>
+                  <p className="whitespace-pre-wrap wrap-anywhere">
+                    <LinkifiedText text={selected.description} />
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs">Escrito por</p>
