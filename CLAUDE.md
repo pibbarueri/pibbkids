@@ -39,12 +39,39 @@ QR Codes de cadastro.
   soft status, dialog de detalhe, confirm-to-delete).
 - Permissões centralizadas em `src/lib/permissions.ts` (`canManage`, `isLeadership`, helpers
   por feature). Nunca checar `role === Role.X` solto num componente — adicionar/usar helper.
-- Inputs de texto: `maxLength 70`. Telefone: mascarar só na UI, salvar dígitos puros no banco
-  (`src/lib/phone.ts`).
+- Inputs de texto: `maxLength 70` — já vem por padrão do primitive `src/components/ui/input.tsx`,
+  não precisa repetir. **Títulos usam `maxLength={50}` explícito.** `type="url"` e
+  `type="email"` são isentos do cap de propósito: URL de pasta do Drive tem ~84 chars, e
+  cortar em 70 gera link quebrado silencioso (já aconteceu). Campo que precisar de limite
+  diferente passa `maxLength` na mão.
+- Telefone: mascarar só na UI, salvar dígitos puros no banco (`src/lib/phone.ts`).
 - Modais: título fixo/sticky no scroll vertical.
+- **Texto livre de usuário usa `wrap-anywhere`, nunca `break-words`.** Ver "Layout" abaixo.
 - Tela de inativos (voluntários/crianças): restaurar e excluir permanente pedem confirmação
   (excluir permanente exige digitar "confirmar exclusão").
 - Sliders/dropdowns/etc: reusar primitives de `src/components/ui/`, não reinventar.
+
+### Layout: armadilhas conhecidas
+
+Já quebrou produção de verdade.
+
+- **`break-words` não segura token indivisível dentro de grid/flex — use `wrap-anywhere`.**
+  `overflow-wrap: break-word` **não reduz o min-content** da caixa (só `anywhere` reduz), e
+  um grid/flex item tem `min-width: auto`, ou seja, piso = min-content. Resultado: uma URL
+  colada de 79 chars empurrou o item pra 420px numa content box de 352px, e como o item que
+  estourou era o mesmo que continha a fileira de botões, **os botões foram cortados** pelo
+  `overflow-x-hidden` do `DialogContent`. `min-w-0` **não resolve** — foi a primeira coisa
+  que tentamos. Medido: `break-words` 420px vs `wrap-anywhere` 352px (zero estouro), com
+  quebra idêntica em prosa normal (mesmo número de linhas, nenhuma palavra picotada).
+  Regra prática: todo campo que renderiza texto que o usuário digitou (descrição, detalhes,
+  título) leva `wrap-anywhere`.
+- **URL crua em texto de usuário passa por `LinkifiedText`**
+  (`src/components/ui/linkified-text.tsx`), que vira link com label encurtado
+  (`host/primeiro-segmento/…`) e `href` completo. O texto é fatiado em nós React, nunca
+  `dangerouslySetInnerHTML` — e só `http`/`https` casam, então `javascript:`/`data:` colados
+  ficam como texto inerte.
+- **`line-clamp-*` já traz `overflow: hidden`**, então card de lista com `min-w-0` no pai
+  não estoura — mas ainda leva `wrap-anywhere` pra não picotar a URL no meio no preview.
 
 ## Banco de dados
 

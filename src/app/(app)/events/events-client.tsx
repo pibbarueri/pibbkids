@@ -180,6 +180,7 @@ export function EventsClient({
               <p className="text-sm font-medium">Título</p>
               <Input
                 className="h-12"
+                maxLength={50}
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                 disabled={!isManager}
