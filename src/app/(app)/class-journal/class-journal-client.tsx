@@ -222,7 +222,7 @@ export function ClassJournalClient({
             <div className="space-y-3">
               <div className="space-y-1">
                 <p className="text-sm font-medium">Título *</p>
-                <Input className="h-12" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
+                <Input className="h-12" maxLength={50} value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">Data *</p>
@@ -279,7 +279,7 @@ export function ClassJournalClient({
                 <Badge variant="outline" className="shrink-0">{CONTEXT_LABELS[e.context]}</Badge>
               </div>
               <p className="text-xs text-muted-foreground">{formatDate(e.entryDate)}</p>
-              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{e.description}</p>
+              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 wrap-anywhere">{e.description}</p>
             </div>
             <Badge className={cn("shrink-0", statusBadgeClass(!!e.acknowledgedAt))}>
               {e.acknowledgedAt ? "Ciente" : "Reportado"}
@@ -383,7 +383,7 @@ export function ClassJournalClient({
               <div className="space-y-3">
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Título *</p>
-                  <Input className="h-12" value={editForm.title} onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))} />
+                  <Input className="h-12" maxLength={50} value={editForm.title} onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))} />
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Data *</p>

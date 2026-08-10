@@ -220,7 +220,7 @@ export function OccurrencesClient({
               <p className="font-medium text-sm">
                 {formatDate(o.occurredAt)} · {CONTEXT_LABELS[o.context]}
               </p>
-              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{o.details}</p>
+              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 wrap-anywhere">{o.details}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Badge className={statusBadgeClass(o.status)}>{STATUS_LABELS[o.status]}</Badge>
