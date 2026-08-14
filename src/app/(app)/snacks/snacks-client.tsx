@@ -98,7 +98,13 @@ function SnackFields({
   );
 }
 
-export function SnacksClient({ initialSnacks }: { initialSnacks: Snack[] }) {
+export function SnacksClient({
+  initialSnacks,
+  canDelete,
+}: {
+  initialSnacks: Snack[];
+  canDelete: boolean;
+}) {
   const router = useRouter();
   const [snacks, setSnacks] = useState(initialSnacks);
   const [createOpen, setCreateOpen] = useState(false);
@@ -224,15 +230,17 @@ export function SnacksClient({ initialSnacks }: { initialSnacks: Snack[] }) {
             >
               <Plus className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-destructive"
-              onClick={() => remove(s.id)}
-              aria-label="Remover"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {canDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={() => remove(s.id)}
+                aria-label="Remover"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       ))}

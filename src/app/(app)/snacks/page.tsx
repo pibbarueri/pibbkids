@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManageSnacks } from "@/lib/permissions";
+import { canDeleteSnack, canManageSnacks } from "@/lib/permissions";
 import { SnacksClient } from "./snacks-client";
 
 export default async function SnacksPage() {
@@ -18,7 +18,7 @@ export default async function SnacksPage() {
 
   return (
     <div className="p-4 pb-24 space-y-4">
-      <SnacksClient initialSnacks={snacks} />
+      <SnacksClient initialSnacks={snacks} canDelete={canDeleteSnack(role)} />
     </div>
   );
 }

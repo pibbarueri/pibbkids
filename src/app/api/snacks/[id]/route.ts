@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { canManageSnacks } from "@/lib/permissions";
+import { canDeleteSnack, canManageSnacks } from "@/lib/permissions";
 
 async function hasApoioGeral(userId: string) {
   const f = await prisma.volunteerFunction.findFirst({
@@ -36,8 +36,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const allowed = canManageSnacks(session.user.role, await hasApoioGeral(session.user.id));
-  if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // Narrower than PATCH on purpose: Apoio Geral restocks, only management removes.
+  if (!canDeleteSnack(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   await prisma.snack.delete({ where: { id } });
