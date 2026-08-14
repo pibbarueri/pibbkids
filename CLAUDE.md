@@ -156,15 +156,32 @@ Fluxo de verificação de UI: `preview_start` (`.claude/launch.json`, nome `pibb
 porta 3000) → login → navegar → `read_page`/screenshot pra conferir. Preferir `ref_N` de
 `read_page` a coordenadas de pixel quando clique não registrar.
 
-## Git / commits
+## Git Workflow
 
-- **Feature branches + PR.** Todo trabalho em branch própria, nunca commit direto em `main`.
-  Abrir PR (`gh pr create`) pra revisão/merge — merge de `main` costuma ser feito pelo
-  usuário no GitHub, não pelo agente (push direto pra `main` é ação bloqueada pro agente).
-- Branches devem seguir o padrão de nomenclatura de acordo com o [Conventional Branch](https://conventionalbranch.org)
-- Commits pequenos, um por mudança lógica (ex: uma tabela por commit num refactor de DB).
-- Mensagem minúscula, direta, sem atribuição de IA, seguindo as convenções do [Conventional Commits](https://www.conventionalcommits.org), sempre em inglês
-- **Nunca commitar ou dar push sem pedido explícito** ("comita", "da push").
+### Branches
+
+- Crie branches sempre a partir da `main` (nunca commit direto na `main`)
+- Todo trabalho em branch própria (feature branch)
+- nomes devem seguir o padrão de nomenclatura do [Conventional Branch](https://conventionalbranch.org)
+- sempre use `rebase` ao invés de `merge` quando for sincronizar uma branch com a `main`
+
+### Commits
+
+- Commits pequenos, um por mudança lógica (um commit deve ser um "entregável" completo)
+- Mensagem sem atribuição de IA, seguindo as convenções do [Conventional Commits](https://www.conventionalcommits.org), sempre em inglês
+- Nunca use "co-authored" ou qualquer outra menção de AI em commits/PRs
+
+### Pull Requests
+
+- Mantenha a descrição do PR focada em informações relevantes e fácil de ler rapidamente; não a transforme em um CHANGELOG
+- Siga o arquivo `.github/pull_request_template.md` para obter detalhes e preencha-o adequadamente ao criar PRs.
+- Busque manter um histórico de commits claro e descrições de PR detalhadas para facilitar as revisões.
+- NUNCA mencione que um assistente ou IA trabalhou na alteração, e NUNCA adicione atribuições a IA/assistentes ou rodapés do tipo "Gerado com..." às ​​descrições dos PRs.
+- Adote o estilo de PR preferido do repositório:
+  - resumo conciso da alteração
+  - lista simples de tópicos para comportamentos relevantes, endpoints, efeitos colaterais, documentação, etc
+  - screenshot da alteração, se possivel
+
 - **Avisar ANTES de implementar** se um pedido não encaixa bem no modelo atual (ex: overlap
   de tabelas, escopo ambíguo) — não implementar e descobrir o problema no meio.
 
