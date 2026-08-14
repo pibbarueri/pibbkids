@@ -15,9 +15,13 @@ type Profile = {
   motherName: string | null;
 };
 
+// Matched with startsWith, so the more specific prefix has to come first.
 const PAGE_TITLES: [string, string][] = [
   ["/children", "Crianças"],
   ["/volunteers", "Voluntários"],
+  ["/reports/visitors", "Visitantes"],
+  ["/reports/journals", "Revistas"],
+  ["/reports", "Relatórios"],
   ["/curriculum/overview", "Visão semestral"],
   ["/curriculum/lessons", "Aulas"],
   ["/schedule/overview", "Visão semestral"],
@@ -52,12 +56,15 @@ export function BackHeader({
   const router = useRouter();
   const pathname = usePathname();
 
-  // Visão semestral belongs under Aulas/Escala — its back returns there, not home.
+  // The overviews are now reached from Relatórios, so back returns there rather than to the
+  // screen they used to hang off. Same for the report pages under /reports.
   const target =
-    pathname === "/curriculum/overview" ? "/curriculum/lessons" :
-    pathname === "/schedule/overview" ? "/schedule" :
-    pathname === "/attendance/overview" ? "/attendance" :
-    "/dashboard";
+    pathname === "/curriculum/overview" ||
+    pathname === "/schedule/overview" ||
+    pathname === "/attendance/overview" ||
+    (pathname.startsWith("/reports/") && pathname !== "/reports")
+      ? "/reports"
+      : "/dashboard";
   const showBack = pathname !== "/dashboard";
   const title = PAGE_TITLES.find(([href]) => pathname.startsWith(href))?.[1];
 

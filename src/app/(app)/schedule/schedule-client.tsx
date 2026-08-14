@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -317,15 +316,16 @@ export function ScheduleClient({
 
       {/* Actions */}
       {canViewAll && (
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex-1 h-10" onClick={copyWhatsApp}>
-            <Copy className="h-4 w-4 mr-2" /> Copiar escala
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10"
+            onClick={copyWhatsApp}
+            aria-label="Copiar escala"
+          >
+            <Copy className="h-4 w-4" />
           </Button>
-          {canEdit && (
-            <Link href="/schedule/overview" className="flex-1">
-              <Button variant="outline" className="w-full h-10">Visão semestral</Button>
-            </Link>
-          )}
         </div>
       )}
       {canEdit && (
