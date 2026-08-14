@@ -19,7 +19,7 @@ Sem módulo financeiro — fora de escopo, não propor.
 ## Papéis e turmas
 
 Roles (`Role` enum):
-`ADMIN`, `COORDINATOR`, `TEACHER`, `ASSISTANT`, `RECEPTIONIST`
+`ADMIN`, `COORDINATOR`, `TEACHER`, `ASSISTANT`, `RECEPTIONIST`, `SUPPORT`
 
 Turmas (nomes fixos, ordem canônica em `src/lib/classes.ts`):
 Berçário, Primeiros Passos, Ovelhinhas, Detetives, Quase Lá
@@ -51,9 +51,7 @@ QR Codes de cadastro.
   (excluir permanente exige digitar "confirmar exclusão").
 - Sliders/dropdowns/etc: reusar primitives de `src/components/ui/`, não reinventar.
 
-### Layout: armadilhas conhecidas
-
-Já quebrou produção de verdade.
+### Layout: known issues
 
 - **`break-words` não segura token indivisível dentro de grid/flex — use `wrap-anywhere`.**
   `overflow-wrap: break-word` **não reduz o min-content** da caixa (só `anywhere` reduz), e
@@ -90,8 +88,7 @@ Já quebrou produção de verdade.
   `prisma generate` (Next.js/Turbopack cacheia o client antigo e quebra em runtime mesmo com
   tsc limpo). Sem TTY, ver "Migrations: armadilhas conhecidas" abaixo.
 - **NUNCA truncar ou reimportar nenhum dado.** São dados reais,
-  mantidos manualmente por SQL. Um reset por reimport já destruiu ~36
-  telefones digitados à mão. Se precisar migrar dado em qualquer tabela, `UPDATE`/`ALTER`
+  mantidos manualmente por SQL. Se precisar migrar dado em qualquer tabela, `UPDATE`/`ALTER`
   cirúrgico, nunca wipe.
 - Reset de senha de usuário: `require_password_change = true` — não precisa mexer em
   `user_sessions` pra isso. Fluxo "Esqueci minha senha" reusa `/first-access`
@@ -100,9 +97,7 @@ Já quebrou produção de verdade.
   abaixo), alternando role via script quando precisar.
 - Não existe mais login `admin/admin` — o usuário admin real foi renomeado para `gustavo`.
 
-### Migrations: armadilhas conhecidas
-
-Todas já aconteceram de verdade, em produção.
+### Migrations: known issues
 
 - **`prisma migrate dev` é interativo** e trava/falha sem TTY (sessão de agente, CI). Usar
   `npx prisma migrate dev --create-only --name X`, editar o SQL à mão, depois
@@ -150,9 +145,6 @@ INSERT INTO material_categories (id, name, sort_order) VALUES ('livros', 'Livros
 
 ## Testes manuais / contas
 
-Conta de teste dedicada: `test` / `test1234` (role trocado via script conforme necessário). Nunca usar contas reais (`gustavo`, etc)
-pra testes destrutivos.
-
 Pra forçar re-login após trocar role de um usuário via script (JWT cacheia a role no login,
 não pega mudança de DB sozinho):
 ```js
@@ -169,9 +161,9 @@ porta 3000) → login → navegar → `read_page`/screenshot pra conferir. Prefe
 - **Feature branches + PR.** Todo trabalho em branch própria, nunca commit direto em `main`.
   Abrir PR (`gh pr create`) pra revisão/merge — merge de `main` costuma ser feito pelo
   usuário no GitHub, não pelo agente (push direto pra `main` é ação bloqueada pro agente).
+- Branches devem seguir o padrão de nomenclatura de acordo com o [Conventional Branch](https://conventionalbranch.org)
 - Commits pequenos, um por mudança lógica (ex: uma tabela por commit num refactor de DB).
-- Mensagem minúscula, direta, sem atribuição de IA.
-- Usar Conventional Commit messages (sempre em inglês)
+- Mensagem minúscula, direta, sem atribuição de IA, seguindo as convenções do [Conventional Commits](https://www.conventionalcommits.org), sempre em inglês
 - **Nunca commitar ou dar push sem pedido explícito** ("comita", "da push").
 - **Avisar ANTES de implementar** se um pedido não encaixa bem no modelo atual (ex: overlap
   de tabelas, escopo ambíguo) — não implementar e descobrir o problema no meio.
