@@ -82,6 +82,8 @@ export function JournalsClient({
   const [editing, setEditing] = useState<Journal | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Journal | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterClassIds, setFilterClassIds] = useState<string[]>([]);
@@ -198,9 +200,13 @@ export function JournalsClient({
     setOpen(false);
   }
 
-  async function remove(id: string) {
-    await fetch(`/api/journals/${id}`, { method: "DELETE" });
-    setJournals((prev) => prev.filter((j) => j.id !== id));
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const res = await fetch(`/api/journals/${deleteTarget.id}`, { method: "DELETE" });
+    if (res.ok) setJournals((prev) => prev.filter((j) => j.id !== deleteTarget.id));
+    setDeleting(false);
+    setDeleteTarget(null);
   }
 
   const valid =
@@ -523,7 +529,7 @@ export function JournalsClient({
                     {j.teacherCopies === 0 && <Badge variant="destructive">Sem estoque</Badge>}
                     <Trash2
                       className="h-4 w-4 text-muted-foreground hover:text-destructive transition-transform active:scale-90"
-                      onClick={(e) => { e.stopPropagation(); remove(j.id); }}
+                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(j); }}
                     />
                   </div>
                 </div>
@@ -538,6 +544,32 @@ export function JournalsClient({
           {journals.length === 0 ? "Nenhuma revista cadastrada." : "Nenhuma revista encontrada."}
         </p>
       )}
+
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir revista?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground wrap-anywhere">
+            {deleteTarget && (
+              <>
+                <span className="font-medium text-foreground">
+                  {SERIES_LABELS[deleteTarget.series]} nº{deleteTarget.edition} — {deleteTarget.title}
+                </span>{" "}
+                será excluída. Essa ação é irreversível.
+              </>
+            )}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 h-12" onClick={() => setDeleteTarget(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" className="flex-1 h-12" disabled={deleting} onClick={confirmDelete}>
+              Excluir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

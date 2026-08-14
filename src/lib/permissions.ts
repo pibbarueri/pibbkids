@@ -34,6 +34,12 @@ export function canManageSnacks(role: Role, hasApoioGeral: boolean) {
   return canManage(role) || hasApoioGeral || role === Role.SUPPORT || role === Role.RECEPTIONIST;
 }
 
+// Removing an item is narrower than restocking it: Apoio Geral adjusts quantities all the
+// time, but dropping a row is management-only so a stock run can't quietly lose an item.
+export function canDeleteSnack(role: Role) {
+  return canManage(role);
+}
+
 export function canViewAttendanceOverview(role: Role) {
   return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER] as Role[]).includes(role);
 }
