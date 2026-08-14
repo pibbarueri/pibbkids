@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -161,13 +160,16 @@ export function LessonsClient({
       </div>
 
       {isManager && (
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex-1 h-10" onClick={copyWhatsApp}>
-            <Copy className="h-4 w-4 mr-2" /> Copiar aulas
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10"
+            onClick={copyWhatsApp}
+            aria-label="Copiar aulas"
+          >
+            <Copy className="h-4 w-4" />
           </Button>
-          <Link href="/curriculum/overview" className="flex-1">
-            <Button variant="outline" className="w-full h-10">Visão semestral</Button>
-          </Link>
         </div>
       )}
 
