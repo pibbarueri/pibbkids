@@ -4,13 +4,18 @@ import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
 import { sortClasses } from "@/lib/classes";
 import { ScheduleClient } from "./schedule-client";
-import { addDays, sundaysBetween, today as getToday, utcDate } from "@/lib/dates";
+import { nextSunday, sundaysBetween, today as getToday, utcDate } from "@/lib/dates";
 
-// Every sunday of the current year. The schedule is rebuilt fresh each January, so
-// the year is the natural window — and it has to start in January, not at the current
-// week, or nobody can look back at a past sunday.
-function sundaysThisYear(year: number): Date[] {
-  return sundaysBetween(utcDate(year, 0, 1), utcDate(year, 11, 31));
+// The schedule is rebuilt fresh each January, so the year is the natural window — and it
+// has to start in January, not at the current week, or nobody can look back at a past
+// sunday. The end stretches past December 31 when needed, because from the monday after
+// the year's last sunday the upcoming sunday already belongs to next year, and landing on
+// it is the whole point.
+function scheduleWindow(today: Date): Date[] {
+  const yearStart = utcDate(today.getUTCFullYear(), 0, 1);
+  const yearEnd = utcDate(today.getUTCFullYear(), 11, 31);
+  const upcoming = nextSunday(today);
+  return sundaysBetween(yearStart, upcoming > yearEnd ? upcoming : yearEnd);
 }
 
 export default async function SchedulePage({
@@ -26,15 +31,21 @@ export default async function SchedulePage({
   const canEdit = canManage(role);
 
   const today = getToday();
-  const sundays = sundaysThisYear(today.getUTCFullYear());
+  const sundays = scheduleWindow(today);
 
   const from = sundays[0];
   const to = sundays[sundays.length - 1];
 
+  // These are UTC-midnight calendar dates, so compare them in UTC. dayKey() from
+  // src/lib/dates.ts formats in the app timezone and would report the previous day here.
   const dayKey = (d: Date) => d.toISOString().slice(0, 10);
-  // Land on the coming sunday; the past ones are still reachable by paging back.
-  const thisWeek = addDays(today, -today.getUTCDay());
-  let initialSundayIdx = Math.max(0, sundays.findIndex((s) => dayKey(s) === dayKey(thisWeek)));
+  // Land on the sunday the ministry is working toward: today when today is a sunday,
+  // otherwise the next one. Never a past sunday — those stay reachable by paging back.
+  const upcoming = nextSunday(today);
+  const found = sundays.findIndex((s) => dayKey(s) === dayKey(upcoming));
+  // scheduleWindow() always includes the upcoming sunday, so -1 is unreachable — guarded
+  // only so an unexpected miss lands on a real index instead of crashing the client.
+  let initialSundayIdx = found === -1 ? sundays.length - 1 : found;
 
   const { date } = await searchParams;
   if (date) {
