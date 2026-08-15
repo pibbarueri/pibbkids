@@ -1,6 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { ClassFilterChips } from "@/components/reports/class-filter-chips";
+import { DateRangeFilter } from "@/components/reports/date-range-filter";
+import { PrintZoomControl, DEFAULT_PRINT_ZOOM } from "@/components/reports/print-zoom-control";
 
 const LESSON_TYPE_LABELS: Record<string, string> = {
   WORKBOOK: "Apostila",
@@ -44,21 +48,34 @@ export function OverviewClient({
   sundays: string[];
 }) {
   const plans = rawPlans.map((p) => ({ ...p, date: new Date(p.date).toISOString() }));
+  const [selectedClasses, setSelectedClasses] = useState<Set<string> | null>(null);
+  const [dateRange, setDateRange] = useState<{ min: string | null; max: string | null }>({ min: null, max: null });
+  const [zoom, setZoom] = useState(DEFAULT_PRINT_ZOOM);
+
+  const visibleClasses = classes.filter((c) => selectedClasses === null || selectedClasses.has(c.id));
+  const visibleSundays = sundays.filter((sunday) => {
+    const key = sunday.slice(0, 10);
+    if (dateRange.min && key < dateRange.min) return false;
+    if (dateRange.max && key > dateRange.max) return false;
+    return true;
+  });
 
   return (
     <div className="space-y-3">
-      <div className="overflow-auto border rounded-lg max-h-[70vh]">
+      <ClassFilterChips classes={classes} selected={selectedClasses} onChange={setSelectedClasses} />
+      <DateRangeFilter min={dateRange.min} max={dateRange.max} onChange={setDateRange} />
+      <div className="overflow-auto border rounded-lg max-h-[70vh]" style={{ zoom: `${zoom}%` }}>
         <table className="text-sm w-max">
           <thead>
             <tr className="bg-muted/50">
               <th className="sticky top-0 left-0 bg-muted p-2 text-left border-r z-20 min-w-[80px]">Domingo</th>
-              {classes.map((cls) => (
+              {visibleClasses.map((cls) => (
                 <th key={cls.id} className="sticky top-0 bg-muted p-2 text-left border-r z-10 min-w-[180px]">{cls.name}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {sundays.map((sunday) => {
+            {visibleSundays.map((sunday) => {
               const key = sunday.slice(0, 10);
               const dayPlans = plans.filter((p) => p.date.startsWith(key));
               return (
@@ -66,7 +83,7 @@ export function OverviewClient({
                   <td className="sticky left-0 bg-background p-2 border-r font-medium z-10">
                     {formatDate(sunday)}
                   </td>
-                  {classes.map((cls) => {
+                  {visibleClasses.map((cls) => {
                     const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "EBD");
                     const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "CULTO");
                     return (
@@ -86,6 +103,7 @@ export function OverviewClient({
           </tbody>
         </table>
       </div>
+      <PrintZoomControl zoom={zoom} onChange={setZoom} />
     </div>
   );
 }
