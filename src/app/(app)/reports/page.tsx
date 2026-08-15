@@ -30,9 +30,9 @@ const REPORTS: Report[] = [
     canAccess: canManage,
   },
   {
-    href: "/attendance/overview",
+    href: "/reports/attendance",
     label: "Presença",
-    description: "Visão semestral da presença",
+    description: "Calendário e visão semestral",
     icon: ClipboardCheck,
     canAccess: canViewAttendanceOverview,
   },

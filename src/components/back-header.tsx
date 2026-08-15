@@ -21,6 +21,7 @@ const PAGE_TITLES: [string, string][] = [
   ["/volunteers", "Voluntários"],
   ["/reports/visitors", "Visitantes"],
   ["/reports/journals", "Revistas"],
+  ["/reports/attendance", "Presença"],
   ["/reports", "Relatórios"],
   ["/curriculum/overview", "Visão semestral"],
   ["/curriculum/lessons", "Aulas"],

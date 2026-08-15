@@ -314,20 +314,6 @@ export function ScheduleClient({
         </Button>
       </div>
 
-      {/* Actions */}
-      {canViewAll && (
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10"
-            onClick={copyWhatsApp}
-            aria-label="Copiar escala"
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
       {canEdit && (
         <Button
           size="icon"
@@ -339,13 +325,26 @@ export function ScheduleClient({
         </Button>
       )}
 
-      {/* EBD / Culto tabs */}
-      <Tabs value={timeSlotTab} onValueChange={(v) => setTimeSlotTab(v as "EBD" | "CULTO")}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="EBD">EBD</TabsTrigger>
-          <TabsTrigger value="CULTO">Culto</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* EBD / Culto tabs, with the copy action beside them */}
+      <div className="flex items-center gap-2">
+        <Tabs value={timeSlotTab} onValueChange={(v) => setTimeSlotTab(v as "EBD" | "CULTO")} className="flex-1">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="EBD">EBD</TabsTrigger>
+            <TabsTrigger value="CULTO">Culto</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        {canViewAll && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 shrink-0"
+            onClick={copyWhatsApp}
+            aria-label="Copiar escala"
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
 
       {/* Slots display */}
       {shownSlots.length === 0 ? (
