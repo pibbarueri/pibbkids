@@ -92,7 +92,7 @@ export function JournalsReportClient({
 
   return (
     <div className="space-y-4">
-      <ReportFilterSheet className="fixed bottom-20 left-4 z-40 shadow-lg bg-background">
+      <ReportFilterSheet>
         <ClassFilterChips classes={classes} selected={selectedClasses} onChange={setSelectedClasses} />
         <div className="space-y-1.5">
           <p className="text-sm font-medium">Colunas</p>

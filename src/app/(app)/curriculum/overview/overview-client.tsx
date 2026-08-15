@@ -61,7 +61,7 @@ export function OverviewClient({
 
   return (
     <div className="space-y-3">
-      <ReportFilterSheet className="fixed bottom-20 left-4 z-40 shadow-lg bg-background">
+      <ReportFilterSheet>
         <ClassFilterChips classes={classes} selected={selectedClasses} onChange={setSelectedClasses} />
         <DateRangeFilter min={dateRange.min} max={dateRange.max} onChange={setDateRange} />
       </ReportFilterSheet>
