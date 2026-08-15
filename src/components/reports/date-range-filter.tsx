@@ -20,8 +20,7 @@ export function DateRangeFilter({
           type="date"
           value={min ?? ""}
           onChange={(e) => onChange({ min: e.target.value || null, max })}
-          className="w-auto"
-          placeholder="DD/MM/AAAA"
+          className="w-[150px]"
           aria-label="Data mínima"
         />
         <span className="text-xs text-muted-foreground shrink-0">até</span>
@@ -29,8 +28,7 @@ export function DateRangeFilter({
           type="date"
           value={max ?? ""}
           onChange={(e) => onChange({ min, max: e.target.value || null })}
-          className="w-auto"
-          placeholder="DD/MM/AAAA"
+          className="w-[150px]"
           aria-label="Data máxima"
         />
       </div>
