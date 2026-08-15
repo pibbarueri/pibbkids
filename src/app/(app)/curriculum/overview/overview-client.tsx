@@ -4,7 +4,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ClassFilterChips } from "@/components/reports/class-filter-chips";
 import { DateRangeFilter } from "@/components/reports/date-range-filter";
-import { PrintZoomControl, DEFAULT_PRINT_ZOOM } from "@/components/reports/print-zoom-control";
+import { ReportFilterSheet } from "@/components/reports/report-filter-sheet";
 
 const LESSON_TYPE_LABELS: Record<string, string> = {
   WORKBOOK: "Apostila",
@@ -50,7 +50,6 @@ export function OverviewClient({
   const plans = rawPlans.map((p) => ({ ...p, date: new Date(p.date).toISOString() }));
   const [selectedClasses, setSelectedClasses] = useState<Set<string> | null>(null);
   const [dateRange, setDateRange] = useState<{ min: string | null; max: string | null }>({ min: null, max: null });
-  const [zoom, setZoom] = useState(DEFAULT_PRINT_ZOOM);
 
   const visibleClasses = classes.filter((c) => selectedClasses === null || selectedClasses.has(c.id));
   const visibleSundays = sundays.filter((sunday) => {
@@ -62,9 +61,11 @@ export function OverviewClient({
 
   return (
     <div className="space-y-3">
-      <ClassFilterChips classes={classes} selected={selectedClasses} onChange={setSelectedClasses} />
-      <DateRangeFilter min={dateRange.min} max={dateRange.max} onChange={setDateRange} />
-      <div className="overflow-auto border rounded-lg max-h-[70vh]" style={{ zoom: `${zoom}%` }}>
+      <ReportFilterSheet className="fixed bottom-20 left-4 z-40 shadow-lg bg-background">
+        <ClassFilterChips classes={classes} selected={selectedClasses} onChange={setSelectedClasses} />
+        <DateRangeFilter min={dateRange.min} max={dateRange.max} onChange={setDateRange} />
+      </ReportFilterSheet>
+      <div className="overflow-auto border rounded-lg max-h-[70vh]">
         <table className="text-sm w-max">
           <thead>
             <tr className="bg-muted/50">
@@ -103,7 +104,6 @@ export function OverviewClient({
           </tbody>
         </table>
       </div>
-      <PrintZoomControl zoom={zoom} onChange={setZoom} />
     </div>
   );
 }

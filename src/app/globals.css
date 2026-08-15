@@ -172,4 +172,13 @@
   .print-landscape .sticky {
     position: static !important;
   }
+
+  /* Report tables fit the landscape page better at ~45% than at full size.
+     This only kicks in for print — on screen the report stays at 100% so
+     filters/columns stay readable while editing them. The OS print dialog's
+     own scale control (Android/iOS "Save as PDF" sheet) still works on top
+     of this, so the user can tune further from there. */
+  .print-landscape {
+    zoom: 45%;
+  }
 }

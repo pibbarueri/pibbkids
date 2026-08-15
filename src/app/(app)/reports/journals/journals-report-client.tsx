@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { ClassFilterChips } from "@/components/reports/class-filter-chips";
-import { PrintZoomControl, DEFAULT_PRINT_ZOOM } from "@/components/reports/print-zoom-control";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
-import { SlidersHorizontal } from "lucide-react";
+import { ReportFilterSheet } from "@/components/reports/report-filter-sheet";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type ClassGroup = { id: string; name: string };
 type Row = {
@@ -80,7 +79,6 @@ export function JournalsReportClient({
 }) {
   const [selectedClasses, setSelectedClasses] = useState<Set<string> | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnKey>>(ALL_COLUMNS);
-  const [zoom, setZoom] = useState(DEFAULT_PRINT_ZOOM);
 
   const visibleRows = rows.filter((r) => selectedClasses === null || selectedClasses.has(r.classGroupId));
   const columns = COLUMNS.filter((c) => visibleColumns.has(c.key));
@@ -94,29 +92,21 @@ export function JournalsReportClient({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
+      <ReportFilterSheet className="fixed bottom-20 left-4 z-40 shadow-lg bg-background">
         <ClassFilterChips classes={classes} selected={selectedClasses} onChange={setSelectedClasses} />
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className="no-print shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-input hover:bg-accent"
-            aria-label="Colunas visíveis"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+        <div className="space-y-1.5">
+          <p className="text-sm font-medium">Colunas</p>
+          <div className="space-y-2">
             {COLUMNS.map((c) => (
-              <DropdownMenuCheckboxItem
-                key={c.key}
-                checked={visibleColumns.has(c.key)}
-                onCheckedChange={() => toggleColumn(c.key)}
-              >
+              <label key={c.key} className="flex items-center gap-2 text-sm">
+                <Checkbox checked={visibleColumns.has(c.key)} onCheckedChange={() => toggleColumn(c.key)} />
                 {c.label}
-              </DropdownMenuCheckboxItem>
+              </label>
             ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <div className="overflow-x-auto border rounded-lg" style={{ zoom: `${zoom}%` }}>
+          </div>
+        </div>
+      </ReportFilterSheet>
+      <div className="overflow-x-auto border rounded-lg">
         <table className="text-sm w-max">
           <thead>
             <tr className="bg-muted/50">
@@ -151,7 +141,6 @@ export function JournalsReportClient({
           <p className="text-sm text-muted-foreground text-center py-8">Nenhuma revista cadastrada.</p>
         )}
       </div>
-      <PrintZoomControl zoom={zoom} onChange={setZoom} />
     </div>
   );
 }
