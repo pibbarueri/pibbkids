@@ -1,8 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Copy } from "lucide-react";
-
 type ClassGroup = { id: string; name: string };
 type Slot = {
   date: string;
@@ -50,41 +47,8 @@ export function OverviewClient({
 }) {
   const slots = rawSlots.map((s) => ({ ...s, date: new Date(s.date).toISOString() }));
 
-  function copyWhatsApp() {
-    const lines = ["📅 *Calendário de Escalas*\n"];
-    for (const sunday of sundays) {
-      const key = sunday.slice(0, 10);
-      const daySlots = slots.filter((s) => s.date.startsWith(key));
-      if (daySlots.length === 0) continue;
-      lines.push(`*${formatDate(sunday)}*`);
-      for (const col of SPECIAL_COLUMNS) {
-        const colSlots = daySlots.filter((s) => s.slotType === col.slotType);
-        if (colSlots.length === 0) continue;
-        const ebd = colSlots.filter((s) => s.timeSlot === "EBD");
-        const culto = colSlots.filter((s) => s.timeSlot === "CULTO");
-        const none = colSlots.filter((s) => !s.timeSlot);
-        if (none.length > 0) lines.push(`  ${col.label}: ${groupLabel(none)}`);
-        if (ebd.length > 0 || culto.length > 0) {
-          lines.push(`  ${col.label}: EBD ${groupLabel(ebd)} · Culto ${groupLabel(culto)}`);
-        }
-      }
-      for (const cls of classes) {
-        const ebd = daySlots.filter((s) => s.slotType === "CLASS" && s.classGroupId === cls.id && s.timeSlot === "EBD");
-        const culto = daySlots.filter((s) => s.slotType === "CLASS" && s.classGroupId === cls.id && s.timeSlot === "CULTO");
-        if (ebd.length === 0 && culto.length === 0) continue;
-        lines.push(`  ${cls.name}: EBD ${groupLabel(ebd)} · Culto ${groupLabel(culto)}`);
-      }
-      lines.push("");
-    }
-    navigator.clipboard.writeText(lines.join("\n"));
-  }
-
   return (
     <div className="space-y-3">
-      <Button variant="outline" className="h-10" onClick={copyWhatsApp}>
-        <Copy className="h-4 w-4 mr-2" /> Copiar calendário
-      </Button>
-
       <div className="overflow-auto border rounded-lg max-h-[70vh]">
         <table className="text-sm w-max">
           <thead>
