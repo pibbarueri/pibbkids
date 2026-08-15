@@ -448,13 +448,13 @@ export function ChildrenClient({
         {isManager && (
           <TabsList className="w-full">
             <TabsTrigger value="pending" className="flex-1">
-              Pendentes {pending.length > 0 && <Badge className="ml-1">{pending.length}</Badge>}
+              Pendentes <Badge className="ml-1">{pending.length}</Badge>
             </TabsTrigger>
             <TabsTrigger value="approved" className="flex-1">
-              Frequentes
+              Frequentes <Badge variant="secondary" className="ml-1">{approved.length}</Badge>
             </TabsTrigger>
             <TabsTrigger value="inactive" className="flex-1">
-              Inativos
+              Inativos <Badge variant="secondary" className="ml-1">{inactive.length}</Badge>
             </TabsTrigger>
           </TabsList>
         )}
