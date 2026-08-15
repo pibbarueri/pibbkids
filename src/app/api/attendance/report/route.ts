@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         type: true,
-        child: { select: { name: true, classGroup: { select: { name: true } } } },
+        child: { select: { name: true, classGroupId: true, classGroup: { select: { name: true } } } },
       },
       orderBy: { child: { name: "asc" } },
     });
@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
         id: r.id,
         type: r.type,
         childName: r.child.name,
+        classGroupId: r.child.classGroupId,
         className: r.child.classGroup?.name ?? null,
       }))
     );

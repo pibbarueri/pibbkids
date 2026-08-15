@@ -5,14 +5,22 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { sortClasses } from "@/lib/classes";
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 const MONTH_LABELS = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
+const ALL_CLASSES = "all";
 
-type PresentChild = { id: string; type: "EBD" | "CULTO"; childName: string; className: string | null };
+type PresentChild = {
+  id: string;
+  type: "EBD" | "CULTO";
+  childName: string;
+  classGroupId: string | null;
+  className: string | null;
+};
 
 function toDateKey(d: Date) {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
@@ -24,6 +32,7 @@ export function AttendanceReportClient() {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(false);
   const [dayChildren, setDayChildren] = useState<PresentChild[]>([]);
+  const [classFilter, setClassFilter] = useState(ALL_CLASSES);
 
   const today = new Date();
   const viewDate = new Date(Date.UTC(today.getFullYear(), today.getMonth() + monthOffset, 1));
@@ -54,10 +63,25 @@ export function AttendanceReportClient() {
 
   function openDayList(key: string) {
     setListOpen(true);
+    setClassFilter(ALL_CLASSES);
     fetch(`/api/attendance/report?date=${key}`)
       .then((r) => r.json())
       .then(setDayChildren);
   }
+
+  // Distinct classes present that day, in the canonical ministry order, each tagged with
+  // how many children from it are on the list — so the tab itself answers "how many by
+  // turma" without opening anything further.
+  const classesPresent = sortClasses(
+    Array.from(
+      new Map(
+        dayChildren
+          .filter((c) => c.classGroupId)
+          .map((c) => [c.classGroupId!, { id: c.classGroupId!, name: c.className! }])
+      ).values()
+    )
+  );
+  const visibleChildren = classFilter === ALL_CLASSES ? dayChildren : dayChildren.filter((c) => c.classGroupId === classFilter);
 
   return (
     <div className="border rounded-lg p-3 space-y-3 bg-background">
@@ -125,8 +149,33 @@ export function AttendanceReportClient() {
               Presença — {selectedKey && new Date(`${selectedKey}T00:00:00Z`).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}
             </DialogTitle>
           </DialogHeader>
+          {classesPresent.length > 1 && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setClassFilter(ALL_CLASSES)}
+                className={cn(
+                  "h-8 rounded-full border px-3 text-xs font-medium transition-all active:scale-95",
+                  classFilter === ALL_CLASSES ? "border-primary bg-primary text-primary-foreground" : "border-input"
+                )}
+              >
+                Todas ({dayChildren.length})
+              </button>
+              {classesPresent.map((cls) => (
+                <button
+                  key={cls.id}
+                  onClick={() => setClassFilter(cls.id)}
+                  className={cn(
+                    "h-8 rounded-full border px-3 text-xs font-medium transition-all active:scale-95",
+                    classFilter === cls.id ? "border-primary bg-primary text-primary-foreground" : "border-input"
+                  )}
+                >
+                  {cls.name} ({dayChildren.filter((c) => c.classGroupId === cls.id).length})
+                </button>
+              ))}
+            </div>
+          )}
           <div className="space-y-2">
-            {dayChildren.map((c) => (
+            {visibleChildren.map((c) => (
               <div key={c.id} className="p-3 border rounded-lg bg-background">
                 <p className="font-medium text-sm wrap-anywhere">{c.childName}</p>
                 <p className="text-xs text-muted-foreground">
@@ -134,7 +183,7 @@ export function AttendanceReportClient() {
                 </p>
               </div>
             ))}
-            {dayChildren.length === 0 && (
+            {visibleChildren.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">Nenhuma presença registrada nesse dia.</p>
             )}
           </div>
