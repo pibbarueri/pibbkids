@@ -12,22 +12,26 @@ export function DateRangeFilter({
   onChange: (range: { min: string | null; max: string | null }) => void;
 }) {
   return (
-    <div className="no-print flex items-center gap-2">
-      <Input
-        type="date"
-        value={min ?? ""}
-        onChange={(e) => onChange({ min: e.target.value || null, max })}
-        className="w-auto"
-        aria-label="Data mínima"
-      />
-      <span className="text-xs text-muted-foreground shrink-0">até</span>
-      <Input
-        type="date"
-        value={max ?? ""}
-        onChange={(e) => onChange({ min, max: e.target.value || null })}
-        className="w-auto"
-        aria-label="Data máxima"
-      />
+    <div className="no-print space-y-1.5">
+      <p className="text-sm font-medium">Período</p>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs text-muted-foreground shrink-0">De</span>
+        <Input
+          type="date"
+          value={min ?? ""}
+          onChange={(e) => onChange({ min: e.target.value || null, max })}
+          className="w-auto"
+          aria-label="Data mínima"
+        />
+        <span className="text-xs text-muted-foreground shrink-0">até</span>
+        <Input
+          type="date"
+          value={max ?? ""}
+          onChange={(e) => onChange({ min, max: e.target.value || null })}
+          className="w-auto"
+          aria-label="Data máxima"
+        />
+      </div>
     </div>
   );
 }
