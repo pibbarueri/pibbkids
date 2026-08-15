@@ -23,7 +23,7 @@ export function AttendanceReportTabs({
 
   return (
     <div className="space-y-4">
-      <Tabs value={tab} onValueChange={(v) => setTab(v as "calendar" | "semester")}>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as "calendar" | "semester")} className="no-print">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="calendar">Calendário</TabsTrigger>
           <TabsTrigger value="semester">Semestral</TabsTrigger>

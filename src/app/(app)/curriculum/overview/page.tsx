@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
 import { sortClasses } from "@/lib/classes";
 import { OverviewClient } from "./overview-client";
+import { ExportPdfButton } from "@/components/reports/export-pdf-button";
 
 function sundaysInRange(start: Date, end: Date): Date[] {
   const sundays: Date[] = [];
@@ -44,13 +45,14 @@ export default async function OverviewPage() {
   ]);
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 print-landscape">
       <p className="text-sm text-muted-foreground">{semester}º semestre {year}</p>
       <OverviewClient
         plans={plans as any}
         classes={sortClasses(classes)}
         sundays={sundays.map((d) => d.toISOString())}
       />
+      <ExportPdfButton />
     </div>
   );
 }

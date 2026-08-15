@@ -5,6 +5,7 @@ import { canManage } from "@/lib/permissions";
 import { sortClasses } from "@/lib/classes";
 import { OverviewClient } from "./overview-client";
 import { sundaysBetween, today as getToday, utcDate } from "@/lib/dates";
+import { ExportPdfButton } from "@/components/reports/export-pdf-button";
 
 export default async function ScheduleOverviewPage() {
   const session = await auth();
@@ -34,13 +35,14 @@ export default async function ScheduleOverviewPage() {
   ]);
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 print-landscape">
       <p className="text-sm text-muted-foreground">{semester}º semestre {year}</p>
       <OverviewClient
         slots={slots.map((s) => ({ ...s, date: s.date.toISOString() }))}
         classes={sortClasses(classes)}
         sundays={sundays.map((d) => d.toISOString())}
       />
+      <ExportPdfButton />
     </div>
   );
 }

@@ -131,3 +131,45 @@
     @apply font-heading;
   }
 }
+/*
+ * Export-to-PDF for the report screens uses the browser's own print pipeline
+ * (window.print → "Save as PDF") rather than a client-side PDF library, so
+ * this is the only place orientation/print behavior is controlled.
+ *
+ * @page can't be scoped by a descendant selector — CSS Paged Media has no
+ * concept of "this @page only applies inside .foo". A *named* page is the
+ * standards-compliant way around that: elements opt in via `page: <name>`,
+ * and only content assigned that name is affected. Everything else in the
+ * app keeps whatever the browser's print default is.
+ */
+@page report-landscape {
+  size: landscape;
+  margin: 12mm;
+}
+
+.print-landscape {
+  page: report-landscape;
+}
+
+@media print {
+  header,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Scroll containers exist so the table fits a phone screen — on paper
+     there's no viewport to scroll, so let the table run to its full size
+     instead of clipping at whatever height the screen version used. */
+  .print-landscape .overflow-x-auto,
+  .print-landscape .overflow-auto {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* position: sticky has no meaning once content isn't scrolling, and left
+     unset it can pin a header over table rows in some print engines. */
+  .print-landscape .sticky {
+    position: static !important;
+  }
+}

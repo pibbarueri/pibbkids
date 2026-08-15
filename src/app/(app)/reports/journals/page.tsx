@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { canManage } from "@/lib/permissions";
 import { sortClasses } from "@/lib/classes";
 import { SERIES_LABELS, USAGE_LABELS } from "@/lib/curriculum";
+import { ExportPdfButton } from "@/components/reports/export-pdf-button";
 
 const COLUMNS = [
   { label: "Turma", width: "min-w-[120px]" },
@@ -66,7 +67,7 @@ export default async function JournalsReportPage() {
   const ordered = byClass.flatMap((g) => g.rows);
 
   return (
-    <div className="p-4 pb-24 space-y-4">
+    <div className="p-4 pb-24 space-y-4 print-landscape">
       <div className="overflow-x-auto border rounded-lg">
         <table className="text-sm w-max">
           <thead>
@@ -108,6 +109,7 @@ export default async function JournalsReportPage() {
           <p className="text-sm text-muted-foreground text-center py-8">Nenhuma revista cadastrada.</p>
         )}
       </div>
+      <ExportPdfButton />
     </div>
   );
 }
