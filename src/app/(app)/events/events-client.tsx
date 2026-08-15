@@ -11,9 +11,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Copy, Trash2, Pencil } from "lucide-react";
+import { Check, Plus, Copy, Trash2, Pencil } from "lucide-react";
+import { toast } from "sonner";
 import { eventTimeRange, toDateInput, toTimeInput, fromDateTimeInputs } from "@/lib/event-time";
 import { EventDetailDialog } from "@/components/events/event-detail-dialog";
+import { copyText } from "@/lib/clipboard";
+import { cn } from "@/lib/utils";
 
 type Event = {
   id: string;
@@ -45,6 +48,7 @@ export function EventsClient({
   const [manualDetailId, setManualDetailId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [justCopiedId, setJustCopiedId] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -112,13 +116,20 @@ export function EventsClient({
     setOpen(false);
   }
 
-  function copyWhatsApp(event: Event) {
+  async function copyWhatsApp(event: Event) {
     const lines = [
       `📅 *${event.title}*`,
       `${formatDate(event.date)} · ${eventTimeRange(event.date, event.endDate)}`,
       event.description ?? "",
     ].filter(Boolean);
-    navigator.clipboard.writeText(lines.join("\n"));
+    const ok = await copyText(lines.join("\n"));
+    if (ok) {
+      setJustCopiedId(event.id);
+      setTimeout(() => setJustCopiedId(null), 1500);
+      toast.success("Evento copiado");
+    } else {
+      toast.error("Não foi possível copiar. Tente selecionar e copiar manualmente.");
+    }
   }
 
   return (
@@ -151,9 +162,12 @@ export function EventsClient({
                 role="button"
                 aria-label="Copiar"
                 onClick={(ev) => { ev.stopPropagation(); copyWhatsApp(e); }}
-                className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted transition-transform active:scale-90"
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted transition-transform active:scale-90",
+                  justCopiedId === e.id && "text-green-600"
+                )}
               >
-                <Copy className="h-4 w-4" />
+                {justCopiedId === e.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </span>
               {isManager && (
                 <span

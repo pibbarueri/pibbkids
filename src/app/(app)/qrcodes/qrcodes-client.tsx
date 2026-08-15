@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import QRCodeStyling from "qr-code-styling";
 import { Button } from "@/components/ui/button";
 import { Check, Copy, Download } from "lucide-react";
+import { toast } from "sonner";
+import { copyText } from "@/lib/clipboard";
+import { cn } from "@/lib/utils";
 
 const TARGETS = [
   { path: "/register/child", label: "Cadastro de crianças" },
@@ -43,10 +46,15 @@ function QrCard({ url, label, path }: { url: string; label: string; path: string
     qrRef.current?.download({ name: `qrcode-${path.split("/").pop()}`, extension: "png" });
   }
 
-  function copyLink() {
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  async function copyLink() {
+    const ok = await copyText(url);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success("Link copiado");
+    } else {
+      toast.error("Não foi possível copiar. Tente selecionar e copiar manualmente.");
+    }
   }
 
   return (
@@ -57,7 +65,11 @@ function QrCard({ url, label, path }: { url: string; label: string; path: string
         <Button variant="outline" className="flex-1" onClick={download}>
           <Download className="h-4 w-4 mr-2" /> Baixar PNG
         </Button>
-        <Button variant="outline" className="flex-1" onClick={copyLink}>
+        <Button
+          variant="outline"
+          className={cn("flex-1", copied && "border-green-600 text-green-600")}
+          onClick={copyLink}
+        >
           {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
           {copied ? "Copiado!" : "Copiar Link"}
         </Button>

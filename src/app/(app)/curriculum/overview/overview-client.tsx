@@ -1,7 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LESSON_TYPE_LABELS: Record<string, string> = {
@@ -47,30 +45,8 @@ export function OverviewClient({
 }) {
   const plans = rawPlans.map((p) => ({ ...p, date: new Date(p.date).toISOString() }));
 
-  function copyWhatsApp() {
-    const lines = ["📚 *Calendário de Aulas*\n"];
-    for (const sunday of sundays) {
-      const key = sunday.slice(0, 10);
-      const dayPlans = plans.filter((p) => p.date.startsWith(key));
-      if (dayPlans.length === 0) continue;
-      lines.push(`*${formatDate(sunday)}*`);
-      for (const cls of classes) {
-        const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "EBD");
-        const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "CULTO");
-        if (!ebd && !culto) continue;
-        lines.push(`  ${cls.name}: EBD ${planLabel(ebd)} · Culto ${planLabel(culto)}`);
-      }
-      lines.push("");
-    }
-    navigator.clipboard.writeText(lines.join("\n"));
-  }
-
   return (
     <div className="space-y-3">
-      <Button variant="outline" className="h-10" onClick={copyWhatsApp}>
-        <Copy className="h-4 w-4 mr-2" /> Copiar calendário
-      </Button>
-
       <div className="overflow-auto border rounded-lg max-h-[70vh]">
         <table className="text-sm w-max">
           <thead>
