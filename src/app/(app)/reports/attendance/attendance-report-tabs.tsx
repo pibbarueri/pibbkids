@@ -47,11 +47,13 @@ export function AttendanceReportTabs({
         <AttendanceReportClient />
       ) : (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">{semesterLabel}</p>
-          <ReportFilterSheet>
-            <ClassFilterChips classes={classes} selected={selectedClasses} onChange={setSelectedClasses} />
-            <DateRangeFilter min={dateRange.min} max={dateRange.max} onChange={setDateRange} />
-          </ReportFilterSheet>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">{semesterLabel}</p>
+            <ReportFilterSheet>
+              <ClassFilterChips classes={classes} selected={selectedClasses} onChange={setSelectedClasses} />
+              <DateRangeFilter min={dateRange.min} max={dateRange.max} onChange={setDateRange} />
+            </ReportFilterSheet>
+          </div>
           <OverviewClient attendance={attendance} classes={visibleClasses} sundays={visibleSundays} />
         </div>
       )}
