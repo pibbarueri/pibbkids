@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { canViewAttendanceOverview } from "@/lib/permissions";
 import { sortClasses } from "@/lib/classes";
 import { AttendanceReportTabs } from "./attendance-report-tabs";
+import { ExportPdfButton } from "@/components/reports/export-pdf-button";
 
 function sundaysInRange(start: Date, end: Date): Date[] {
   const sundays: Date[] = [];
@@ -40,13 +41,14 @@ export default async function AttendanceReportPage() {
   ]);
 
   return (
-    <div className="p-4">
+    <div className="p-4 print-landscape">
       <AttendanceReportTabs
         attendance={attendance.map((a) => ({ date: a.date.toISOString(), type: a.type, classGroupId: a.child.classGroupId }))}
         classes={sortClasses(classes)}
         sundays={sundays.map((d) => d.toISOString())}
         semesterLabel={`${semester}º semestre ${year}`}
       />
+      <ExportPdfButton />
     </div>
   );
 }
