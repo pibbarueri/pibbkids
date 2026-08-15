@@ -113,6 +113,8 @@ export function SnacksClient({
   const [adjusting, setAdjusting] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(emptyForm);
+  const [deleteTarget, setDeleteTarget] = useState<Snack | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   function openEdit(s: Snack) {
     setEditingId(s.id);
@@ -168,9 +170,13 @@ export function SnacksClient({
     router.refresh();
   }
 
-  async function remove(id: string) {
-    await fetch(`/api/snacks/${id}`, { method: "DELETE" });
-    setSnacks((prev) => prev.filter((s) => s.id !== id));
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const res = await fetch(`/api/snacks/${deleteTarget.id}`, { method: "DELETE" });
+    if (res.ok) setSnacks((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+    setDeleting(false);
+    setDeleteTarget(null);
   }
 
   return (
@@ -235,7 +241,7 @@ export function SnacksClient({
                 variant="ghost"
                 size="icon"
                 className="text-muted-foreground hover:text-destructive"
-                onClick={() => remove(s.id)}
+                onClick={() => setDeleteTarget(s)}
                 aria-label="Remover"
               >
                 <Trash2 className="h-4 w-4" />
@@ -264,6 +270,25 @@ export function SnacksClient({
               Salvar
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir item?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground wrap-anywhere">
+            {deleteTarget && (
+              <>
+                <span className="font-medium text-foreground uppercase">{deleteTarget.description}</span>{" "}
+                será excluído. Essa ação é irreversível.
+              </>
+            )}
+          </p>
+          <Button variant="destructive" className="w-full h-12" disabled={deleting} onClick={confirmDelete}>
+            Confirmar
+          </Button>
         </DialogContent>
       </Dialog>
     </div>
