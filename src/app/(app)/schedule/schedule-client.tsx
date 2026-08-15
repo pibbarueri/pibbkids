@@ -17,8 +17,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, ChevronRight, Copy, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, Pencil, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { copyText } from "@/lib/clipboard";
 
 // Sala Plus has no time slot (17h-18h, before EBD/Culto) — always shows in both tabs.
 function inTimeSlot(slot: { slotType: string; timeSlot: string | null }, tab: "EBD" | "CULTO") {
@@ -154,6 +156,7 @@ export function ScheduleClient({
   const [form, setForm] = useState(emptyForm);
   const [repeatDates, setRepeatDates] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [justCopied, setJustCopied] = useState(false);
 
   const selectedSunday = sundays[sundayIdx];
   const daySlots = slots.filter((s) => s.date.startsWith(selectedSunday.slice(0, 10)));
@@ -290,9 +293,16 @@ export function ScheduleClient({
     setDeleteTarget(null);
   }
 
-  function copyWhatsApp() {
+  async function copyWhatsApp() {
     const text = formatWhatsApp(selectedSunday, daySlots, classes);
-    navigator.clipboard.writeText(text);
+    const ok = await copyText(text);
+    if (ok) {
+      setJustCopied(true);
+      setTimeout(() => setJustCopied(false), 1500);
+      toast.success("Escala copiada");
+    } else {
+      toast.error("Não foi possível copiar. Tente selecionar e copiar manualmente.");
+    }
   }
 
   const shownSlots = canViewAll ? tabSlots : tabSlots.filter((s) => s.user.id === currentUserId);
@@ -337,11 +347,14 @@ export function ScheduleClient({
           <Button
             variant="outline"
             size="icon"
-            className="h-10 w-10 shrink-0"
+            className={cn(
+              "h-10 w-10 shrink-0",
+              justCopied && "border-green-600 text-green-600"
+            )}
             onClick={copyWhatsApp}
             aria-label="Copiar escala"
           >
-            <Copy className="h-4 w-4" />
+            {justCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </Button>
         )}
       </div>

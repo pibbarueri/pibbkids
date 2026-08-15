@@ -30,21 +30,30 @@ export default async function JournalsReportPage() {
       orderBy: [{ series: "asc" }, { edition: "asc" }],
     }),
     prisma.classGroup.findMany({ select: { id: true, name: true } }),
-    // Two counts per journal: how many Sundays got a plan at all, and how many of those
-    // were actually marked done — the gap between them is what's still pending.
-    prisma.sundayPlan.groupBy({
-      by: ["journalId", "done"],
+    prisma.sundayPlan.findMany({
       where: { journalId: { not: null } },
-      _count: true,
+      select: { journalId: true, date: true },
     }),
   ]);
 
+  // "Concluídas" means the Sunday has already happened, not SundayPlan.done — that flag
+  // was only ever set by the "mark as given" button, which was removed, so it's frozen at
+  // false for every plan created since and would always report zero here.
+  //
+  // SundayPlan.date is a plain DateTime, not @db.Date, and is written elsewhere (see
+  // sundaysInSchoolYear in src/app/(app)/curriculum/lessons/page.tsx) as server-local
+  // midnight — not UTC midnight. With TZ=America/Sao_Paulo (src/instrumentation.ts) that's
+  // 03:00 UTC, so the cutoff has to be built the same way, not with dates.ts's today()
+  // (UTC midnight, correct only for @db.Date columns like ScheduleSlot.date). Mixing the
+  // two is the exact bug CLAUDE.md warns about.
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const planCounts = new Map<string, { planned: number; done: number }>();
   for (const row of plansByJournal) {
     if (!row.journalId) continue;
     const entry = planCounts.get(row.journalId) ?? { planned: 0, done: 0 };
-    entry.planned += row._count;
-    if (row.done) entry.done += row._count;
+    entry.planned += 1;
+    if (row.date <= cutoff) entry.done += 1;
     planCounts.set(row.journalId, entry);
   }
 

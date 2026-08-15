@@ -17,8 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Copy } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { copyText } from "@/lib/clipboard";
 
 const LESSON_TYPE_LABELS: Record<string, string> = {
   WORKBOOK: "Apostila",
@@ -82,6 +84,7 @@ export function LessonsClient({
   const [editing, setEditing] = useState<{ classGroupId: string; className: string; type: string } | null>(null);
   const [form, setForm] = useState({ lessonType: "WORKBOOK", journalId: "", lessonNumber: "", specialTitle: "", observations: "" });
   const [saving, setSaving] = useState(false);
+  const [justCopiedId, setJustCopiedId] = useState<string | null>(null);
 
   const selectedSunday = sundays[sundayIdx];
   const dayPlans = plans.filter((p) => p.date.startsWith(selectedSunday.slice(0, 10)));
@@ -130,13 +133,20 @@ export function LessonsClient({
   }
 
   // Copying is per-class — copying every class at once is rarely what's needed.
-  function copyClassWhatsApp(cls: ClassGroup) {
+  async function copyClassWhatsApp(cls: ClassGroup) {
     const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "EBD");
     const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "CULTO");
     const lines = [`📖 *${cls.name} — ${formatDate(selectedSunday)}*\n`];
     if (ebd) lines.push(`EBD: ${planLabel(ebd)}`);
     if (culto) lines.push(`Culto: ${planLabel(culto)}`);
-    navigator.clipboard.writeText(lines.join("\n"));
+    const ok = await copyText(lines.join("\n"));
+    if (ok) {
+      setJustCopiedId(cls.id);
+      setTimeout(() => setJustCopiedId(null), 1500);
+      toast.success(`Aulas de ${cls.name} copiadas`);
+    } else {
+      toast.error("Não foi possível copiar. Tente selecionar e copiar manualmente.");
+    }
   }
 
   const availableJournals = journals.filter((c) => c.classGroupId === editing?.classGroupId);
@@ -174,11 +184,14 @@ export function LessonsClient({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 -mt-1 -mr-1 text-muted-foreground"
+                    className={cn(
+                      "h-7 w-7 -mt-1 -mr-1 text-muted-foreground",
+                      justCopiedId === cls.id && "text-green-600"
+                    )}
                     onClick={() => copyClassWhatsApp(cls)}
                     aria-label={`Copiar aulas de ${cls.name}`}
                   >
-                    <Copy className="h-3.5 w-3.5" />
+                    {justCopiedId === cls.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                   </Button>
                 )}
               </div>
