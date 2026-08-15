@@ -13,13 +13,15 @@ import { cn } from "@/lib/utils";
 export function ReportFilterSheet({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <Sheet>
-      <SheetTrigger
-        render={
-          <Button variant="outline" size="icon" className={cn("no-print shrink-0", className)} aria-label="Filtros">
-            <SlidersHorizontal className="h-4 w-4" />
-          </Button>
-        }
-      />
+      <div className="no-print flex justify-end">
+        <SheetTrigger
+          render={
+            <Button variant="outline" size="icon" className={cn("shrink-0", className)} aria-label="Filtros">
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+          }
+        />
+      </div>
       <SheetContent side="bottom" className="no-print max-h-[85vh] overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Filtros</SheetTitle>

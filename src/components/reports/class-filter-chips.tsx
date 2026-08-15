@@ -19,7 +19,7 @@ export function ClassFilterChips({
 }) {
   function toggle(id: string) {
     if (selected === null) {
-      onChange(new Set(classes.filter((c) => c.id !== id).map((c) => c.id)));
+      onChange(new Set([id]));
       return;
     }
     const next = new Set(selected);

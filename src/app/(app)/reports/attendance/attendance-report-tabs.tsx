@@ -48,7 +48,7 @@ export function AttendanceReportTabs({
       ) : (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">{semesterLabel}</p>
-          <ReportFilterSheet className="fixed bottom-20 left-4 z-40 shadow-lg bg-background">
+          <ReportFilterSheet>
             <ClassFilterChips classes={classes} selected={selectedClasses} onChange={setSelectedClasses} />
             <DateRangeFilter min={dateRange.min} max={dateRange.max} onChange={setDateRange} />
           </ReportFilterSheet>
