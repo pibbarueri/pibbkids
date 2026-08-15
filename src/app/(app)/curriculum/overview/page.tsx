@@ -46,8 +46,8 @@ export default async function OverviewPage() {
 
   return (
     <div className="p-4 space-y-4 print-landscape">
-      <p className="text-sm text-muted-foreground">{semester}º semestre {year}</p>
       <OverviewClient
+        subtitle={`${semester}º semestre ${year}`}
         plans={plans as any}
         classes={sortClasses(classes)}
         sundays={sundays.map((d) => d.toISOString())}

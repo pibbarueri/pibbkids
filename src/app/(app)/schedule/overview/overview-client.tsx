@@ -42,10 +42,12 @@ function groupLabel(slots: Slot[]) {
 }
 
 export function OverviewClient({
+  subtitle,
   slots: rawSlots,
   classes,
   sundays,
 }: {
+  subtitle: string;
   slots: Slot[];
   classes: ClassGroup[];
   sundays: string[];
@@ -64,10 +66,13 @@ export function OverviewClient({
 
   return (
     <div className="space-y-3">
-      <ReportFilterSheet>
-        <ClassFilterChips classes={classes} selected={selectedClasses} onChange={setSelectedClasses} />
-        <DateRangeFilter min={dateRange.min} max={dateRange.max} onChange={setDateRange} />
-      </ReportFilterSheet>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">{subtitle}</p>
+        <ReportFilterSheet>
+          <ClassFilterChips classes={classes} selected={selectedClasses} onChange={setSelectedClasses} />
+          <DateRangeFilter min={dateRange.min} max={dateRange.max} onChange={setDateRange} />
+        </ReportFilterSheet>
+      </div>
       <div className="overflow-auto border rounded-lg max-h-[70vh]">
         <table className="text-sm w-max">
           <thead>
