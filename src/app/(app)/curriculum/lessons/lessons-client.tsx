@@ -129,16 +129,13 @@ export function LessonsClient({
     setEditing(null);
   }
 
-  function copyWhatsApp() {
-    const lines = [`📖 *Aulas — ${formatDate(selectedSunday)}*\n`];
-    for (const cls of visibleClasses) {
-      const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "EBD");
-      const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "CULTO");
-      if (!ebd && !culto) continue;
-      lines.push(`*${cls.name}*`);
-      if (ebd) lines.push(`  EBD: ${planLabel(ebd)}`);
-      if (culto) lines.push(`  Culto: ${planLabel(culto)}`);
-    }
+  // Copying is per-class — copying every class at once is rarely what's needed.
+  function copyClassWhatsApp(cls: ClassGroup) {
+    const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "EBD");
+    const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "CULTO");
+    const lines = [`📖 *${cls.name} — ${formatDate(selectedSunday)}*\n`];
+    if (ebd) lines.push(`EBD: ${planLabel(ebd)}`);
+    if (culto) lines.push(`Culto: ${planLabel(culto)}`);
     navigator.clipboard.writeText(lines.join("\n"));
   }
 
@@ -159,20 +156,6 @@ export function LessonsClient({
         </Button>
       </div>
 
-      {isManager && (
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10"
-            onClick={copyWhatsApp}
-            aria-label="Copiar aulas"
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-
       {visibleClasses.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">
           Não há aulas a serem exibidas. Você não está associado a nenhuma turma.
@@ -184,8 +167,21 @@ export function LessonsClient({
           const ebd = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "EBD");
           const culto = dayPlans.find((p) => p.classGroupId === cls.id && p.type === "CULTO");
           return (
-            <div key={cls.id} className="border rounded-lg p-3 space-y-2">
-              <p className="font-medium text-sm">{cls.name}</p>
+            <div key={cls.id} className="border rounded-lg p-3 space-y-2 relative">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-medium text-sm">{cls.name}</p>
+                {isManager && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 -mt-1 -mr-1 text-muted-foreground"
+                    onClick={() => copyClassWhatsApp(cls)}
+                    aria-label={`Copiar aulas de ${cls.name}`}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
               {(["EBD", "CULTO"] as const).map((type) => {
                 const plan = type === "EBD" ? ebd : culto;
                 return (

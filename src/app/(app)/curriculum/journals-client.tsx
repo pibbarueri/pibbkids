@@ -203,14 +203,13 @@ export function JournalsClient({
       <div className="flex gap-2">
         <Button
           variant="outline"
-          size="icon"
-          className="h-11 w-11 relative shrink-0"
-          aria-label="Filtrar"
+          className="h-11 w-full"
           onClick={() => setFilterOpen(true)}
         >
-          <Filter className="h-4 w-4" />
+          <Filter className="h-4 w-4 mr-2" />
+          Filtrar
           {filterCount > 0 && (
-            <Badge className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 text-[10px]">{filterCount}</Badge>
+            <Badge className="ml-2 h-4 min-w-4 px-1 text-[10px]">{filterCount}</Badge>
           )}
         </Button>
       </div>
