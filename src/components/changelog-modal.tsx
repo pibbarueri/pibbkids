@@ -24,7 +24,7 @@ export function ChangelogModal({ entries }: { entries: ChangelogEntry[] }) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && dismiss()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novidades</DialogTitle>
         </DialogHeader>
