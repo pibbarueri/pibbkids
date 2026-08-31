@@ -8,8 +8,8 @@ fecha uma leva de mudanças — não é 1 tag por PR, e não muda o pipeline de 
 (push→main→produção continua igual).
 
 ## v1.6.0 - 2026-08-31
+- Esse aviso, mostrando tudo o que mudou desde a última vez que você abriu o app!
+
+## v1.5.0 - 2026-08-31
 - Recepcionistas agora podem visualizar a tela de Aulas (somente leitura).
   Isso os ajudará na separação de materiais que os professores utilizarão em sala, antes mesmo da aula começar.
-
-## v1.5.0 - 2026-08-19
-- Criação desde modal, mostrando o que mudou desde a última vez que você abriu o app
