@@ -37,7 +37,7 @@ export function ChangelogModal({ entries }: { entries: ChangelogEntry[] }) {
               <p className="text-xs font-medium text-muted-foreground">
                 {entry.version} · {formatDate(entry.date)}
               </p>
-              <ul className="space-y-2">
+              <ul className="space-y-2 list-disc pl-5">
                 {entry.items.map((item, i) => (
                   <li key={i} className="text-sm wrap-anywhere">
                     {item.text}
