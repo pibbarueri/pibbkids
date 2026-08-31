@@ -29,6 +29,9 @@ export function ChangelogModal({ entries }: { entries: ChangelogEntry[] }) {
           <DialogTitle>Novidades</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Essas são as novidades que surgiram desde a última vez que você acessou o app!
+          </p>
           {entries.map((entry) => (
             <div key={entry.version} className="space-y-1.5">
               <p className="text-xs font-medium text-muted-foreground">
