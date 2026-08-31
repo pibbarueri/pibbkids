@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManage } from "@/lib/permissions";
+import { canManage, canViewAllLessons, canViewLessons } from "@/lib/permissions";
 import { sortClasses } from "@/lib/classes";
 import { Role } from "@prisma/client";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,9 @@ export default async function LessonsPage() {
   const session = await auth();
   if (!session) redirect("/login");
   const role = session.user.role;
+  if (!canViewLessons(role)) redirect("/dashboard");
   const isManager = canManage(role);
+  const viewAllClasses = canViewAllLessons(role);
 
   const now = new Date();
   const year = now.getFullYear();
@@ -57,7 +59,7 @@ export default async function LessonsPage() {
           select: { id: true, title: true, series: true, edition: true, classGroupId: true, usage: true },
         })
       : Promise.resolve([]),
-    isManager
+    viewAllClasses
       ? Promise.resolve([])
       : prisma.userPreferredClass.findMany({
           where: { userId: session.user.id },
@@ -83,6 +85,7 @@ export default async function LessonsPage() {
         sundays={sundays.map((d) => d.toISOString())}
         initialSundayIdx={initialSundayIdx}
         isManager={isManager}
+        canViewAllClasses={viewAllClasses}
         myClassIds={myClassIds}
       />
     </div>

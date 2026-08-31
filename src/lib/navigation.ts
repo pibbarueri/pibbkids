@@ -116,7 +116,7 @@ export const DESTINATIONS: NavDestination[] = [
     href: "/curriculum/lessons",
     label: "Aulas",
     icon: BookOpen,
-    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT],
+    roles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST],
     navRoles: [Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT],
   },
   {

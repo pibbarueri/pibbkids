@@ -5,6 +5,9 @@
 Ferramenta de gestão do ministério infantil da PIBB. Substitui Google Sheets/Notion/Drive
 espalhados, com controle de acesso por perfil. PWA mobile-first (maioria do uso é celular).
 
+- **use caveman skill if available**
+- **use cavecrew skill if available**
+
 ## Stack
 
 - Next.js 16 (App Router) + TypeScript

@@ -67,6 +67,7 @@ export function LessonsClient({
   sundays,
   initialSundayIdx,
   isManager,
+  canViewAllClasses,
   myClassIds,
 }: {
   initialPlans: Plan[];
@@ -75,6 +76,7 @@ export function LessonsClient({
   sundays: string[];
   initialSundayIdx: number;
   isManager: boolean;
+  canViewAllClasses: boolean;
   myClassIds: string[];
 }) {
   const [plans, setPlans] = useState(() =>
@@ -89,7 +91,7 @@ export function LessonsClient({
   const selectedSunday = sundays[sundayIdx];
   const dayPlans = plans.filter((p) => p.date.startsWith(selectedSunday.slice(0, 10)));
 
-  const visibleClasses = isManager ? classes : classes.filter((c) => myClassIds.includes(c.id));
+  const visibleClasses = canViewAllClasses ? classes : classes.filter((c) => myClassIds.includes(c.id));
 
   function openEdit(classGroupId: string, className: string, type: string) {
     const existing = dayPlans.find((p) => p.classGroupId === classGroupId && p.type === type);

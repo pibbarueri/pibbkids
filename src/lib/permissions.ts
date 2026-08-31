@@ -59,3 +59,13 @@ export function canWriteClassJournal(role: Role) {
 export function canLogVisitor(role: Role) {
   return role === Role.RECEPTIONIST || canManage(role);
 }
+
+export function canViewLessons(role: Role) {
+  return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] as Role[]).includes(role);
+}
+
+// Who isn't management (ADMIN/COORDINATOR) but still sees every class's lesson plan, not
+// just their own — today only Receptionist, who covers the front desk for any class.
+export function canViewAllLessons(role: Role) {
+  return canManage(role) || role === Role.RECEPTIONIST;
+}
