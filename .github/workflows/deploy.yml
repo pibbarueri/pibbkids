@@ -1,0 +1,39 @@
+# Production deploy runs on version tags (v1.7.0, v1.7.1, ...) instead of Vercel's Git
+# integration. The Hobby plan doesn't connect to private repos owned by an organization,
+# so the build happens here and the Vercel CLI uploads the prebuilt output.
+#
+# Required repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
+name: Deploy
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install --global vercel@latest
+
+      # Pulls the production env vars from the Vercel project so the build sees the same
+      # config the Vercel-hosted build used to.
+      - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

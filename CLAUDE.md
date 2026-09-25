@@ -190,7 +190,21 @@ porta 3000) → login → navegar → `read_page`/screenshot pra conferir. Prefe
 
 ## Deploy
 
-App na Vercel, buildado automaticamente no push pra `main`. Banco na Supabase.
+App na Vercel, banco na Supabase. Repo em `pibbarueri/pibbkids` (org privada no GitHub).
+
+**Deploy de produção acontece no push de uma tag `v*`, não no merge na `main`.** O plano Hobby
+da Vercel não conecta em repo privado de organização, então a integração Git da Vercel está
+desligada e quem faz o deploy é `.github/workflows/deploy.yml` (`vercel pull` → `vercel build`
+→ `vercel deploy --prebuilt --prod`). Merge na `main` não sobe nada sozinho. Pra publicar:
+
+```bash
+git checkout main && git pull
+git tag vX.Y.Z && git push origin vX.Y.Z
+```
+
+Secrets do workflow (Settings → Secrets and variables → Actions): `VERCEL_TOKEN`,
+`VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. Env vars do app continuam no projeto da Vercel, o
+`vercel pull` busca de lá.
 
 Migrations em produção:
 
@@ -201,13 +215,12 @@ Migrations em produção:
 Os três passam por `scripts/prod-migrate.sh`, que lê `DATABASE_URL` do `.env.prod`, imprime o
 host de destino e se recusa a rodar contra localhost.
 
-**`npm run migration` só roda quando pedido explicitamente.** Com feature branches, o normal é
-rodar a migration na hora do merge do PR (pouco antes), não durante o desenvolvimento na
-branch — senão prod fica com schema novo e código velho (deployado) incompatível entre si,
-gerando erro em produção até o merge acontecer.
+**`npm run migration` só roda quando pedido explicitamente.** O normal é rodar a migration
+logo antes de criar a tag, não durante o desenvolvimento na branch. Senão prod fica com schema
+novo e código velho (deployado) incompatível entre si, gerando erro em produção até a tag sair.
 
-**Ordem em deploy que tem migration: migration primeiro, merge depois.** A Vercel builda no
-push; se o app novo subir antes do schema, quebra em runtime.
+**Ordem em deploy que tem migration: merge, migration, tag.** O workflow builda no push da
+tag; se o app novo subir antes do schema, quebra em runtime.
 
 Outros scripts: `npm run seed` (`prisma/seed.ts`), `postinstall` já roda `prisma generate`.
 
@@ -221,8 +234,8 @@ celular. Se você é uma delas, saiba o que não dá:
   migration commitado e avisar que ela roda no PC.
 - **Sem banco de produção e sem dev server visível** → nada de verificação por
   `preview_start`. Verificar por `tsc`/lint e descrever o que precisa ser conferido à mão.
-- **Escopo**: código, branch, PR. Push pra `main` dispara o deploy na Vercel — isso funciona
-  normalmente.
+- **Escopo**: código, branch, PR. Não criar tag de versão por conta própria: tag dispara deploy
+  de produção.
 
 ## Redesign
 
