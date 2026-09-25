@@ -34,6 +34,16 @@ jobs:
       # config the Vercel-hosted build used to.
       - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
+      # Every production env var is marked Sensitive in Vercel, and `vercel pull` writes those
+      # as the literal "[SENSITIVE]". next-auth parses NEXTAUTH_URL when the module loads, so
+      # the build breaks on it. It's the public site URL, not a secret, so it's set here.
+      # DATABASE_URL and NEXTAUTH_SECRET aren't read during the build; the deployed functions
+      # get the real values from Vercel at runtime.
+      - name: Set build-time NEXTAUTH_URL
+        run: |
+          sed -i '/^NEXTAUTH_URL=/d' .vercel/.env.production.local
+          echo 'NEXTAUTH_URL="https://pibbkids.app"' >> .vercel/.env.production.local
+
       - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
