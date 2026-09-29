@@ -42,7 +42,7 @@ jobs:
       - name: Set build-time NEXTAUTH_URL
         run: |
           sed -i '/^NEXTAUTH_URL=/d' .vercel/.env.production.local
-          echo 'NEXTAUTH_URL="https://pibbkids.app"' >> .vercel/.env.production.local
+          echo 'NEXTAUTH_URL="https://pibbkids.vercel.app"' >> .vercel/.env.production.local
 
       - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
