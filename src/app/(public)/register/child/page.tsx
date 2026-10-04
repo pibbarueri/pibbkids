@@ -26,7 +26,7 @@ const schema = z.object({
   motherName: z.string().optional(),
   fatherPhone: z.string().min(8, "Telefone obrigatório"),
   motherPhone: z.string().optional(),
-  frequency: z.nativeEnum(Frequency),
+  frequency: z.enum(Frequency),
   allergies: z.string().optional(),
   restrictions: z.string().optional(),
 });

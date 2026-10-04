@@ -15,7 +15,7 @@ const schema = z
     birthdate: z.string().min(1).optional(),
     ageMonths: ageMonthsField.optional(),
     date: z.string().min(1).optional(),
-    type: z.nativeEnum(SundayType),
+    type: z.enum(SundayType),
   })
   .refine((d) => (d.birthdate === undefined) !== (d.ageMonths === undefined), {
     message: "Informe a idade ou a data de nascimento.",

@@ -14,7 +14,7 @@ const schema = z.object({
   motherName: z.string().optional(),
   fatherPhone: z.string().min(8),
   motherPhone: z.string().optional(),
-  frequency: z.nativeEnum(Frequency),
+  frequency: z.enum(Frequency),
   allergies: z.string().optional(),
   restrictions: z.string().optional(),
   classGroupId: z.string().min(1),

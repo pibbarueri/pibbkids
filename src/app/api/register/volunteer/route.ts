@@ -10,7 +10,7 @@ const schema = z.object({
   cpf: z.string().min(11),
   birthdate: z.string().min(1),
   motherName: z.string().optional(),
-  functions: z.array(z.nativeEnum(FunctionType)).min(1),
+  functions: z.array(z.enum(FunctionType)).min(1),
   preferredClassIds: z.array(z.string()).optional(),
 });
 
