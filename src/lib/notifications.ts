@@ -48,7 +48,7 @@ export async function getNotificationDots(
       ? prisma.user.count({ where: { active: true, status: "PENDING" } })
       : Promise.resolve(0),
     canManageSnacks(role, hasApoioGeral)
-      ? prisma.snack.count({ where: { quantity: { lte: 5 } } })
+      ? prisma.snack.count({ where: { quantity: { lte: prisma.snack.fields.minQuantity } } })
       : Promise.resolve(0),
     isLeadership(role)
       ? prisma.purchaseRequest.count({ where: { status: "PENDING" } })
