@@ -96,8 +96,8 @@ QR Codes de cadastro.
 - Reset de senha de usuário: `require_password_change = true` — não precisa mexer em
   `user_sessions` pra isso. Fluxo "Esqueci minha senha" reusa `/first-access`
   (challenge por CPF → mãe → nascimento).
-- **Nunca alterar credenciais de usuário real pra teste.** Usar só a conta `test` (ver Testes
-  abaixo), alternando role via script quando precisar.
+- **Nunca alterar credenciais de usuário real em produção pra teste.** Pra testar com o perfil
+  de alguém, usar uma cópia local do banco de produção.
 - Não existe mais login `admin/admin` — o usuário admin real foi renomeado para `gustavo`.
 
 ### Migrations: known issues
