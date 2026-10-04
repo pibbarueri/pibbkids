@@ -5,11 +5,16 @@ import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { slotKindKey, slotPlaceLabel, timeSlotLabel } from "@/lib/schedule";
+import { slotKindKey, slotPlaceLabel, timeSlotLabel, timeSlotPhrase } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
 import { fetchCandidates, futureRange, handle, postSwap, shortDate, type Person, type VolunteerSlot } from "./types";
 
 type Mode = "replace" | "permute";
+
+/** "11/10 no Culto", "04/10 na EBD", "18/10" (Sala Plus). */
+function when(s: VolunteerSlot) {
+  return [shortDate(s.date), timeSlotPhrase(s.timeSlot)].filter(Boolean).join(" ");
+}
 
 function slotText(s: VolunteerSlot) {
   const time = timeSlotLabel(s.timeSlot);
@@ -200,8 +205,8 @@ function Body({
         {ready && (
           <p className="text-sm rounded-lg bg-muted/50 px-3 py-2 wrap-anywhere">
             {mode === "replace"
-              ? `${person && handle(person)} serve em ${shortDate(slot.date)} no lugar de ${handle(volunteer)}.`
-              : `${person && handle(person)} serve em ${shortDate(slot.date)} e ${handle(volunteer)} serve em ${partnerSlot && shortDate(partnerSlot.date)}.`}
+              ? `${person && handle(person)} serve em ${when(slot)} no lugar de ${handle(volunteer)}.`
+              : `${person && handle(person)} serve em ${when(slot)} e ${handle(volunteer)} serve em ${partnerSlot && when(partnerSlot)}.`}
           </p>
         )}
 

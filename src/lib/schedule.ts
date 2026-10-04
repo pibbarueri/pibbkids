@@ -65,6 +65,11 @@ export function timeSlotLabel(timeSlot: string | null) {
   return timeSlot === "CULTO" ? "Culto" : timeSlot === "EBD" ? "EBD" : null;
 }
 
+/** "na EBD" (Escola Bíblica Dominical, feminine) / "no Culto"; empty for Sala Plus. */
+export function timeSlotPhrase(timeSlot: string | null) {
+  return timeSlot === "CULTO" ? "no Culto" : timeSlot === "EBD" ? "na EBD" : "";
+}
+
 /** Slots of the "same seat": same type, class and role. Used to group the bulk-swap view. */
 export function slotKindKey(slot: Pick<SlotShape, "slotType" | "classGroupId" | "role">) {
   return `${slot.slotType}|${slot.classGroupId ?? ""}|${slot.role ?? ""}`;
