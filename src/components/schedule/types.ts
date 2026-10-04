@@ -11,8 +11,15 @@ export type VolunteerSlot = {
   userId: string;
 };
 
+export type Person = { id: string; name: string; username: string | null; regular?: boolean };
+
+/** Short handle for summaries: 'username', or the first name when there is none. */
+export function handle(p: { name: string; username: string | null }) {
+  return p.username ? `'${p.username}'` : p.name.split(" ")[0];
+}
+
 export type Candidates = {
-  volunteers: { id: string; name: string }[];
+  volunteers: Person[];
   /** slotId -> ids of volunteers eligible and free for that slot */
   availability: Record<string, string[]>;
 };

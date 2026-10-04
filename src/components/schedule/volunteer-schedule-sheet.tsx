@@ -10,33 +10,70 @@ import { slotPlaceLabel, timeSlotLabel } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
 import { BulkSwap } from "./bulk-swap";
 import { SwapSlotDialog } from "./swap-slot-dialog";
-import { futureRange, type VolunteerSlot } from "./types";
+import { futureRange, type Person, type VolunteerSlot } from "./types";
 
 /** Calendar of one volunteer's slots, with single-slot swap and bulk redistribution. */
 export function VolunteerScheduleSheet({
   volunteer,
   onClose,
 }: {
-  volunteer: { id: string; name: string } | null;
+  volunteer: Person | null;
   onClose: () => void;
 }) {
+  // Kept out of Body: the sheet closes while the swap dialog is open (only one modal on
+  // screen), and reopening it should land on the same month.
+  const [swapping, setSwapping] = useState<VolunteerSlot | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [version, setVersion] = useState(0);
+
   return (
-    <Sheet open={!!volunteer} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent side="bottom" className="h-[95dvh] overflow-y-auto">
-        {volunteer && <Body key={volunteer.id} volunteer={volunteer} />}
-      </SheetContent>
-    </Sheet>
+    <>
+      <Sheet open={!!volunteer && !swapping} onOpenChange={(o) => !o && onClose()}>
+        <SheetContent side="bottom" className="h-[95dvh] overflow-y-auto">
+          {volunteer && (
+            <Body
+              key={volunteer.id}
+              volunteer={volunteer}
+              offset={offset}
+              onOffsetChange={setOffset}
+              version={version}
+              onRefresh={() => setVersion((v) => v + 1)}
+              onSwap={setSwapping}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+      {volunteer && (
+        <SwapSlotDialog
+          slot={swapping}
+          volunteer={volunteer}
+          onClose={() => setSwapping(null)}
+          onDone={() => setVersion((v) => v + 1)}
+        />
+      )}
+    </>
   );
 }
 
-function Body({ volunteer }: { volunteer: { id: string; name: string } }) {
+function Body({
+  volunteer,
+  offset,
+  onOffsetChange,
+  version,
+  onRefresh,
+  onSwap,
+}: {
+  volunteer: Person;
+  offset: number;
+  onOffsetChange: (offset: number) => void;
+  version: number;
+  onRefresh: () => void;
+  onSwap: (slot: VolunteerSlot) => void;
+}) {
   const [view, setView] = useState<"calendar" | "bulk">("calendar");
-  const [offset, setOffset] = useState(0);
   const [slots, setSlots] = useState<VolunteerSlot[]>([]);
   const [futureSlots, setFutureSlots] = useState<VolunteerSlot[] | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [swapping, setSwapping] = useState<VolunteerSlot | null>(null);
-  const [version, setVersion] = useState(0);
 
   const todayKey = dayKey();
 
@@ -64,7 +101,7 @@ function Body({ volunteer }: { volunteer: { id: string; name: string } }) {
   }
 
   function refresh() {
-    setVersion((v) => v + 1);
+    onRefresh();
     setSelectedKey(null);
   }
 
@@ -83,8 +120,7 @@ function Body({ volunteer }: { volunteer: { id: string; name: string } }) {
       <div className="space-y-4 p-4 pt-0">
         {view === "bulk" && futureSlots ? (
           <BulkSwap
-            volunteerId={volunteer.id}
-            volunteerName={volunteer.name}
+            volunteer={volunteer}
             futureSlots={futureSlots}
             onCancel={() => setView("calendar")}
             onDone={() => {
@@ -101,7 +137,7 @@ function Body({ volunteer }: { volunteer: { id: string; name: string } }) {
             <MonthGrid
               offset={offset}
               onOffsetChange={(o) => {
-                setOffset(o);
+                onOffsetChange(o);
                 setSelectedKey(null);
               }}
               renderDay={(date, key) => {
@@ -147,7 +183,7 @@ function Body({ volunteer }: { volunteer: { id: string; name: string } }) {
                           variant="outline"
                           size="icon"
                           className="h-9 w-9 shrink-0"
-                          onClick={() => setSwapping(s)}
+                          onClick={() => onSwap(s)}
                           aria-label="Trocar escala"
                         >
                           <Repeat className="h-4 w-4" />
@@ -161,13 +197,6 @@ function Body({ volunteer }: { volunteer: { id: string; name: string } }) {
           </>
         )}
       </div>
-
-      <SwapSlotDialog
-        slot={swapping}
-        volunteerName={volunteer.name}
-        onClose={() => setSwapping(null)}
-        onDone={refresh}
-      />
     </>
   );
 }

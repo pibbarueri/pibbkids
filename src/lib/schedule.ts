@@ -16,6 +16,7 @@ export type SlotShape = {
 export const ELIGIBILITY_SELECT = {
   id: true,
   name: true,
+  username: true,
   role: true,
   inclusionEnabled: true,
   preferredClasses: { select: { classGroupId: true } },
