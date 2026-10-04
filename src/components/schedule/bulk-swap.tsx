@@ -12,7 +12,8 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { Search, Undo2 } from "lucide-react";
+import { Search } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MonthGrid } from "@/components/ui/month-grid";
@@ -27,13 +28,11 @@ function Chip({
   label,
   selected,
   onTap,
-  icon,
 }: {
   id: string;
   label: string;
   selected: boolean;
   onTap: () => void;
-  icon?: React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
   return (
@@ -50,7 +49,6 @@ function Chip({
         isDragging && "z-50 shadow-lg"
       )}
     >
-      {icon}
       <span className="truncate">{label}</span>
     </button>
   );
@@ -101,9 +99,6 @@ function DayCell({
   );
 }
 
-// Chip that sends a day back to whoever was scheduled on it before any change.
-const ORIGINAL = "__original__";
-
 type SeatSlot = VolunteerSlot & { user: Person };
 
 /**
@@ -139,6 +134,7 @@ export function BulkSwap({
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [timeTab, setTimeTab] = useState<"EBD" | "CULTO" | null>(null);
 
   const sample = kinds.find(([k]) => k === kind)?.[1];
 
@@ -171,9 +167,19 @@ export function BulkSwap({
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
   );
 
-  const slots = seatSlots ?? [];
+  // EBD and Culto are separate slots of the same seat: one tab each, so a drop only touches
+  // the horário on screen. Sala Plus has no horário and no tabs.
+  const allSlots = seatSlots ?? [];
+  const timeTabs = (["EBD", "CULTO"] as const).filter((t) => allSlots.some((s) => s.timeSlot === t));
+  const activeTab =
+    timeTabs.length === 0
+      ? null
+      : timeTab && timeTabs.includes(timeTab)
+        ? timeTab
+        : (timeTabs.find((t) => allSlots.some((s) => s.timeSlot === t && s.userId === volunteer.id)) ?? timeTabs[0]);
+  const slots = activeTab ? allSlots.filter((s) => s.timeSlot === activeTab) : allSlots;
   const names = new Map<string, string>([
-    ...slots.map((s) => [s.user.id, s.user.name] as const),
+    ...allSlots.map((s) => [s.user.id, s.user.name] as const),
     ...(candidates?.volunteers ?? []).map((v) => [v.id, v.name] as const),
   ]);
   const slotsByDay = new Map<string, SeatSlot[]>();
@@ -185,7 +191,7 @@ export function BulkSwap({
 
   // Whoever was scheduled on a slot can always take it back.
   const canTake = (userId: string, slot: SeatSlot) =>
-    userId === ORIGINAL || userId === slot.userId || (candidates?.availability[slot.id] ?? []).includes(userId);
+    userId === slot.userId || (candidates?.availability[slot.id] ?? []).includes(userId);
 
   function assign(userId: string, targets: SeatSlot[]) {
     setError(null);
@@ -193,7 +199,7 @@ export function BulkSwap({
       const next = { ...prev };
       for (const slot of targets) {
         if (!canTake(userId, slot)) continue;
-        if (userId === ORIGINAL || userId === slot.userId) delete next[slot.id];
+        if (userId === slot.userId) delete next[slot.id];
         else next[slot.id] = userId;
       }
       return next;
@@ -262,6 +268,7 @@ export function BulkSwap({
                   setPending({});
                   setSelectedChip(null);
                   setQuery("");
+                  setTimeTab(null);
                 }}
                 className={cn(
                   "rounded-full border px-3 py-1.5 text-xs font-medium",
@@ -276,8 +283,17 @@ export function BulkSwap({
 
         <p className="text-xs text-muted-foreground">
           Arraste um nome até o dia, ou toque no nome e depois nos dias. Os dias de{" "}
-          {firstName(volunteer.name)} ficam destacados.
+          {firstName(volunteer.name)} ficam destacados. Pra desfazer, arraste a pessoa de volta.
         </p>
+
+        {timeTabs.length > 1 && (
+          <Tabs value={activeTab ?? undefined} onValueChange={(v) => setTimeTab(v as "EBD" | "CULTO")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="EBD">EBD</TabsTrigger>
+              <TabsTrigger value="CULTO">Culto</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
 
         {seatSlots === null ? (
           <p className="text-sm text-muted-foreground">Carregando…</p>
@@ -319,13 +335,6 @@ export function BulkSwap({
             </div>
           )}
           <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
-            <Chip
-              id={ORIGINAL}
-              label="Original"
-              icon={<Undo2 className="h-3.5 w-3.5" />}
-              selected={selectedChip === ORIGINAL}
-              onTap={() => setSelectedChip((c) => (c === ORIGINAL ? null : ORIGINAL))}
-            />
             {visibleChips.map((v) => (
               <Chip
                 key={v.id}
@@ -336,7 +345,7 @@ export function BulkSwap({
               />
             ))}
           </div>
-          {selectedChip && selectedChip !== ORIGINAL && ownSlots.length > 0 && (
+          {selectedChip && ownSlots.length > 0 && (
             <Button variant="outline" className="w-full" onClick={() => assign(selectedChip, ownSlots)}>
               Todos os dias de {firstName(volunteer.name)} → {firstName(names.get(selectedChip) ?? "")}
             </Button>
