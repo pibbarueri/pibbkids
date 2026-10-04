@@ -49,6 +49,8 @@ export function EventsClient({
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [justCopiedId, setJustCopiedId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -110,10 +112,21 @@ export function EventsClient({
     setForm(emptyForm);
   }
 
-  async function remove(id: string) {
-    await fetch(`/api/events/${id}`, { method: "DELETE" });
-    setEvents((prev) => prev.filter((e) => e.id !== id));
+  function askDelete(id: string) {
+    const event = events.find((e) => e.id === id);
+    if (!event) return;
     setOpen(false);
+    setEditingId(null);
+    setDeleteTarget(event);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const res = await fetch(`/api/events/${deleteTarget.id}`, { method: "DELETE" });
+    if (res.ok) setEvents((prev) => prev.filter((e) => e.id !== deleteTarget.id));
+    setDeleting(false);
+    setDeleteTarget(null);
   }
 
   async function copyWhatsApp(event: Event) {
@@ -254,13 +267,31 @@ export function EventsClient({
                   Salvar
                 </Button>
                 {editingId && (
-                  <Button variant="destructive" className="h-12 px-4" onClick={() => remove(editingId)}>
+                  <Button variant="destructive" className="h-12 px-4" onClick={() => askDelete(editingId)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir evento?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground wrap-anywhere">
+            {deleteTarget && (
+              <>
+                <span className="font-medium text-foreground">{deleteTarget.title}</span> será excluído. Essa ação
+                é irreversível.
+              </>
+            )}
+          </p>
+          <Button variant="destructive" className="w-full h-12" disabled={deleting} onClick={confirmDelete}>
+            Confirmar
+          </Button>
         </DialogContent>
       </Dialog>
       <EventDetailDialog eventId={detailId} onOpenChange={(o) => !o && closeDetail()} />
