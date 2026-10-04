@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canDeleteSnack, canManageSnacks } from "@/lib/permissions";
+import { validateMinQuantity } from "@/lib/snacks";
 
 async function hasApoioGeral(userId: string) {
   const f = await prisma.volunteerFunction.findFirst({
@@ -19,6 +20,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json();
 
+  // The quick +/- adjust (quantityDelta) is deliberately not validated: dropping below the
+  // threshold is exactly what it's for. Only explicit edits of the threshold are checked.
+  if (body.minQuantity !== undefined) {
+    const quantity =
+      body.quantity !== undefined
+        ? Number(body.quantity)
+        : (await prisma.snack.findUnique({ where: { id }, select: { quantity: true } }))?.quantity ?? 0;
+    const error = validateMinQuantity(Number(body.minQuantity), quantity);
+    if (error) return NextResponse.json({ error }, { status: 400 });
+  }
+
   const snack = await prisma.snack.update({
     where: { id },
     data: {
@@ -26,6 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(body.description !== undefined && { description: body.description }),
       ...(body.unit !== undefined && { unit: body.unit }),
       ...(body.quantity !== undefined && { quantity: Number(body.quantity) }),
+      ...(body.minQuantity !== undefined && { minQuantity: Number(body.minQuantity) }),
       ...(body.quantityDelta !== undefined && { quantity: { increment: Number(body.quantityDelta) } }),
     },
   });

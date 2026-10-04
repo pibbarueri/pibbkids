@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Minus, Trash2 } from "lucide-react";
+import { DEFAULT_SNACK_MIN_QUANTITY, validateMinQuantity } from "@/lib/snacks";
 
 const CATEGORY_LABELS: Record<string, string> = {
   FOOD: "Comida",
@@ -32,12 +33,27 @@ type Snack = {
   category: string;
   description: string;
   quantity: number;
+  minQuantity: number;
   unit: string;
 };
 
-type Form = { category: string; description: string; quantity: string; unit: string };
+type Form = { category: string; description: string; quantity: string; minQuantity: string; unit: string };
 
-const emptyForm: Form = { category: "FOOD", description: "", quantity: "0", unit: "" };
+const emptyForm: Form = {
+  category: "FOOD",
+  description: "",
+  quantity: "0",
+  minQuantity: String(DEFAULT_SNACK_MIN_QUANTITY),
+  unit: "",
+};
+
+function minQuantityError(f: Form) {
+  return validateMinQuantity(Number(f.minQuantity), Number(f.quantity) || 0);
+}
+
+function toPayload(f: Form) {
+  return { ...f, quantity: Number(f.quantity) || 0, minQuantity: Number(f.minQuantity) };
+}
 
 // Module scope on purpose: nesting this in SnacksClient would remount the inputs on
 // every keystroke and drop focus.
@@ -48,6 +64,7 @@ function SnackFields({
   value: Form;
   onChange: (patch: Partial<Form>) => void;
 }) {
+  const error = minQuantityError(value);
   return (
     <>
       <div className="space-y-1">
@@ -94,6 +111,19 @@ function SnackFields({
           />
         </div>
       </div>
+      <div className="space-y-1">
+        <p className="text-sm font-medium">Comprar mais quando chegar em</p>
+        <Input
+          type="number"
+          className="h-12"
+          min={0}
+          max={Number(value.quantity) || 0}
+          value={value.minQuantity}
+          onChange={(e) => onChange({ minQuantity: e.target.value })}
+          aria-invalid={!!error}
+        />
+        {error && <p className="text-xs text-destructive">{error}</p>}
+      </div>
     </>
   );
 }
@@ -122,6 +152,7 @@ export function SnacksClient({
       category: s.category,
       description: s.description,
       quantity: String(s.quantity),
+      minQuantity: String(s.minQuantity),
       unit: s.unit,
     });
   }
@@ -132,7 +163,7 @@ export function SnacksClient({
     const res = await fetch(`/api/snacks/${editingId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...editForm, quantity: Number(editForm.quantity) || 0 }),
+      body: JSON.stringify(toPayload(editForm)),
     });
     const updated = await res.json();
     setSnacks((prev) =>
@@ -148,7 +179,7 @@ export function SnacksClient({
     const res = await fetch("/api/snacks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, quantity: Number(form.quantity) || 0 }),
+      body: JSON.stringify(toPayload(form)),
     });
     const saved = await res.json();
     setSnacks((prev) => [...prev, saved].sort((a, b) => a.description.localeCompare(b.description)));
@@ -196,7 +227,7 @@ export function SnacksClient({
             <SnackFields value={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
             <Button
               className="w-full h-12"
-              disabled={!form.description || !form.unit || saving}
+              disabled={!form.description || !form.unit || !!minQuantityError(form) || saving}
               onClick={create}
             >
               Salvar
@@ -211,7 +242,7 @@ export function SnacksClient({
             <p className="font-medium text-sm uppercase">{s.description}</p>
             <p className="text-xs text-muted-foreground">
               {s.quantity} {s.unit}
-              {s.quantity <= 5 && <span className="text-destructive"> · estoque baixo</span>}
+              {s.quantity <= s.minQuantity && <span className="text-destructive"> · estoque baixo</span>}
             </p>
           </button>
           <div className="flex shrink-0 items-center gap-2">
@@ -264,7 +295,7 @@ export function SnacksClient({
             <SnackFields value={editForm} onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))} />
             <Button
               className="w-full h-12"
-              disabled={!editForm.description || !editForm.unit || saving}
+              disabled={!editForm.description || !editForm.unit || !!minQuantityError(editForm) || saving}
               onClick={saveEdit}
             >
               Salvar

@@ -410,6 +410,7 @@ model Snack {
   category    SnackCategory
   description String
   quantity    Int           @default(0)
+  minQuantity Int           @default(5) @map("min_quantity")
   unit        String
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")

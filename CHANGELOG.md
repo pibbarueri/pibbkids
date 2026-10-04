@@ -9,6 +9,10 @@ depois do merge que fecha uma leva de mudanças. Não é 1 tag por PR. O push da
 deploy de produção (`.github/workflows/deploy.yml`), então a seção da versão precisa estar
 aqui antes da tag sair.
 
+## v1.7.0 - 2026-10-03
+- Cada lanche agora tem seu próprio aviso de estoque baixo.
+  No cadastro do lanche, preencha "Comprar mais quando chegar em" e a liderança é avisada quando o estoque chegar nesse número.
+
 ## v1.6.0 - 2026-08-31
 - Esse aviso, mostrando tudo o que mudou desde a última vez que você abriu o app!
 
