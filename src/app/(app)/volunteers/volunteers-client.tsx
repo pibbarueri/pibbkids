@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Check, Filter, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
+import { VolunteerScheduleSheet } from "@/components/schedule/volunteer-schedule-sheet";
+import { CalendarDays, Check, Filter, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { formatPhone, phoneDigits, whatsappChatLink } from "@/lib/phone";
 import { formatCpf, cpfDigits } from "@/lib/cpf";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
@@ -109,14 +110,17 @@ export function VolunteersClient({
   initialVolunteers,
   classes,
   isLeadership,
+  canEditSchedule,
 }: {
   initialVolunteers: Volunteer[];
   classes: ClassGroup[];
   isLeadership: boolean;
+  canEditSchedule: boolean;
 }) {
   const router = useRouter();
   const [volunteers, setVolunteers] = useState(initialVolunteers);
   const [selected, setSelected] = useState<Volunteer | null>(null);
+  const [scheduleOf, setScheduleOf] = useState<{ id: string; name: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addForm, setAddForm] = useState(emptyVolunteerForm);
@@ -550,10 +554,18 @@ export function VolunteersClient({
                   <p className="text-muted-foreground">—</p>
                 )}
               </div>
+
+              {canEditSchedule && (
+                <Button variant="outline" className="w-full h-12" onClick={() => { setScheduleOf({ id: selected.id, name: selected.name }); setSelected(null); }}>
+                  <CalendarDays className="h-4 w-4" /> Ver escalas
+                </Button>
+              )}
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      <VolunteerScheduleSheet volunteer={scheduleOf} onClose={() => setScheduleOf(null)} />
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
