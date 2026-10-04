@@ -206,6 +206,20 @@ export function BulkSwap({
     });
   }
 
+  // Tapping a day that already has a change undoes it (back to whoever was scheduled);
+  // otherwise it takes the selected name.
+  function tapDay(daySlots: SeatSlot[]) {
+    if (daySlots.some((slot) => slot.id in pending)) {
+      setPending((prev) => {
+        const next = { ...prev };
+        for (const slot of daySlots) delete next[slot.id];
+        return next;
+      });
+      return;
+    }
+    if (selectedChip) assign(selectedChip, daySlots);
+  }
+
   function onDragStart(e: DragStartEvent) {
     setDraggingId(String(e.active.id));
   }
@@ -283,7 +297,7 @@ export function BulkSwap({
 
         <p className="text-xs text-muted-foreground">
           Arraste um nome até o dia, ou toque no nome e depois nos dias. Os dias de{" "}
-          {firstName(volunteer.name)} ficam destacados. Pra desfazer, arraste a pessoa de volta.
+          {firstName(volunteer.name)} ficam destacados. Toque de novo num dia alterado pra desfazer.
         </p>
 
         {timeTabs.length > 1 && (
@@ -314,7 +328,7 @@ export function BulkSwap({
                   servingNames={serving}
                   pending={daySlots.some((s) => s.id in pending)}
                   blocked={blocked}
-                  onTap={() => selectedChip && assign(selectedChip, daySlots)}
+                  onTap={() => tapDay(daySlots)}
                 />
               );
             }}
