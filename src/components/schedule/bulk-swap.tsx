@@ -12,10 +12,8 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { Search } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { MonthGrid } from "@/components/ui/month-grid";
 import { slotKindKey, slotPlaceLabel } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
@@ -131,7 +129,6 @@ export function BulkSwap({
   const [pending, setPending] = useState<Record<string, string>>({});
   const [selectedChip, setSelectedChip] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeTab, setTimeTab] = useState<"EBD" | "CULTO" | null>(null);
@@ -230,13 +227,11 @@ export function BulkSwap({
     assign(String(e.active.id), slotsByDay.get(String(e.over.id)) ?? []);
   }
 
-  // Seats like Sala Plus accept anyone: show who already serves there, and keep the rest
-  // behind search so the list stays usable.
-  const regulars = (candidates?.volunteers ?? []).filter((v) => v.regular);
-  const others = (candidates?.volunteers ?? []).filter((v) => !v.regular);
-  const q = query.trim().toLowerCase();
-  const matches = q.length >= 2 ? others.filter((v) => v.name.toLowerCase().includes(q)).slice(0, 8) : [];
-  const visibleChips = [...regulars, ...matches, ...others.filter((v) => v.id === selectedChip && !matches.includes(v))];
+  // Seats like Sala Plus accept anyone, so only who already serves there is listed. A seat
+  // nobody has served yet falls back to everyone eligible.
+  const allCandidates = candidates?.volunteers ?? [];
+  const regulars = allCandidates.filter((v) => v.regular);
+  const visibleChips = regulars.length > 0 ? regulars : allCandidates;
 
   const focusId = draggingId ?? selectedChip;
   const pendingCount = Object.keys(pending).length;
@@ -281,7 +276,6 @@ export function BulkSwap({
                   setCandidates(null);
                   setPending({});
                   setSelectedChip(null);
-                  setQuery("");
                   setTimeTab(null);
                 }}
                 className={cn(
@@ -337,17 +331,6 @@ export function BulkSwap({
 
         <div className="space-y-2">
           <p className="text-sm font-medium">{regulars.length > 0 ? "Quem já serve aqui" : "Quem pode servir"}</p>
-          {others.length > 0 && (
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="h-10 pl-9"
-                placeholder={regulars.length > 0 ? "Buscar outros voluntários" : "Buscar voluntário"}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </div>
-          )}
           <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
             {visibleChips.map((v) => (
               <Chip
