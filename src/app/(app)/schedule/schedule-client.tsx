@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -155,23 +154,12 @@ export function ScheduleClient({
   const [deleteTarget, setDeleteTarget] = useState<Slot | null>(null);
   const emptyForm = { timeSlots: [] as ("EBD" | "CULTO")[], classId: "", userId: "", role: "" as "TEACHER" | "ASSISTANT" | "" };
   const [form, setForm] = useState(emptyForm);
-  const [repeatDates, setRepeatDates] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [justCopied, setJustCopied] = useState(false);
 
   const selectedSunday = sundays[sundayIdx];
   const daySlots = slots.filter((s) => s.date.startsWith(selectedSunday.slice(0, 10)));
 
-  // Bulk "repeat on": the 4 sundays after the currently viewed one — the viewed
-  // sunday itself is always included separately, so it's excluded here.
-  const repeatSundays = useMemo(() => {
-    const d = new Date(selectedSunday);
-    return Array.from({ length: 4 }, (_, i) => {
-      const s = new Date(d);
-      s.setUTCDate(d.getUTCDate() + (i + 1) * 7);
-      return s.toISOString();
-    });
-  }, [selectedSunday]);
 
   const tabSlots = daySlots.filter((s) => inTimeSlot(s, timeSlotTab));
 
@@ -191,7 +179,6 @@ export function ScheduleClient({
   function openAdd() {
     setEditingSlot(null);
     setForm(emptyForm);
-    setRepeatDates([]);
     setAddOpen(true);
   }
 
@@ -259,7 +246,7 @@ export function ScheduleClient({
       const updated = await res.json();
       setSlots((prev) => prev.map((s) => (s.id === editingSlot.id ? updated : s)));
     } else {
-      const dates = repeatDates.length > 0 ? repeatDates : [selectedSunday];
+      const dates = [selectedSunday];
       const createdAll: Slot[] = [];
       for (const timeSlot of timeSlotList) {
         const res = await fetch("/api/schedule/bulk", {
@@ -277,12 +264,8 @@ export function ScheduleClient({
     setAddOpen(false);
     setEditingSlot(null);
     setForm(emptyForm);
-    setRepeatDates([]);
   }
 
-  function toggleRepeatDate(date: string) {
-    setRepeatDates((prev) => (prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]));
-  }
 
   async function confirmDelete() {
     if (!deleteTarget) return;
@@ -508,24 +491,6 @@ export function ScheduleClient({
               </div>
             )}
 
-            {!editingSlot && (
-              <div className="space-y-1">
-                <p className="text-sm font-medium">
-                  Repetir em <span className="text-muted-foreground font-normal">(opcional — sem seleção, só {formatDate(selectedSunday)})</span>
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {repeatSundays.map((s) => (
-                    <label key={s} className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer text-sm">
-                      <Checkbox
-                        checked={repeatDates.includes(s)}
-                        onCheckedChange={() => toggleRepeatDate(s)}
-                      />
-                      {new Date(s).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" })}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <Button
               className="w-full h-12"
@@ -538,7 +503,7 @@ export function ScheduleClient({
               }
               onClick={saveSlot}
             >
-              Salvar{!editingSlot && repeatDates.length > 1 ? ` (${repeatDates.length} domingos)` : ""}
+              Salvar
               {!editingSlot && timeSlotList.length > 1 ? ` × ${timeSlotList.length} horários` : ""}
             </Button>
           </div>
