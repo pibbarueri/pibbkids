@@ -9,6 +9,10 @@ depois do merge que fecha uma leva de mudanças. Não é 1 tag por PR. O push da
 deploy de produção (`.github/workflows/deploy.yml`), então a seção da versão precisa estar
 aqui antes da tag sair.
 
+## v1.8.0 - 2026-10-04
+- Troca de escalas: no detalhe do voluntário, "Ver escalas" mostra o calendário de quando ele serve.
+  Dá pra trocar um dia com outro voluntário, ou redistribuir vários dias futuros para outros voluntários da mesma turma.
+
 ## v1.7.0 - 2026-10-03
 - Cada lanche agora tem seu próprio aviso de estoque baixo.
   No cadastro do lanche, preencha "Comprar mais quando chegar em" (de 0 a 50) e a liderança é avisada quando o estoque chegar nesse número. Use 0 para não receber aviso daquele lanche.
