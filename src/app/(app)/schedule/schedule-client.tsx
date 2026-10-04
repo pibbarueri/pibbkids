@@ -21,6 +21,7 @@ import { Check, ChevronLeft, ChevronRight, Copy, Pencil, Plus, Trash2 } from "lu
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { copyText } from "@/lib/clipboard";
+import { isEligibleForSlot } from "@/lib/schedule";
 
 // Sala Plus has no time slot (17h-18h, before EBD/Culto) — always shows in both tabs.
 function inTimeSlot(slot: { slotType: string; timeSlot: string | null }, tab: "EBD" | "CULTO") {
@@ -178,17 +179,14 @@ export function ScheduleClient({
 
   const eligibleVolunteers = !form.classId
     ? []
-    : isRealClass
-    ? volunteers.filter((v) => v.preferredClasses.some((c) => c.classGroupId === form.classId))
-    : form.classId === "COORDINATOR"
-    ? volunteers.filter((v) => v.role === "ADMIN" || v.role === "COORDINATOR")
-    : form.classId === "RECEPTION"
-    ? volunteers.filter((v) => v.functions.some((f) => f.function === "RECEPTION"))
-    : form.classId === "INCLUSION"
-    ? volunteers.filter((v) => v.inclusionEnabled)
-    : form.classId === "SNACK"
-    ? volunteers.filter((v) => v.functions.some((f) => f.function === "SUPPORT"))
-    : volunteers;
+    : volunteers.filter((v) =>
+        isEligibleForSlot(
+          v,
+          isRealClass
+            ? { slotType: "CLASS", classGroupId: form.classId }
+            : { slotType: form.classId, classGroupId: null }
+        )
+      );
 
   function openAdd() {
     setEditingSlot(null);
