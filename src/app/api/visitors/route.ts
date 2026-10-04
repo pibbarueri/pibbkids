@@ -3,7 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canEditVisitor, canLogVisitor } from "@/lib/permissions";
-import { MAX_VISITOR_AGE, suggestedClassName, suggestedClassNameForAge, visitorAgeYears } from "@/lib/age";
+import { visitorAgeText } from "@/lib/age";
+import { ageMonthsField, classGroupIdForVisitor } from "@/lib/visitors";
 import { dayRangeUTC, dateTimeOnDay, dayKey } from "@/lib/dates";
 import { SundayType } from "@prisma/client";
 
@@ -12,13 +13,13 @@ const schema = z
   .object({
     name: z.string().min(2),
     birthdate: z.string().min(1).optional(),
-    age: z.number().int().min(0).max(MAX_VISITOR_AGE).optional(),
+    ageMonths: ageMonthsField.optional(),
     date: z.string().min(1).optional(),
     type: z.nativeEnum(SundayType),
   })
-  .refine((d) => (d.birthdate === undefined) !== (d.age === undefined), {
+  .refine((d) => (d.birthdate === undefined) !== (d.ageMonths === undefined), {
     message: "Informe a idade ou a data de nascimento.",
-    path: ["age"],
+    path: ["ageMonths"],
   });
 
 export async function GET(req: NextRequest) {
@@ -76,20 +77,15 @@ export async function POST(req: NextRequest) {
   }
 
   const birthdate = parsed.data.birthdate ? new Date(parsed.data.birthdate) : null;
-  const age = birthdate ? null : parsed.data.age!;
-  const suggestion = birthdate ? suggestedClassName(birthdate) : suggestedClassNameForAge(age!);
-  const classGroup = await prisma.classGroup.findFirst({
-    where: { name: suggestion },
-    select: { id: true, name: true },
-  });
+  const ageMonths = birthdate ? null : parsed.data.ageMonths!;
 
   const visitor = await prisma.visitor.create({
     data: {
       name: parsed.data.name,
       birthdate,
-      age,
+      ageMonths,
       type: parsed.data.type,
-      classGroupId: classGroup?.id ?? null,
+      classGroupId: await classGroupIdForVisitor({ birthdate, ageMonths }),
       createdById: session.user.id,
       createdAt: dateTimeOnDay(parsed.data.date ?? dayKey()),
     },
@@ -97,7 +93,7 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json(
-    { ...visitor, age: visitorAgeYears(visitor) },
+    { ...visitor, ageText: visitorAgeText(visitor) },
     { status: 201 }
   );
 }

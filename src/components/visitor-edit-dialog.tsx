@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -15,9 +16,8 @@ type EditableVisitor = {
   id: string;
   name: string;
   birthdate: string | null;
-  age: number | null;
+  ageMonths: number | null;
   type: "EBD" | "CULTO";
-  classGroup: { id: string } | null;
 };
 
 /**
@@ -102,17 +102,21 @@ function EditBody({
       <div className="space-y-3">
         <VisitorForm value={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} withSchedule />
         {error && <p className="text-sm text-destructive">{error}</p>}
-        <Button className="w-full h-12" disabled={!isVisitorFormValid(form) || busy} onClick={() => send("PATCH")}>
-          Salvar
-        </Button>
-        <Button
-          variant="ghost"
-          className="w-full h-12 text-destructive hover:text-destructive"
-          disabled={busy}
-          onClick={() => setConfirmingDelete(true)}
-        >
-          Remover visitante
-        </Button>
+        <div className="flex gap-2">
+          <Button className="flex-1 h-12" disabled={!isVisitorFormValid(form) || busy} onClick={() => send("PATCH")}>
+            Salvar
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12 shrink-0 text-destructive hover:text-destructive"
+            disabled={busy}
+            onClick={() => setConfirmingDelete(true)}
+            aria-label="Remover visitante"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </>
   );

@@ -168,10 +168,11 @@ enum Frequency {
 model Visitor {
   id           String      @id @default(cuid())
   name         String
-  // Exactly one of birthdate/age is set: reception can log just the age on a busy Sunday.
-  // age is the age on the day of the visit, never turned into a made-up birthdate.
+  // Exactly one of birthdate/ageMonths is set: reception can log just the age on a busy
+  // Sunday. ageMonths is the total age in months on the day of the visit, never turned into
+  // a made-up birthdate.
   birthdate    DateTime?   @db.Date
-  age          Int?
+  ageMonths    Int?        @map("age_months")
   type         SundayType
   classGroupId String?     @map("class_group_id")
   classGroup   ClassGroup? @relation(fields: [classGroupId], references: [id])

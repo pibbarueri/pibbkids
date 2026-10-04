@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { sortClasses } from "@/lib/classes";
 import { dayKey } from "@/lib/dates";
-import { visitorAgeYears } from "@/lib/age";
+import { visitorAgeText } from "@/lib/age";
 import {
   VisitorForm,
   emptyVisitorForm,
@@ -34,7 +34,7 @@ type Visitor = {
   id: string;
   name: string;
   birthdate: string | null;
-  age: number | null;
+  ageMonths: number | null;
   type: "EBD" | "CULTO";
   classGroup: ClassGroup | null;
   childId: string | null;
@@ -54,7 +54,7 @@ function VisitorFab({
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<VisitorFormValue>(emptyVisitorForm(type));
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<{ name: string; age: number; className: string } | null>(null);
+  const [result, setResult] = useState<{ name: string; ageText: string; className: string } | null>(null);
 
   function reset() {
     setForm(emptyVisitorForm(type));
@@ -73,7 +73,7 @@ function VisitorFab({
       const created = await res.json();
       setResult({
         name: created.name,
-        age: created.age,
+        ageText: created.ageText,
         className: created.classGroup?.name ?? "Sem turma definida",
       });
     }
@@ -103,7 +103,7 @@ function VisitorFab({
               <DialogTitle>{result.name}</DialogTitle>
             </DialogHeader>
             <p className="text-sm">
-              Tem <span className="font-bold">{result.age} anos</span> e vai pra sala{" "}
+              Tem <span className="font-bold">{result.ageText}</span> e vai pra sala{" "}
               <span className="font-bold">{result.className}</span>.
             </p>
             <Button
@@ -411,7 +411,7 @@ export function AttendanceClient({
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm truncate">{v.name}</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {v.classGroup?.name ?? "Sem turma"} · {visitorAgeYears(v)} anos
+                  {v.classGroup?.name ?? "Sem turma"} · {visitorAgeText(v)}
                   {v.childId && " · efetivado"}
                 </p>
               </div>
