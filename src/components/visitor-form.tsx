@@ -3,46 +3,51 @@
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { NumberStepper } from "@/components/ui/number-stepper";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MAX_VISITOR_AGE } from "@/lib/age";
-import { sortClasses } from "@/lib/classes";
+import { MAX_VISITOR_AGE_YEARS, visitorClassName } from "@/lib/age";
 import { cn } from "@/lib/utils";
 
 export type VisitorFormValue = {
   name: string;
   mode: "age" | "birthdate";
-  age: number;
+  years: number;
+  months: number;
   birthdate: string;
   type: "EBD" | "CULTO";
-  classGroupId: string | null;
 };
 
 type VisitorLike = {
   name: string;
   birthdate: string | null;
-  age: number | null;
+  ageMonths: number | null;
   type: "EBD" | "CULTO";
-  classGroup: { id: string } | null;
 };
 
-type Suggestion = { id: string; name: string; birthdate: string | null; age: number | null };
+type Suggestion = { id: string; name: string; birthdate: string | null; ageMonths: number | null };
 
-const NO_CLASS = "__none__";
-const DEFAULT_AGE = 5;
+const DEFAULT_YEARS = 5;
+
+function splitMonths(total: number) {
+  return { years: Math.floor(total / 12), months: total % 12 };
+}
 
 export function emptyVisitorForm(type: "EBD" | "CULTO"): VisitorFormValue {
-  return { name: "", mode: "age", age: DEFAULT_AGE, birthdate: "", type, classGroupId: null };
+  return { name: "", mode: "age", years: DEFAULT_YEARS, months: 0, birthdate: "", type };
 }
 
 export function visitorFormFrom(v: VisitorLike): VisitorFormValue {
   return {
     name: v.name,
     mode: v.birthdate ? "birthdate" : "age",
-    age: v.age ?? DEFAULT_AGE,
+    ...(v.ageMonths !== null ? splitMonths(v.ageMonths) : { years: DEFAULT_YEARS, months: 0 }),
     birthdate: v.birthdate ? new Date(v.birthdate).toISOString().slice(0, 10) : "",
     type: v.type,
-    classGroupId: v.classGroup?.id ?? null,
   };
+}
+
+/** Same rule the API uses to pick the turma, so the preview matches what gets saved. */
+function previewClassName(v: VisitorFormValue) {
+  if (v.mode === "age") return visitorClassName({ birthdate: null, ageMonths: v.years * 12 + v.months });
+  return v.birthdate ? visitorClassName({ birthdate: v.birthdate, ageMonths: null }) : null;
 }
 
 export function isVisitorFormValid(v: VisitorFormValue) {
@@ -53,8 +58,8 @@ export function isVisitorFormValid(v: VisitorFormValue) {
 export function visitorPayload(v: VisitorFormValue, opts: { includeSchedule: boolean }) {
   return {
     name: v.name.trim(),
-    ...(v.mode === "age" ? { age: v.age } : { birthdate: v.birthdate }),
-    ...(opts.includeSchedule && { type: v.type, classGroupId: v.classGroupId }),
+    ...(v.mode === "age" ? { ageMonths: v.years * 12 + v.months } : { birthdate: v.birthdate }),
+    ...(opts.includeSchedule && { type: v.type }),
   };
 }
 
@@ -87,8 +92,9 @@ function Chips<T extends string>({
 }
 
 /**
- * Shared by "Incluir visitante" (name autocomplete, no schedule fields) and the edit dialogs
- * on Presença and the visitors report (schedule fields: horário + turma).
+ * Shared by "Incluir visitante" (name autocomplete, no horário) and the edit dialogs on
+ * Presença and the visitors report (horário editable). The turma is never editable: it's
+ * shown live from the age/birthdate and recomputed by the API on save.
  */
 export function VisitorForm({
   value,
@@ -102,7 +108,6 @@ export function VisitorForm({
   withSchedule?: boolean;
 }) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
 
   const query = value.name.trim();
   const searching = withAutocomplete && query.length >= 2;
@@ -123,17 +128,7 @@ export function VisitorForm({
     };
   }, [query, searching]);
 
-  useEffect(() => {
-    if (!withSchedule) return;
-    fetch("/api/classes")
-      .then((r) => r.json())
-      .then((data) => setClasses(sortClasses(data)));
-  }, [withSchedule]);
-
-  const classItems: Record<string, string> = {
-    [NO_CLASS]: "Sem turma",
-    ...Object.fromEntries(classes.map((c) => [c.id, c.name])),
-  };
+  const className = previewClassName(value);
 
   return (
     <div className="space-y-3">
@@ -157,7 +152,7 @@ export function VisitorForm({
                     name: s.name,
                     ...(s.birthdate
                       ? { mode: "birthdate", birthdate: new Date(s.birthdate).toISOString().slice(0, 10) }
-                      : s.age !== null && { mode: "age", age: s.age }),
+                      : s.ageMonths !== null && { mode: "age", ...splitMonths(s.ageMonths) }),
                   });
                   setSuggestions([]);
                 }}
@@ -182,15 +177,30 @@ export function VisitorForm({
       </div>
 
       {value.mode === "age" ? (
-        <div className="space-y-1">
+        <div className="space-y-2">
           <p className="text-sm font-medium">Idade *</p>
-          <NumberStepper
-            value={value.age}
-            onChange={(age) => onChange({ age })}
-            min={0}
-            max={MAX_VISITOR_AGE}
-            aria-label="Idade"
-          />
+          <div className="flex items-center gap-2">
+            <NumberStepper
+              className="flex-1"
+              value={value.years}
+              onChange={(years) => onChange({ years })}
+              min={0}
+              max={MAX_VISITOR_AGE_YEARS}
+              aria-label="Anos"
+            />
+            <span className="w-14 text-sm text-muted-foreground">anos</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <NumberStepper
+              className="flex-1"
+              value={value.months}
+              onChange={(months) => onChange({ months })}
+              min={0}
+              max={11}
+              aria-label="Meses"
+            />
+            <span className="w-14 text-sm text-muted-foreground">meses</span>
+          </div>
         </div>
       ) : (
         <div className="space-y-1">
@@ -205,39 +215,23 @@ export function VisitorForm({
       )}
 
       {withSchedule && (
-        <>
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Horário</p>
-            <Chips
-              options={[
-                { value: "EBD", label: "EBD" },
-                { value: "CULTO", label: "Culto" },
-              ]}
-              value={value.type}
-              onChange={(type) => onChange({ type })}
-            />
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Turma</p>
-            <Select
-              value={value.classGroupId ?? NO_CLASS}
-              onValueChange={(v) => onChange({ classGroupId: !v || v === NO_CLASS ? null : v })}
-              items={classItems}
-            >
-              <SelectTrigger className="h-12">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(classItems).map(([id, label]) => (
-                  <SelectItem key={id} value={id}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </>
+        <div className="space-y-1">
+          <p className="text-sm font-medium">Horário</p>
+          <Chips
+            options={[
+              { value: "EBD", label: "EBD" },
+              { value: "CULTO", label: "Culto" },
+            ]}
+            value={value.type}
+            onChange={(type) => onChange({ type })}
+          />
+        </div>
       )}
+
+      <div className="rounded-lg bg-muted/50 px-3 py-2 text-sm">
+        <span className="text-muted-foreground">Turma: </span>
+        <span className="font-medium">{className ?? "informe a idade ou a data"}</span>
+      </div>
     </div>
   );
 }

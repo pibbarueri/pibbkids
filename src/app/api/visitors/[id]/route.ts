@@ -5,19 +5,18 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canEditVisitor } from "@/lib/permissions";
 import { dayKey } from "@/lib/dates";
-import { MAX_VISITOR_AGE } from "@/lib/age";
+import { ageMonthsField, classGroupIdForVisitor } from "@/lib/visitors";
 
 const patchSchema = z
   .object({
     name: z.string().min(2).optional(),
     birthdate: z.string().min(1).optional(),
-    age: z.number().int().min(0).max(MAX_VISITOR_AGE).optional(),
+    ageMonths: ageMonthsField.optional(),
     type: z.enum(SundayType).optional(),
-    classGroupId: z.string().min(1).nullable().optional(),
   })
-  .refine((d) => !(d.birthdate !== undefined && d.age !== undefined), {
+  .refine((d) => !(d.birthdate !== undefined && d.ageMonths !== undefined), {
     message: "Informe a idade ou a data de nascimento, não os dois.",
-    path: ["age"],
+    path: ["ageMonths"],
   });
 
 type Guard = { ok: true } | { ok: false; response: NextResponse };
@@ -67,15 +66,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!parsed.success) {
     return NextResponse.json({ errors: parsed.error.flatten().fieldErrors }, { status: 422 });
   }
-  const { birthdate, age, ...rest } = parsed.data;
+  const { birthdate, ageMonths, ...rest } = parsed.data;
+
+  // Switching between birthdate and age clears the other one, so only one is ever set.
+  const ageFields =
+    birthdate !== undefined
+      ? { birthdate: new Date(birthdate), ageMonths: null }
+      : ageMonths !== undefined
+        ? { birthdate: null, ageMonths }
+        : null;
 
   const visitor = await prisma.visitor.update({
     where: { id },
     data: {
       ...rest,
-      // Switching between birthdate and age clears the other one, so only one is ever set.
-      ...(birthdate !== undefined && { birthdate: new Date(birthdate), age: null }),
-      ...(age !== undefined && { age, birthdate: null }),
+      ...(ageFields && { ...ageFields, classGroupId: await classGroupIdForVisitor(ageFields) }),
     },
     include: { classGroup: { select: { id: true, name: true } } },
   });

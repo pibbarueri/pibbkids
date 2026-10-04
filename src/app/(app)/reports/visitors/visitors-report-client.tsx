@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { ageLabel, suggestedClassName, suggestedClassNameForAge } from "@/lib/age";
+import { visitorAgeText, visitorClassName } from "@/lib/age";
 import { VisitorEditDialog } from "@/components/visitor-edit-dialog";
 import { formatPhone, phoneDigits } from "@/lib/phone";
 import { Frequency } from "@prisma/client";
@@ -30,7 +30,7 @@ type VisitorListItem = {
   id: string;
   name: string;
   birthdate: string | null;
-  age: number | null;
+  ageMonths: number | null;
   type: "EBD" | "CULTO";
   classGroup: ClassGroup | null;
 };
@@ -41,11 +41,6 @@ type VisitorDetail = VisitorListItem & {
   canEdit: boolean;
 };
 
-// Visitors logged with just an age keep the age from the day of the visit.
-function visitorAgeText(v: { birthdate: string | null; age: number | null }) {
-  if (v.birthdate) return ageLabel(new Date(v.birthdate));
-  return v.age === null ? "—" : `${v.age} ${v.age === 1 ? "ano" : "anos"}`;
-}
 
 function toDateKey(d: Date) {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
@@ -143,9 +138,7 @@ export function VisitorsReportClient({ isManager }: { isManager: boolean }) {
 
   function openPromote() {
     if (!detail) return;
-    const suggestion = detail.birthdate
-      ? suggestedClassName(new Date(detail.birthdate))
-      : suggestedClassNameForAge(detail.age ?? 0);
+    const suggestion = visitorClassName(detail) ?? "";
     const match = classes.find((c) => c.name.toLowerCase() === suggestion.toLowerCase());
     setPromoteForm({
       ...emptyPromoteForm,
@@ -280,18 +273,28 @@ export function VisitorsReportClient({ isManager }: { isManager: boolean }) {
                   label="Cadastrado por"
                   value={`${detail.createdBy.username ?? "—"}, em ${new Date(detail.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric", timeZone: "America/Sao_Paulo" })} às ${new Date(detail.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}`}
                 />
-                {detail.canEdit && (
-                  <Button variant="outline" className="w-full h-12" onClick={() => setEditing(true)}>
-                    Editar ou remover
-                  </Button>
-                )}
-                {isManager && (
-                  detail.childId ? (
-                    <p className="text-sm text-muted-foreground">Já efetivada.</p>
-                  ) : (
-                    <Button className="w-full h-12" onClick={openPromote}>
-                      Efetivar
-                    </Button>
+                {detail.childId ? (
+                  <p className="text-sm text-muted-foreground">Já efetivada.</p>
+                ) : (
+                  (isManager || detail.canEdit) && (
+                    <div className="flex gap-2">
+                      {isManager && (
+                        <Button className="flex-1 h-12" onClick={openPromote}>
+                          Efetivar
+                        </Button>
+                      )}
+                      {detail.canEdit && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-12 w-12 shrink-0"
+                          onClick={() => setEditing(true)}
+                          aria-label="Editar visitante"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   )
                 )}
               </div>

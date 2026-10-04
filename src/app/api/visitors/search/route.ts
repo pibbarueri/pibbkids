@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   const visitors = await prisma.visitor.findMany({
     where: { name: { contains: q, mode: "insensitive" } },
-    select: { id: true, name: true, birthdate: true, age: true },
+    select: { id: true, name: true, birthdate: true, ageMonths: true },
     distinct: ["name"],
     orderBy: { createdAt: "desc" },
     take: 5,
