@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { MonthGrid } from "@/components/ui/month-grid";
 import { slotKindKey, slotPlaceLabel } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
-import { fetchCandidates, postSwap, type Candidates, type Person, type VolunteerSlot } from "./types";
+import { fetchCandidates, futureRange, postSwap, type Candidates, type Person, type VolunteerSlot } from "./types";
 
 const firstName = (name: string) => name.split(" ")[0];
 
@@ -59,21 +59,22 @@ function Chip({
 function DayCell({
   date,
   dayKey,
-  slots,
-  servingName,
+  active,
+  own,
+  servingNames,
   pending,
   blocked,
   onTap,
 }: {
   date: Date;
   dayKey: string;
-  slots: VolunteerSlot[];
-  servingName: string | null;
+  active: boolean;
+  own: boolean;
+  servingNames: string[];
   pending: boolean;
   blocked: boolean;
   onTap: () => void;
 }) {
-  const active = slots.length > 0;
   const { setNodeRef, isOver } = useDroppable({ id: dayKey, disabled: !active || blocked });
   return (
     <button
@@ -82,22 +83,33 @@ function DayCell({
       disabled={!active}
       onClick={onTap}
       className={cn(
-        "flex aspect-square w-full flex-col items-center justify-center rounded-md text-xs leading-tight",
-        active ? "bg-muted" : "text-muted-foreground/50",
+        "flex aspect-square w-full flex-col items-center justify-center overflow-hidden rounded-md text-xs leading-none",
+        !active && "text-muted-foreground/50",
+        active && (own ? "bg-orange-100 dark:bg-orange-950" : "bg-muted"),
         pending && "border border-primary bg-primary/15",
         active && blocked && "opacity-40",
         isOver && "ring-2 ring-primary"
       )}
     >
       <span className="font-medium">{date.getUTCDate()}</span>
-      {active && servingName && <span className="w-full truncate px-0.5 text-[9px]">{firstName(servingName)}</span>}
+      {servingNames.slice(0, 2).map((name, i) => (
+        <span key={i} className="mt-0.5 w-full truncate px-0.5 text-[8px]">
+          {firstName(name)}
+        </span>
+      ))}
     </button>
   );
 }
 
+// Chip that sends a day back to whoever was scheduled on it before any change.
+const ORIGINAL = "__original__";
+
+type SeatSlot = VolunteerSlot & { user: Person };
+
 /**
- * Redistribute a volunteer's future slots of one seat (same sala/cargo) among the people who
- * can take it: drag a name onto a day, or tap a name and then the days. Nothing is saved until
+ * Redistribute one seat (same sala/cargo) over the coming Sundays. The calendar shows every
+ * slot of the seat, the volunteer's and everyone else's, so trades are planned with the whole
+ * picture. Drag a name onto a day, or tap a name and then the days. Nothing is saved until
  * "Salvar", which sends every change in one request.
  */
 export function BulkSwap({
@@ -111,9 +123,6 @@ export function BulkSwap({
   onDone: () => void;
   onCancel: () => void;
 }) {
-  const volunteerId = volunteer.id;
-  const volunteerName = volunteer.name;
-  const [query, setQuery] = useState("");
   const kinds = useMemo(() => {
     const map = new Map<string, VolunteerSlot>();
     for (const s of futureSlots) if (!map.has(slotKindKey(s))) map.set(slotKindKey(s), s);
@@ -122,42 +131,69 @@ export function BulkSwap({
 
   const [kind, setKind] = useState(kinds[0]?.[0] ?? "");
   const [offset, setOffset] = useState(0);
+  const [seatSlots, setSeatSlots] = useState<SeatSlot[] | null>(null);
   const [candidates, setCandidates] = useState<Candidates | null>(null);
   const [pending, setPending] = useState<Record<string, string>>({});
   const [selectedChip, setSelectedChip] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const kindSlots = useMemo(() => futureSlots.filter((s) => slotKindKey(s) === kind), [futureSlots, kind]);
+  const sample = kinds.find(([k]) => k === kind)?.[1];
 
   useEffect(() => {
-    fetchCandidates(kindSlots.map((s) => s.id)).then(setCandidates);
-  }, [kindSlots]);
+    if (!sample) return;
+    let cancelled = false;
+    const { from, to } = futureRange();
+    const params = new URLSearchParams({
+      slotType: sample.slotType,
+      classGroupId: sample.classGroupId ?? "",
+      role: sample.role ?? "",
+      from,
+      to,
+    });
+    fetch(`/api/schedule/seat?${params}`)
+      .then((r) => r.json())
+      .then(async (slots: SeatSlot[]) => {
+        const c = await fetchCandidates(slots.map((s) => s.id));
+        if (cancelled) return;
+        setSeatSlots(slots);
+        setCandidates(c);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sample]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
   );
 
-  const names = new Map<string, string>([[volunteerId, volunteerName], ...(candidates?.volunteers ?? []).map((v) => [v.id, v.name] as const)]);
-  const slotsByDay = new Map<string, VolunteerSlot[]>();
-  for (const s of kindSlots) {
+  const slots = seatSlots ?? [];
+  const names = new Map<string, string>([
+    ...slots.map((s) => [s.user.id, s.user.name] as const),
+    ...(candidates?.volunteers ?? []).map((v) => [v.id, v.name] as const),
+  ]);
+  const slotsByDay = new Map<string, SeatSlot[]>();
+  for (const s of slots) {
     const key = s.date.slice(0, 10);
     slotsByDay.set(key, [...(slotsByDay.get(key) ?? []), s]);
   }
+  const ownSlots = slots.filter((s) => s.userId === volunteer.id);
 
-  // The original volunteer can always take their own slot back.
-  const canTake = (userId: string, slot: VolunteerSlot) =>
-    userId === volunteerId || (candidates?.availability[slot.id] ?? []).includes(userId);
+  // Whoever was scheduled on a slot can always take it back.
+  const canTake = (userId: string, slot: SeatSlot) =>
+    userId === ORIGINAL || userId === slot.userId || (candidates?.availability[slot.id] ?? []).includes(userId);
 
-  function assign(userId: string, slots: VolunteerSlot[]) {
+  function assign(userId: string, targets: SeatSlot[]) {
     setError(null);
     setPending((prev) => {
       const next = { ...prev };
-      for (const slot of slots) {
+      for (const slot of targets) {
         if (!canTake(userId, slot)) continue;
-        if (userId === volunteerId) delete next[slot.id];
+        if (userId === ORIGINAL || userId === slot.userId) delete next[slot.id];
         else next[slot.id] = userId;
       }
       return next;
@@ -202,7 +238,7 @@ export function BulkSwap({
   if (kinds.length === 0) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">{volunteerName} não tem escalas futuras.</p>
+        <p className="text-sm text-muted-foreground">{volunteer.name} não tem escalas futuras.</p>
         <Button variant="outline" className="w-full h-12" onClick={onCancel}>
           Voltar
         </Button>
@@ -215,12 +251,14 @@ export function BulkSwap({
       <div className="space-y-4">
         {kinds.length > 1 && (
           <div className="flex flex-wrap gap-2">
-            {kinds.map(([key, sample]) => (
+            {kinds.map(([key, s]) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => {
                   setKind(key);
+                  setSeatSlots(null);
+                  setCandidates(null);
                   setPending({});
                   setSelectedChip(null);
                   setQuery("");
@@ -230,41 +268,45 @@ export function BulkSwap({
                   key === kind ? "border-primary bg-primary text-primary-foreground" : "border-input"
                 )}
               >
-                {slotPlaceLabel(sample)}
+                {slotPlaceLabel(s)}
               </button>
             ))}
           </div>
         )}
 
         <p className="text-xs text-muted-foreground">
-          Arraste um nome até o dia, ou toque no nome e depois nos dias.
+          Arraste um nome até o dia, ou toque no nome e depois nos dias. Os dias de{" "}
+          {firstName(volunteer.name)} ficam destacados.
         </p>
 
-        <MonthGrid
-          offset={offset}
-          onOffsetChange={setOffset}
-          renderDay={(date, key) => {
-            const daySlots = slotsByDay.get(key) ?? [];
-            const first = daySlots[0];
-            const serving = first ? names.get(pending[first.id] ?? volunteerId) ?? null : null;
-            const blocked = !!focusId && daySlots.length > 0 && !daySlots.some((s) => canTake(focusId, s));
-            return (
-              <DayCell
-                date={date}
-                dayKey={key}
-                slots={daySlots}
-                servingName={serving}
-                pending={daySlots.some((s) => s.id in pending)}
-                blocked={blocked}
-                onTap={() => selectedChip && assign(selectedChip, daySlots)}
-              />
-            );
-          }}
-        />
+        {seatSlots === null ? (
+          <p className="text-sm text-muted-foreground">Carregando…</p>
+        ) : (
+          <MonthGrid
+            offset={offset}
+            onOffsetChange={setOffset}
+            renderDay={(date, key) => {
+              const daySlots = slotsByDay.get(key) ?? [];
+              const serving = daySlots.map((s) => names.get(pending[s.id] ?? s.userId) ?? "");
+              const blocked = !!focusId && daySlots.length > 0 && !daySlots.some((s) => canTake(focusId, s));
+              return (
+                <DayCell
+                  date={date}
+                  dayKey={key}
+                  active={daySlots.length > 0}
+                  own={daySlots.some((s) => s.userId === volunteer.id)}
+                  servingNames={serving}
+                  pending={daySlots.some((s) => s.id in pending)}
+                  blocked={blocked}
+                  onTap={() => selectedChip && assign(selectedChip, daySlots)}
+                />
+              );
+            }}
+          />
+        )}
 
         <div className="space-y-2">
           <p className="text-sm font-medium">{regulars.length > 0 ? "Quem já serve aqui" : "Quem pode servir"}</p>
-          {candidates === null && <p className="text-sm text-muted-foreground">Carregando…</p>}
           {others.length > 0 && (
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -278,11 +320,11 @@ export function BulkSwap({
           )}
           <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
             <Chip
-              id={volunteerId}
-              label={firstName(volunteerName)}
+              id={ORIGINAL}
+              label="Original"
               icon={<Undo2 className="h-3.5 w-3.5" />}
-              selected={selectedChip === volunteerId}
-              onTap={() => setSelectedChip((c) => (c === volunteerId ? null : volunteerId))}
+              selected={selectedChip === ORIGINAL}
+              onTap={() => setSelectedChip((c) => (c === ORIGINAL ? null : ORIGINAL))}
             />
             {visibleChips.map((v) => (
               <Chip
@@ -294,9 +336,9 @@ export function BulkSwap({
               />
             ))}
           </div>
-          {selectedChip && (
-            <Button variant="outline" className="w-full" onClick={() => assign(selectedChip, kindSlots)}>
-              Todos os dias → {firstName(names.get(selectedChip) ?? "")}
+          {selectedChip && selectedChip !== ORIGINAL && ownSlots.length > 0 && (
+            <Button variant="outline" className="w-full" onClick={() => assign(selectedChip, ownSlots)}>
+              Todos os dias de {firstName(volunteer.name)} → {firstName(names.get(selectedChip) ?? "")}
             </Button>
           )}
         </div>
@@ -304,11 +346,7 @@ export function BulkSwap({
         {error && <p className="text-sm text-destructive whitespace-pre-line">{error}</p>}
 
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="h-12"
-            onClick={() => (pendingCount > 0 ? setPending({}) : onCancel())}
-          >
+          <Button variant="outline" className="h-12" onClick={() => (pendingCount > 0 ? setPending({}) : onCancel())}>
             {pendingCount > 0 ? "Descartar" : "Voltar"}
           </Button>
           <Button className="flex-1 h-12" disabled={pendingCount === 0 || saving} onClick={save}>
@@ -319,4 +357,3 @@ export function BulkSwap({
     </DndContext>
   );
 }
-
