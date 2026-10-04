@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MonthGrid, monthRange } from "@/components/ui/month-grid";
 import { dayKey } from "@/lib/dates";
 import { slotPlaceLabel, timeSlotLabel } from "@/lib/schedule";
@@ -13,14 +13,14 @@ import { SwapSlotDialog } from "./swap-slot-dialog";
 import { futureRange, type Person, type VolunteerSlot } from "./types";
 
 /** Calendar of one volunteer's slots, with single-slot swap and bulk redistribution. */
-export function VolunteerScheduleSheet({
+export function VolunteerScheduleDialog({
   volunteer,
   onClose,
 }: {
   volunteer: Person | null;
   onClose: () => void;
 }) {
-  // Kept out of Body: the sheet closes while the swap dialog is open (only one modal on
+  // Kept out of Body: the calendar closes while the swap dialog is open (only one modal on
   // screen), and reopening it should land on the same month.
   const [swapping, setSwapping] = useState<VolunteerSlot | null>(null);
   const [offset, setOffset] = useState(0);
@@ -28,8 +28,8 @@ export function VolunteerScheduleSheet({
 
   return (
     <>
-      <Sheet open={!!volunteer && !swapping} onOpenChange={(o) => !o && onClose()}>
-        <SheetContent side="bottom" className="h-[95dvh] overflow-y-auto">
+      <Dialog open={!!volunteer && !swapping} onOpenChange={(o) => !o && onClose()}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           {volunteer && (
             <Body
               key={volunteer.id}
@@ -41,8 +41,8 @@ export function VolunteerScheduleSheet({
               onSwap={setSwapping}
             />
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
       {volunteer && (
         <SwapSlotDialog
           slot={swapping}
@@ -114,10 +114,10 @@ function Body({
 
   return (
     <>
-      <SheetHeader>
-        <SheetTitle>Escalas de {volunteer.name}</SheetTitle>
-      </SheetHeader>
-      <div className="space-y-4 p-4 pt-0">
+      <DialogHeader>
+        <DialogTitle className="wrap-anywhere">Escalas de {volunteer.name}</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-4">
         {view === "bulk" && futureSlots ? (
           <BulkSwap
             volunteer={volunteer}

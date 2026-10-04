@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { VolunteerScheduleSheet } from "@/components/schedule/volunteer-schedule-sheet";
+import { VolunteerScheduleDialog } from "@/components/schedule/volunteer-schedule-dialog";
 import { CalendarDays, Check, Filter, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { formatPhone, phoneDigits, whatsappChatLink } from "@/lib/phone";
 import { formatCpf, cpfDigits } from "@/lib/cpf";
@@ -565,7 +565,7 @@ export function VolunteersClient({
         </DialogContent>
       </Dialog>
 
-      <VolunteerScheduleSheet key={scheduleOf?.id} volunteer={scheduleOf} onClose={() => setScheduleOf(null)} />
+      <VolunteerScheduleDialog key={scheduleOf?.id} volunteer={scheduleOf} onClose={() => setScheduleOf(null)} />
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
