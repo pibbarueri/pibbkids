@@ -20,14 +20,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json();
 
-  // The quick +/- adjust (quantityDelta) is deliberately not validated: dropping below the
-  // threshold is exactly what it's for. Only explicit edits of the threshold are checked.
   if (body.minQuantity !== undefined) {
-    const quantity =
-      body.quantity !== undefined
-        ? Number(body.quantity)
-        : (await prisma.snack.findUnique({ where: { id }, select: { quantity: true } }))?.quantity ?? 0;
-    const error = validateMinQuantity(Number(body.minQuantity), quantity);
+    const error = validateMinQuantity(Number(body.minQuantity));
     if (error) return NextResponse.json({ error }, { status: 400 });
   }
 

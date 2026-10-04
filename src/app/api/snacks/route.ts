@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const quantity = Number(body.quantity ?? 0);
   const minQuantity = Number(body.minQuantity ?? DEFAULT_SNACK_MIN_QUANTITY);
-  const error = validateMinQuantity(minQuantity, quantity);
+  const error = validateMinQuantity(minQuantity);
   if (error) return NextResponse.json({ error }, { status: 400 });
 
   const snack = await prisma.snack.create({

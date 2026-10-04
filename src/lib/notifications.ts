@@ -48,7 +48,8 @@ export async function getNotificationDots(
       ? prisma.user.count({ where: { active: true, status: "PENDING" } })
       : Promise.resolve(0),
     canManageSnacks(role, hasApoioGeral)
-      ? prisma.snack.count({ where: { quantity: { lte: prisma.snack.fields.minQuantity } } })
+      ? // min_quantity = 0 turns the warning off for that snack (mirrors isLowStock in src/lib/snacks.ts).
+        prisma.snack.count({ where: { minQuantity: { gt: 0 }, quantity: { lte: prisma.snack.fields.minQuantity } } })
       : Promise.resolve(0),
     isLeadership(role)
       ? prisma.purchaseRequest.count({ where: { status: "PENDING" } })

@@ -20,7 +20,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Minus, Trash2 } from "lucide-react";
-import { DEFAULT_SNACK_MIN_QUANTITY, validateMinQuantity } from "@/lib/snacks";
+import { NumberStepper } from "@/components/ui/number-stepper";
+import {
+  DEFAULT_SNACK_MIN_QUANTITY,
+  MAX_SNACK_MIN_QUANTITY,
+  isLowStock,
+  validateMinQuantity,
+} from "@/lib/snacks";
 
 const CATEGORY_LABELS: Record<string, string> = {
   FOOD: "Comida",
@@ -37,22 +43,22 @@ type Snack = {
   unit: string;
 };
 
-type Form = { category: string; description: string; quantity: string; minQuantity: string; unit: string };
+type Form = { category: string; description: string; quantity: string; minQuantity: number; unit: string };
 
 const emptyForm: Form = {
   category: "FOOD",
   description: "",
   quantity: "0",
-  minQuantity: String(DEFAULT_SNACK_MIN_QUANTITY),
+  minQuantity: DEFAULT_SNACK_MIN_QUANTITY,
   unit: "",
 };
 
 function minQuantityError(f: Form) {
-  return validateMinQuantity(Number(f.minQuantity), Number(f.quantity) || 0);
+  return validateMinQuantity(f.minQuantity);
 }
 
 function toPayload(f: Form) {
-  return { ...f, quantity: Number(f.quantity) || 0, minQuantity: Number(f.minQuantity) };
+  return { ...f, quantity: Number(f.quantity) || 0 };
 }
 
 // Module scope on purpose: nesting this in SnacksClient would remount the inputs on
@@ -113,16 +119,18 @@ function SnackFields({
       </div>
       <div className="space-y-1">
         <p className="text-sm font-medium">Comprar mais quando chegar em</p>
-        <Input
-          type="number"
-          className="h-12"
-          min={0}
-          max={Number(value.quantity) || 0}
+        <NumberStepper
           value={value.minQuantity}
-          onChange={(e) => onChange({ minQuantity: e.target.value })}
-          aria-invalid={!!error}
+          onChange={(minQuantity) => onChange({ minQuantity })}
+          min={0}
+          max={MAX_SNACK_MIN_QUANTITY}
+          aria-label="Comprar mais quando chegar em"
         />
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        {error ? (
+          <p className="text-xs text-destructive">{error}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">&apos;0&apos; para não informar uma nova compra</p>
+        )}
       </div>
     </>
   );
@@ -152,7 +160,7 @@ export function SnacksClient({
       category: s.category,
       description: s.description,
       quantity: String(s.quantity),
-      minQuantity: String(s.minQuantity),
+      minQuantity: s.minQuantity,
       unit: s.unit,
     });
   }
@@ -242,7 +250,7 @@ export function SnacksClient({
             <p className="font-medium text-sm uppercase">{s.description}</p>
             <p className="text-xs text-muted-foreground">
               {s.quantity} {s.unit}
-              {s.quantity <= s.minQuantity && <span className="text-destructive"> · estoque baixo</span>}
+              {isLowStock(s) && <span className="text-destructive"> · estoque baixo</span>}
             </p>
           </button>
           <div className="flex shrink-0 items-center gap-2">
