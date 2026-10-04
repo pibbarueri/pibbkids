@@ -34,7 +34,7 @@ const schema = z.object({
   cpf: z.string().min(11, "CPF obrigatório"),
   birthdate: z.string().min(1, "Data de nascimento obrigatória"),
   motherName: z.string().optional(),
-  functions: z.array(z.nativeEnum(FunctionType)).min(1, "Selecione ao menos uma função"),
+  functions: z.array(z.enum(FunctionType)).min(1, "Selecione ao menos uma função"),
   preferredClassIds: z.array(z.string()).optional(),
 });
 

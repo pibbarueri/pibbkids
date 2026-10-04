@@ -15,8 +15,8 @@ const createSchema = z.object({
   cpf: z.string().min(11),
   birthdate: z.string().min(1),
   motherName: z.string().optional(),
-  role: z.nativeEnum(Role),
-  functions: z.array(z.nativeEnum(FunctionType)).optional(),
+  role: z.enum(Role),
+  functions: z.array(z.enum(FunctionType)).optional(),
   preferredClassIds: z.array(z.string()).optional(),
 });
 
