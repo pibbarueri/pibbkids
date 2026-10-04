@@ -14,6 +14,7 @@ aqui antes da tag sair.
   No cadastro do lanche, preencha "Comprar mais quando chegar em" (de 0 a 50) e a liderança é avisada quando o estoque chegar nesse número. Use 0 para não receber aviso daquele lanche.
 - Visitantes: dá pra informar só a idade em vez da data de nascimento.
 - Visitantes agora podem ser editados ou removidos pela recepção!
+- Excluir um evento agora pede confirmação.
 
 ## v1.6.0 - 2026-08-31
 - Esse aviso, mostrando tudo o que mudou desde a última vez que você abriu o app!
