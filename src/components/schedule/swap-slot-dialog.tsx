@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { slotKindKey, slotPlaceLabel, timeSlotLabel, timeSlotPhrase } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
@@ -78,7 +76,6 @@ function Body({
   const [partnerSlotId, setPartnerSlotId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
 
   useEffect(() => {
     fetchCandidates([slot.id]).then((c) => {
@@ -108,13 +105,10 @@ function Body({
 
   const person = people?.find((p) => p.id === personId);
 
-  // Same as the bulk view: who already serves in this seat first, the rest behind search
-  // (Sala Plus, for instance, accepts any volunteer).
+  // Same as the bulk view: only who already serves in this seat (Sala Plus accepts anyone),
+  // or everyone eligible when nobody has served it yet.
   const regulars = (people ?? []).filter((p) => p.regular);
-  const others = (people ?? []).filter((p) => !p.regular);
-  const q = query.trim().toLowerCase();
-  const matches = q.length >= 2 ? others.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 8) : [];
-  const visible = [...regulars, ...matches, ...others.filter((p) => p.id === personId && !matches.includes(p))];
+  const visible = regulars.length > 0 ? regulars : people ?? [];
   const ready = mode === "replace" ? !!personId : !!partnerSlotId;
 
   async function confirm() {
@@ -166,17 +160,6 @@ function Body({
           {people === null && <p className="text-sm text-muted-foreground">Carregando…</p>}
           {people?.length === 0 && (
             <p className="text-sm text-muted-foreground">Ninguém disponível pra esse lugar nesse horário.</p>
-          )}
-          {others.length > 0 && (
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="h-10 pl-9"
-                placeholder={regulars.length > 0 ? "Buscar outros voluntários" : "Buscar voluntário"}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </div>
           )}
           {visible.map((p) => (
             <Choice key={p.id} selected={p.id === personId} onClick={() => pickPerson(p.id)}>
