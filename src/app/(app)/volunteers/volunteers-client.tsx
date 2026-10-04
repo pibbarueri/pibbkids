@@ -120,7 +120,7 @@ export function VolunteersClient({
   const router = useRouter();
   const [volunteers, setVolunteers] = useState(initialVolunteers);
   const [selected, setSelected] = useState<Volunteer | null>(null);
-  const [scheduleOf, setScheduleOf] = useState<{ id: string; name: string } | null>(null);
+  const [scheduleOf, setScheduleOf] = useState<{ id: string; name: string; username: string | null } | null>(null);
   const [saving, setSaving] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addForm, setAddForm] = useState(emptyVolunteerForm);
@@ -556,7 +556,7 @@ export function VolunteersClient({
               </div>
 
               {canEditSchedule && (
-                <Button variant="outline" className="w-full h-12" onClick={() => { setScheduleOf({ id: selected.id, name: selected.name }); setSelected(null); }}>
+                <Button variant="outline" className="w-full h-12" onClick={() => { setScheduleOf({ id: selected.id, name: selected.name, username: selected.username ?? null }); setSelected(null); }}>
                   <CalendarDays className="h-4 w-4" /> Ver escalas
                 </Button>
               )}
@@ -565,7 +565,7 @@ export function VolunteersClient({
         </DialogContent>
       </Dialog>
 
-      <VolunteerScheduleSheet volunteer={scheduleOf} onClose={() => setScheduleOf(null)} />
+      <VolunteerScheduleSheet key={scheduleOf?.id} volunteer={scheduleOf} onClose={() => setScheduleOf(null)} />
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">

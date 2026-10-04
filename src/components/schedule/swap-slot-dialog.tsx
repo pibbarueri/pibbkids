@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { slotKindKey, slotPlaceLabel, timeSlotLabel } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
-import { fetchCandidates, futureRange, postSwap, shortDate, type VolunteerSlot } from "./types";
+import { fetchCandidates, futureRange, handle, postSwap, shortDate, type Person, type VolunteerSlot } from "./types";
 
 type Mode = "replace" | "permute";
 
@@ -35,19 +35,19 @@ function Choice({ selected, onClick, children }: { selected: boolean; onClick: (
  */
 export function SwapSlotDialog({
   slot,
-  volunteerName,
+  volunteer,
   onClose,
   onDone,
 }: {
   slot: VolunteerSlot | null;
-  volunteerName: string;
+  volunteer: Person;
   onClose: () => void;
   onDone: () => void;
 }) {
   return (
     <Dialog open={!!slot} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto">
-        {slot && <Body key={slot.id} slot={slot} volunteerName={volunteerName} onClose={onClose} onDone={onDone} />}
+        {slot && <Body key={slot.id} slot={slot} volunteer={volunteer} onClose={onClose} onDone={onDone} />}
       </DialogContent>
     </Dialog>
   );
@@ -55,17 +55,17 @@ export function SwapSlotDialog({
 
 function Body({
   slot,
-  volunteerName,
+  volunteer,
   onClose,
   onDone,
 }: {
   slot: VolunteerSlot;
-  volunteerName: string;
+  volunteer: Person;
   onClose: () => void;
   onDone: () => void;
 }) {
   const [mode, setMode] = useState<Mode>("replace");
-  const [people, setPeople] = useState<{ id: string; name: string }[] | null>(null);
+  const [people, setPeople] = useState<Person[] | null>(null);
   const [personId, setPersonId] = useState<string | null>(null);
   const [partnerSlots, setPartnerSlots] = useState<VolunteerSlot[] | null>(null);
   const [partnerSlotId, setPartnerSlotId] = useState<string | null>(null);
@@ -126,7 +126,7 @@ function Body({
       </DialogHeader>
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground wrap-anywhere">
-          {volunteerName} · {shortDate(slot.date)} · {slotText(slot)}
+          {volunteer.name} · {shortDate(slot.date)} · {slotText(slot)}
         </p>
 
         <div className="grid grid-cols-2 gap-2">
@@ -160,7 +160,9 @@ function Body({
 
         {mode === "permute" && personId && (
           <div className="space-y-2">
-            <p className="text-sm font-medium">Escala de {person?.name} que {volunteerName} assume</p>
+            <p className="text-sm font-medium">
+              Escala de {person && handle(person)} que {handle(volunteer)} assume
+            </p>
             {partnerSlots === null && <p className="text-sm text-muted-foreground">Carregando…</p>}
             {partnerSlots?.length === 0 && (
               <p className="text-sm text-muted-foreground">Nenhuma escala futura nesse mesmo lugar.</p>
@@ -176,8 +178,8 @@ function Body({
         {ready && (
           <p className="text-sm rounded-lg bg-muted/50 px-3 py-2 wrap-anywhere">
             {mode === "replace"
-              ? `${person?.name} serve em ${shortDate(slot.date)} no lugar de ${volunteerName}.`
-              : `${person?.name} serve em ${shortDate(slot.date)} e ${volunteerName} serve em ${partnerSlot && shortDate(partnerSlot.date)}.`}
+              ? `${person && handle(person)} serve em ${shortDate(slot.date)} no lugar de ${handle(volunteer)}.`
+              : `${person && handle(person)} serve em ${shortDate(slot.date)} e ${handle(volunteer)} serve em ${partnerSlot && shortDate(partnerSlot.date)}.`}
           </p>
         )}
 

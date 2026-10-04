@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canEditSchedule } from "@/lib/permissions";
-import { ELIGIBILITY_SELECT, conflicts, isEligibleForSlot } from "@/lib/schedule";
+import { addDays, today } from "@/lib/dates";
+import { ELIGIBILITY_SELECT, conflicts, isEligibleForSlot, slotKindKey } from "@/lib/schedule";
 
 /**
  * Volunteers who could take over the given slots. For each slot, returns who is eligible and
@@ -21,7 +22,10 @@ export async function GET(req: NextRequest) {
   const slots = await prisma.scheduleSlot.findMany({ where: { id: { in: ids } } });
   const dates = [...new Set(slots.map((s) => s.date.toISOString()))].map((d) => new Date(d));
 
-  const [volunteers, busy] = await Promise.all([
+  // Seats without a requirement (Sala Plus) make everyone eligible. "regular" marks who
+  // already serves in these seats (last 6 months onwards), so the UI can show them first.
+  const kinds = [...new Set(slots.map(slotKindKey))];
+  const [volunteers, busy, seatHistory] = await Promise.all([
     prisma.user.findMany({
       where: { active: true, status: "APPROVED" },
       select: ELIGIBILITY_SELECT,
@@ -31,7 +35,15 @@ export async function GET(req: NextRequest) {
       where: { date: { in: dates } },
       select: { userId: true, date: true, timeSlot: true },
     }),
+    prisma.scheduleSlot.findMany({
+      where: {
+        date: { gte: addDays(today(), -180) },
+        OR: slots.map((s) => ({ slotType: s.slotType, classGroupId: s.classGroupId, role: s.role })),
+      },
+      select: { userId: true, slotType: true, classGroupId: true, role: true },
+    }),
   ]);
+  const regulars = new Set(seatHistory.filter((h) => kinds.includes(slotKindKey(h))).map((h) => h.userId));
 
   // Eligible for at least one of the slots; per-slot availability tells which ones.
   const availability: Record<string, string[]> = {};
@@ -44,7 +56,9 @@ export async function GET(req: NextRequest) {
   }
   const candidateIds = new Set(Object.values(availability).flat());
   return NextResponse.json({
-    volunteers: volunteers.filter((v) => candidateIds.has(v.id)).map((v) => ({ id: v.id, name: v.name })),
+    volunteers: volunteers
+      .filter((v) => candidateIds.has(v.id))
+      .map((v) => ({ id: v.id, name: v.name, username: v.username, regular: regulars.has(v.id) })),
     availability,
   });
 }

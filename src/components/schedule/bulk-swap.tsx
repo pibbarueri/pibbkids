@@ -12,12 +12,13 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { Undo2 } from "lucide-react";
+import { Search, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { MonthGrid } from "@/components/ui/month-grid";
 import { slotKindKey, slotPlaceLabel } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
-import { fetchCandidates, postSwap, type Candidates, type VolunteerSlot } from "./types";
+import { fetchCandidates, postSwap, type Candidates, type Person, type VolunteerSlot } from "./types";
 
 const firstName = (name: string) => name.split(" ")[0];
 
@@ -44,13 +45,13 @@ function Chip({
       {...attributes}
       style={transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined}
       className={cn(
-        "flex touch-none items-center gap-1 rounded-full border px-3 py-1.5 text-sm transition-colors",
+        "flex max-w-[12rem] touch-none items-center gap-1 rounded-full border px-3 py-1.5 text-sm transition-colors",
         selected ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background",
         isDragging && "z-50 shadow-lg"
       )}
     >
       {icon}
-      {label}
+      <span className="truncate">{label}</span>
     </button>
   );
 }
@@ -100,18 +101,19 @@ function DayCell({
  * "Salvar", which sends every change in one request.
  */
 export function BulkSwap({
-  volunteerId,
-  volunteerName,
+  volunteer,
   futureSlots,
   onDone,
   onCancel,
 }: {
-  volunteerId: string;
-  volunteerName: string;
+  volunteer: Person;
   futureSlots: VolunteerSlot[];
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const volunteerId = volunteer.id;
+  const volunteerName = volunteer.name;
+  const [query, setQuery] = useState("");
   const kinds = useMemo(() => {
     const map = new Map<string, VolunteerSlot>();
     for (const s of futureSlots) if (!map.has(slotKindKey(s))) map.set(slotKindKey(s), s);
@@ -172,6 +174,14 @@ export function BulkSwap({
     assign(String(e.active.id), slotsByDay.get(String(e.over.id)) ?? []);
   }
 
+  // Seats like Sala Plus accept anyone: show who already serves there, and keep the rest
+  // behind search so the list stays usable.
+  const regulars = (candidates?.volunteers ?? []).filter((v) => v.regular);
+  const others = (candidates?.volunteers ?? []).filter((v) => !v.regular);
+  const q = query.trim().toLowerCase();
+  const matches = q.length >= 2 ? others.filter((v) => v.name.toLowerCase().includes(q)).slice(0, 8) : [];
+  const visibleChips = [...regulars, ...matches, ...others.filter((v) => v.id === selectedChip && !matches.includes(v))];
+
   const focusId = draggingId ?? selectedChip;
   const pendingCount = Object.keys(pending).length;
 
@@ -213,6 +223,7 @@ export function BulkSwap({
                   setKind(key);
                   setPending({});
                   setSelectedChip(null);
+                  setQuery("");
                 }}
                 className={cn(
                   "rounded-full border px-3 py-1.5 text-xs font-medium",
@@ -252,9 +263,20 @@ export function BulkSwap({
         />
 
         <div className="space-y-2">
-          <p className="text-sm font-medium">Quem pode servir</p>
+          <p className="text-sm font-medium">{regulars.length > 0 ? "Quem já serve aqui" : "Quem pode servir"}</p>
           {candidates === null && <p className="text-sm text-muted-foreground">Carregando…</p>}
-          <div className="flex flex-wrap gap-2">
+          {others.length > 0 && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="h-10 pl-9"
+                placeholder={regulars.length > 0 ? "Buscar outros voluntários" : "Buscar voluntário"}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+          )}
+          <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
             <Chip
               id={volunteerId}
               label={firstName(volunteerName)}
@@ -262,7 +284,7 @@ export function BulkSwap({
               selected={selectedChip === volunteerId}
               onTap={() => setSelectedChip((c) => (c === volunteerId ? null : volunteerId))}
             />
-            {candidates?.volunteers.map((v) => (
+            {visibleChips.map((v) => (
               <Chip
                 key={v.id}
                 id={v.id}
