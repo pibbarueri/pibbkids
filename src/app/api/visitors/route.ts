@@ -2,17 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { canLogVisitor } from "@/lib/permissions";
-import { suggestedClassName, ageInYears } from "@/lib/age";
+import { canEditVisitor, canLogVisitor } from "@/lib/permissions";
+import { MAX_VISITOR_AGE, suggestedClassName, suggestedClassNameForAge, visitorAgeYears } from "@/lib/age";
 import { dayRangeUTC, dateTimeOnDay, dayKey } from "@/lib/dates";
 import { SundayType } from "@prisma/client";
 
-const schema = z.object({
-  name: z.string().min(2),
-  birthdate: z.string().min(1),
-  date: z.string().min(1).optional(),
-  type: z.nativeEnum(SundayType),
-});
+// Reception logs either a birthdate or just the age, never both.
+const schema = z
+  .object({
+    name: z.string().min(2),
+    birthdate: z.string().min(1).optional(),
+    age: z.number().int().min(0).max(MAX_VISITOR_AGE).optional(),
+    date: z.string().min(1).optional(),
+    type: z.nativeEnum(SundayType),
+  })
+  .refine((d) => (d.birthdate === undefined) !== (d.age === undefined), {
+    message: "Informe a idade ou a data de nascimento.",
+    path: ["age"],
+  });
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -33,7 +40,13 @@ export async function GET(req: NextRequest) {
       include: { classGroup: { select: { id: true, name: true } } },
       orderBy: { createdAt: "asc" },
     });
-    return NextResponse.json(visitors);
+    const today = dayKey();
+    return NextResponse.json(
+      visitors.map((v) => ({
+        ...v,
+        canEdit: !v.childId && canEditVisitor(session.user.role, dayKey(v.createdAt), today),
+      }))
+    );
   }
 
   if (from && to) {
@@ -62,8 +75,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ errors: parsed.error.flatten().fieldErrors }, { status: 422 });
   }
 
-  const birthdate = new Date(parsed.data.birthdate);
-  const suggestion = suggestedClassName(birthdate);
+  const birthdate = parsed.data.birthdate ? new Date(parsed.data.birthdate) : null;
+  const age = birthdate ? null : parsed.data.age!;
+  const suggestion = birthdate ? suggestedClassName(birthdate) : suggestedClassNameForAge(age!);
   const classGroup = await prisma.classGroup.findFirst({
     where: { name: suggestion },
     select: { id: true, name: true },
@@ -73,6 +87,7 @@ export async function POST(req: NextRequest) {
     data: {
       name: parsed.data.name,
       birthdate,
+      age,
       type: parsed.data.type,
       classGroupId: classGroup?.id ?? null,
       createdById: session.user.id,
@@ -82,7 +97,7 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json(
-    { ...visitor, age: ageInYears(birthdate) },
+    { ...visitor, age: visitorAgeYears(visitor) },
     { status: 201 }
   );
 }

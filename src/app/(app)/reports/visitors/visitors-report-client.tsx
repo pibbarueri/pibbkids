@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { ageLabel, suggestedClassName } from "@/lib/age";
+import { ageLabel, suggestedClassName, suggestedClassNameForAge } from "@/lib/age";
+import { VisitorEditDialog } from "@/components/visitor-edit-dialog";
 import { formatPhone, phoneDigits } from "@/lib/phone";
 import { Frequency } from "@prisma/client";
 
@@ -25,8 +26,26 @@ const FREQ_OPTIONS: { value: Frequency; label: string }[] = [
 ];
 
 type ClassGroup = { id: string; name: string };
-type VisitorListItem = { id: string; name: string; birthdate: string; type: "EBD" | "CULTO"; classGroup: ClassGroup | null };
-type VisitorDetail = VisitorListItem & { createdBy: { username: string | null }; createdAt: string; childId: string | null };
+type VisitorListItem = {
+  id: string;
+  name: string;
+  birthdate: string | null;
+  age: number | null;
+  type: "EBD" | "CULTO";
+  classGroup: ClassGroup | null;
+};
+type VisitorDetail = VisitorListItem & {
+  createdBy: { username: string | null };
+  createdAt: string;
+  childId: string | null;
+  canEdit: boolean;
+};
+
+// Visitors logged with just an age keep the age from the day of the visit.
+function visitorAgeText(v: { birthdate: string | null; age: number | null }) {
+  if (v.birthdate) return ageLabel(new Date(v.birthdate));
+  return v.age === null ? "—" : `${v.age} ${v.age === 1 ? "ano" : "anos"}`;
+}
 
 function toDateKey(d: Date) {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
@@ -57,6 +76,8 @@ export function VisitorsReportClient({ isManager }: { isManager: boolean }) {
   const [promoting, setPromoting] = useState(false);
   const [promoteForm, setPromoteForm] = useState(emptyPromoteForm);
   const [promoteSaving, setPromoteSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [countsVersion, setCountsVersion] = useState(0);
 
   const today = new Date();
   const viewDate = new Date(Date.UTC(today.getFullYear(), today.getMonth() + monthOffset, 1));
@@ -89,7 +110,7 @@ export function VisitorsReportClient({ isManager }: { isManager: boolean }) {
     return () => {
       cancelled = true;
     };
-  }, [year, month, daysInMonth]);
+  }, [year, month, daysInMonth, countsVersion]);
 
   useEffect(() => {
     fetch("/api/classes")
@@ -122,12 +143,15 @@ export function VisitorsReportClient({ isManager }: { isManager: boolean }) {
 
   function openPromote() {
     if (!detail) return;
-    const suggestion = suggestedClassName(new Date(detail.birthdate));
+    const suggestion = detail.birthdate
+      ? suggestedClassName(new Date(detail.birthdate))
+      : suggestedClassNameForAge(detail.age ?? 0);
     const match = classes.find((c) => c.name.toLowerCase() === suggestion.toLowerCase());
     setPromoteForm({
       ...emptyPromoteForm,
       name: detail.name,
-      birthdate: new Date(detail.birthdate).toISOString().slice(0, 10),
+      // Age-only visitors have no birthdate yet; the promote form requires one.
+      birthdate: detail.birthdate ? new Date(detail.birthdate).toISOString().slice(0, 10) : "",
       classGroupId: detail.classGroup?.id ?? match?.id ?? "",
     });
     setPromoting(true);
@@ -226,7 +250,7 @@ export function VisitorsReportClient({ isManager }: { isManager: boolean }) {
               >
                 <p className="font-medium text-sm">{v.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {ageLabel(new Date(v.birthdate))} · {v.classGroup?.name ?? "Sem turma"} · {v.type === "CULTO" ? "Culto" : "EBD"}
+                  {visitorAgeText(v)} · {v.classGroup?.name ?? "Sem turma"} · {v.type === "CULTO" ? "Culto" : "EBD"}
                 </p>
               </button>
             ))}
@@ -245,14 +269,22 @@ export function VisitorsReportClient({ isManager }: { isManager: boolean }) {
                 <DialogTitle>{detail.name}</DialogTitle>
               </DialogHeader>
               <div className="space-y-3 text-sm">
-                <Row label="Data de nascimento" value={new Date(detail.birthdate).toLocaleDateString("pt-BR", { timeZone: "UTC" })} />
-                <Row label="Idade" value={ageLabel(new Date(detail.birthdate))} />
+                <Row
+                  label="Data de nascimento"
+                  value={detail.birthdate && new Date(detail.birthdate).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
+                />
+                <Row label="Idade" value={visitorAgeText(detail)} />
                 <Row label="Turma sugerida" value={detail.classGroup?.name ?? "Sem turma"} />
                 <Row label="Horário" value={detail.type === "CULTO" ? "Culto" : "EBD"} />
                 <Row
                   label="Cadastrado por"
                   value={`${detail.createdBy.username ?? "—"}, em ${new Date(detail.createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric", timeZone: "America/Sao_Paulo" })} às ${new Date(detail.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}`}
                 />
+                {detail.canEdit && (
+                  <Button variant="outline" className="w-full h-12" onClick={() => setEditing(true)}>
+                    Editar ou remover
+                  </Button>
+                )}
                 {isManager && (
                   detail.childId ? (
                     <p className="text-sm text-muted-foreground">Já efetivada.</p>
@@ -267,6 +299,16 @@ export function VisitorsReportClient({ isManager }: { isManager: boolean }) {
           )}
         </DialogContent>
       </Dialog>
+
+      <VisitorEditDialog
+        visitor={editing ? detail : null}
+        onClose={() => setEditing(false)}
+        onChanged={() => {
+          setDetailId(null);
+          setCountsVersion((n) => n + 1);
+          if (selectedKey) openDayList(selectedKey);
+        }}
+      />
 
       <Dialog open={promoting} onOpenChange={setPromoting}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
