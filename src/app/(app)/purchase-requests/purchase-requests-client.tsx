@@ -330,10 +330,7 @@ export function PurchaseRequestsClient({
           className="w-full text-left p-4 border rounded-lg bg-background flex items-start justify-between gap-2 hover:bg-muted/50 transition-all active:scale-[0.98]"
         >
           <div>
-            <p className="font-medium text-sm">
-              {r.quantity}
-              {r.unit ? ` ${r.unit}` : "x"} {itemName(r)}
-            </p>
+            <p className="font-medium text-sm wrap-anywhere">{itemName(r)}</p>
             <p className="text-xs text-muted-foreground">{r.requester.name}</p>
           </div>
           <Badge className={statusBadgeClass(r.status)}>{STATUS_LABELS[r.status]}</Badge>
@@ -350,23 +347,23 @@ export function PurchaseRequestsClient({
           {selected && (
             <>
               <DialogHeader>
-                <DialogTitle>
-                  {selected.quantity}
-                  {selected.unit ? ` ${selected.unit}` : "x"} {itemName(selected)}
-                </DialogTitle>
+                <DialogTitle className="wrap-anywhere">{itemName(selected)}</DialogTitle>
               </DialogHeader>
 
               <div className="space-y-4">
                 <Breadcrumb status={selected.status} />
 
-                {(selected.category || selected.description) && (
-                  <div className="space-y-1">
-                    {selected.category && (
-                      <p className="text-xs text-muted-foreground">Categoria: {selected.category.name}</p>
-                    )}
-                    {selected.description && <p className="text-sm">{selected.description}</p>}
-                  </div>
-                )}
+                <div className="space-y-1">
+                  {/* Unit is free text, so it stays out of the title and only shows here. */}
+                  <p className="text-xs text-muted-foreground wrap-anywhere">
+                    Quantidade: {selected.quantity}
+                    {selected.unit && ` ${selected.unit}`}
+                  </p>
+                  {selected.category && (
+                    <p className="text-xs text-muted-foreground">Categoria: {selected.category.name}</p>
+                  )}
+                  {selected.description && <p className="text-sm wrap-anywhere">{selected.description}</p>}
+                </div>
 
                 {selected.justification && (
                   <div>
