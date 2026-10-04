@@ -10,7 +10,7 @@ import { computeUpcomingBirthdays } from "@/lib/birthdays";
 import { canManage } from "@/lib/permissions";
 import { parseAppSettings, resolveLayout } from "@/lib/navigation";
 import { addDays, nextSunday as getNextSunday, today as getToday } from "@/lib/dates";
-import { getNotificationDots } from "@/lib/notifications";
+import { getNotificationDots, lowStockSnackWhere } from "@/lib/notifications";
 
 // Tailwind can't generate a class from an interpolated string, so map them explicitly.
 const GRID_COLS: Record<number, string> = {
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
       select: { name: true, birthdate: true },
     }),
     isManager
-      ? prisma.snack.findMany({ where: { quantity: { lte: 5 } }, select: { description: true, quantity: true, unit: true } })
+      ? prisma.snack.findMany({ where: lowStockSnackWhere(), select: { description: true, quantity: true, unit: true } })
       : Promise.resolve([]),
   ]);
 

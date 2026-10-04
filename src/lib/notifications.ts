@@ -14,6 +14,16 @@ export type NotificationDots = {
 const EPOCH = new Date(0);
 
 /**
+ * Snacks at or below their own threshold. min_quantity = 0 turns the warning off for that
+ * snack (mirrors isLowStock in src/lib/snacks.ts, which can't import prisma since the
+ * snack form uses it client-side). Used by the nav dot and the dashboard banner, so both
+ * agree on what "low" means.
+ */
+export function lowStockSnackWhere() {
+  return { minQuantity: { gt: 0 }, quantity: { lte: prisma.snack.fields.minQuantity } };
+}
+
+/**
  * Orange-dot signals for nav icons. Two flavors:
  * - Self-clearing (children/volunteers/snacks/purchase-requests-for-leadership): the dot
  *   IS the pending state, disappears the moment it's resolved — no read-tracking needed.
@@ -48,8 +58,7 @@ export async function getNotificationDots(
       ? prisma.user.count({ where: { active: true, status: "PENDING" } })
       : Promise.resolve(0),
     canManageSnacks(role, hasApoioGeral)
-      ? // min_quantity = 0 turns the warning off for that snack (mirrors isLowStock in src/lib/snacks.ts).
-        prisma.snack.count({ where: { minQuantity: { gt: 0 }, quantity: { lte: prisma.snack.fields.minQuantity } } })
+      ? prisma.snack.count({ where: lowStockSnackWhere() })
       : Promise.resolve(0),
     isLeadership(role)
       ? prisma.purchaseRequest.count({ where: { status: "PENDING" } })
