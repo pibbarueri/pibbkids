@@ -11,7 +11,7 @@ aqui antes da tag sair.
 
 ## v1.7.0 - 2026-10-03
 - Cada lanche agora tem seu próprio aviso de estoque baixo.
-  No cadastro do lanche, preencha "Comprar mais quando chegar em" e a liderança é avisada quando o estoque chegar nesse número.
+  No cadastro do lanche, preencha "Comprar mais quando chegar em" (de 0 a 50) e a liderança é avisada quando o estoque chegar nesse número. Use 0 para não receber aviso daquele lanche.
 
 ## v1.6.0 - 2026-08-31
 - Esse aviso, mostrando tudo o que mudou desde a última vez que você abriu o app!
