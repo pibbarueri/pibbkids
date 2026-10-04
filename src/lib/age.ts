@@ -27,10 +27,25 @@ export function ageInYears(birthdate: Date, now = new Date()): number {
 // Matches the class names seeded in the DB — used only to pre-select a suggestion,
 // the admin can always override it in the approve dialog.
 export function suggestedClassName(birthdate: Date, now = new Date()): string {
-  const years = ageInYears(birthdate, now);
+  return suggestedClassNameForAge(ageInYears(birthdate, now));
+}
+
+// Visitors are children; the age stepper and the API both cap here.
+export const MAX_VISITOR_AGE = 17;
+
+export function suggestedClassNameForAge(years: number): string {
   if (years < 2) return "Berçário";
   if (years < 4) return "Primeiros Passos";
   if (years < 7) return "Ovelhinhas";
   if (years < 9) return "Detetives";
   return "Quase Lá";
+}
+
+/**
+ * Visitors carry either a birthdate or just the age given on the day of the visit (never
+ * both). Prefer the birthdate when there is one, since it stays correct over time.
+ */
+export function visitorAgeYears(v: { birthdate: string | Date | null; age: number | null }): number | null {
+  if (v.birthdate) return ageInYears(new Date(v.birthdate));
+  return v.age;
 }

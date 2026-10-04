@@ -60,6 +60,13 @@ export function canLogVisitor(role: Role) {
   return role === Role.RECEPTIONIST || canManage(role);
 }
 
+// Leadership edits/removes any visitor; reception only on the visitor's own Sunday.
+// Both days are dayKey() strings ("YYYY-MM-DD" in the app timezone).
+export function canEditVisitor(role: Role, visitorDay: string, today: string) {
+  if (canManage(role)) return true;
+  return role === Role.RECEPTIONIST && visitorDay === today;
+}
+
 export function canViewLessons(role: Role) {
   return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] as Role[]).includes(role);
 }

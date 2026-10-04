@@ -9,6 +9,15 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { sortClasses } from "@/lib/classes";
 import { dayKey } from "@/lib/dates";
+import { visitorAgeYears } from "@/lib/age";
+import {
+  VisitorForm,
+  emptyVisitorForm,
+  isVisitorFormValid,
+  visitorPayload,
+  type VisitorFormValue,
+} from "@/components/visitor-form";
+import { VisitorEditDialog } from "@/components/visitor-edit-dialog";
 
 type ClassGroup = { id: string; name: string };
 type Child = {
@@ -24,24 +33,13 @@ type Attendance = { childId: string; type: string; present: boolean };
 type Visitor = {
   id: string;
   name: string;
-  birthdate: string;
+  birthdate: string | null;
+  age: number | null;
   type: "EBD" | "CULTO";
   classGroup: ClassGroup | null;
   childId: string | null;
+  canEdit: boolean;
 };
-type VisitorSuggestion = { id: string; name: string; birthdate: string };
-
-function visitorAge(birthdate: string): number {
-  const b = new Date(birthdate);
-  const now = new Date();
-  let years = now.getUTCFullYear() - b.getUTCFullYear();
-  const beforeBirthday =
-    now.getUTCMonth() < b.getUTCMonth() ||
-    (now.getUTCMonth() === b.getUTCMonth() && now.getUTCDate() < b.getUTCDate());
-  if (beforeBirthday) years--;
-  return years;
-}
-
 function VisitorFab({
   canLogVisitor,
   date,
@@ -54,45 +52,22 @@ function VisitorFab({
   onCreated: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [birthdate, setBirthdate] = useState("");
-  const [suggestions, setSuggestions] = useState<VisitorSuggestion[]>([]);
+  const [form, setForm] = useState<VisitorFormValue>(emptyVisitorForm(type));
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ name: string; age: number; className: string } | null>(null);
 
-  useEffect(() => {
-    if (name.trim().length < 2) {
-      setSuggestions([]);
-      return;
-    }
-    let cancelled = false;
-    const t = setTimeout(() => {
-      fetch(`/api/visitors/search?q=${encodeURIComponent(name.trim())}`)
-        .then((r) => r.json())
-        .then((data) => {
-          if (!cancelled) setSuggestions(data);
-        });
-    }, 250);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [name]);
-
   function reset() {
-    setName("");
-    setBirthdate("");
-    setSuggestions([]);
+    setForm(emptyVisitorForm(type));
     setResult(null);
   }
 
   async function save() {
-    if (!name.trim() || !birthdate) return;
+    if (!isVisitorFormValid(form)) return;
     setSaving(true);
     const res = await fetch("/api/visitors", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), birthdate, date, type }),
+      body: JSON.stringify({ ...visitorPayload(form, { includeSchedule: false }), date, type }),
     });
     if (res.ok) {
       const created = await res.json();
@@ -148,33 +123,8 @@ function VisitorFab({
               <DialogTitle>Incluir visitante</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
-              <div className="space-y-1 relative">
-                <p className="text-sm font-medium">Nome *</p>
-                <Input className="h-12" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome da criança" />
-                {suggestions.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-lg divide-y">
-                    {suggestions.map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
-                        onClick={() => {
-                          setName(s.name);
-                          setBirthdate(new Date(s.birthdate).toISOString().slice(0, 10));
-                          setSuggestions([]);
-                        }}
-                      >
-                        {s.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Data de nascimento *</p>
-                <Input type="date" className="h-12" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} />
-              </div>
-              <Button className="w-full h-12" disabled={!name.trim() || !birthdate || saving} onClick={save}>
+              <VisitorForm value={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} withAutocomplete />
+              <Button className="w-full h-12" disabled={!isVisitorFormValid(form) || saving} onClick={save}>
                 Salvar
               </Button>
             </div>
@@ -207,6 +157,7 @@ export function AttendanceClient({
   const [timeSlotTab, setTimeSlotTab] = useState<"EBD" | "CULTO">("EBD");
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [visitorsVersion, setVisitorsVersion] = useState(0);
+  const [editingVisitor, setEditingVisitor] = useState<Visitor | null>(null);
 
   // Distinct classes present among the children, in canonical order.
   const classOptions = sortClasses(
@@ -450,17 +401,30 @@ export function AttendanceClient({
         <div className="space-y-2 pt-2">
           <p className="text-xs font-medium text-muted-foreground">Visitantes ({visitorsForTab.length})</p>
           {visitorsForTab.map((v) => (
-            <div key={v.id} className="flex items-center gap-2 p-3 border rounded-lg bg-muted/40">
+            <button
+              key={v.id}
+              type="button"
+              disabled={!v.canEdit}
+              onClick={() => setEditingVisitor(v)}
+              className="flex w-full items-center gap-2 p-3 border rounded-lg bg-muted/40 text-left transition-transform enabled:active:scale-[0.98] disabled:cursor-default"
+            >
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm truncate">{v.name}</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {v.classGroup?.name ?? "Sem turma"} · {visitorAge(v.birthdate)} anos
+                  {v.classGroup?.name ?? "Sem turma"} · {visitorAgeYears(v)} anos
+                  {v.childId && " · efetivado"}
                 </p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}
+
+      <VisitorEditDialog
+        visitor={editingVisitor}
+        onClose={() => setEditingVisitor(null)}
+        onChanged={() => setVisitorsVersion((n) => n + 1)}
+      />
 
       <VisitorFab canLogVisitor={canLogVisitor} date={selectedDayKey} type={timeSlotTab} onCreated={() => setVisitorsVersion((v) => v + 1)} />
     </div>
