@@ -5,6 +5,7 @@ import Link from "next/link";
 import { User, LogOut, Pencil, QrCode, AlertTriangle, LayoutGrid, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { normalizeUsername } from "@/lib/text";
 import {
   DropdownMenu,
@@ -177,16 +178,14 @@ export function ProfileMenu({
 
             <div className="border-t pt-3 space-y-3">
               <p className="text-sm font-medium">Alterar senha</p>
-              <Input
-                type="password"
+              <PasswordInput
                 className="h-12"
                 placeholder="Nova senha"
                 value={form.newPassword}
                 onChange={(e) => setForm((f) => ({ ...f, newPassword: e.target.value }))}
               />
               <p className="text-xs text-muted-foreground">Entre 6 e 70 caracteres.</p>
-              <Input
-                type="password"
+              <PasswordInput
                 className="h-12"
                 placeholder="Confirmar nova senha"
                 value={form.confirmPassword}

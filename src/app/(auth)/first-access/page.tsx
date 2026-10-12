@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPhone, phoneDigits } from "@/lib/phone";
@@ -217,11 +218,11 @@ export default function FirstAccessPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="newPassword">Nova senha</Label>
-                <Input id="newPassword" type="password" className="h-12" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                <PasswordInput id="newPassword" className="h-12" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm">Confirmar senha</Label>
-                <Input id="confirm" type="password" className="h-12" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+                <PasswordInput id="confirm" className="h-12" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
                 {mismatch && <p className="text-xs text-destructive">As senhas não conferem.</p>}
               </div>
 
