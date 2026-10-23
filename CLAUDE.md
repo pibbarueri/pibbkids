@@ -190,11 +190,13 @@ porta 3000) → login → navegar → `read_page`/screenshot pra conferir. Prefe
 
 ## Deploy
 
-App na Vercel, banco na Supabase. Repo em `pibbarueri/pibbkids` (org privada no GitHub).
+App em https://appkids.pibbarueri.org.br (`pibbkids.vercel.app` redireciona pra lá). Vercel e
+Supabase estão nas contas da igreja (time Vercel "PIBB Tech"). Repo público em
+`pibbarueri/pibbkids`.
 
-**Deploy de produção acontece no push de uma tag `v*`, não no merge na `main`.** O plano Hobby
-da Vercel não conecta em repo privado de organização, então a integração Git da Vercel está
-desligada e quem faz o deploy é `.github/workflows/deploy.yml` (`vercel pull` → `vercel build`
+**Deploy de produção acontece no push de uma tag `v*`, não no merge na `main`.** A integração
+Git da Vercel está desligada: no plano Hobby ela bloqueia deploy de commit cujo autor não é
+membro do time, e o Hobby não aceita membros. Quem faz o deploy é `.github/workflows/deploy.yml` (`vercel pull` → `vercel build`
 → `vercel deploy --prebuilt --prod`). Merge na `main` não sobe nada sozinho. Pra publicar:
 
 ```bash
@@ -203,8 +205,12 @@ git tag vX.Y.Z && git push origin vX.Y.Z
 ```
 
 Secrets do workflow (Settings → Secrets and variables → Actions): `VERCEL_TOKEN`,
-`VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. Env vars do app continuam no projeto da Vercel, o
-`vercel pull` busca de lá.
+`VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. O token é da conta da igreja, com escopo All projects.
+Env vars do app ficam no projeto da Vercel (todas Sensitive, então `vercel pull` traz o texto
+`[SENSITIVE]`). Por isso o workflow fixa `NEXTAUTH_URL` no build: o NextAuth usa esse valor
+como host, e se ele estiver errado o domínio redireciona pra outro endereço. Trocou o domínio,
+troca ali e na env var da Vercel. Os outros valores não são lidos no build; as funções pegam
+os reais da Vercel em runtime.
 
 Migrations em produção:
 
