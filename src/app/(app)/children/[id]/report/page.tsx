@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { today } from "@/lib/dates";
+import { canManage } from "@/lib/permissions";
+import { getTeacherRoomIds } from "@/lib/class-journal";
 import { canAccessChildReport, isSemester, semesterOf, semesterRange } from "@/lib/child-report";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -69,14 +71,15 @@ export default async function ChildReportPage({
   if (!child) notFound();
   if (!(await canAccessChildReport(session.user, child))) redirect("/children");
 
-  // Prev/next arrows step through the other active children of the same class, A to Z.
-  const classmates = child.classGroupId
-    ? await prisma.child.findMany({
-        where: { classGroupId: child.classGroupId, active: true },
-        select: { id: true },
-        orderBy: { name: "asc" },
-      })
-    : [];
+  // Prev/next arrows step through every active child, A to Z, like the Crianças list. A
+  // teacher only steps through the children of rooms they've taught (the ones whose report
+  // they can open).
+  const roomIds = canManage(session.user.role) ? null : await getTeacherRoomIds(session.user.id);
+  const classmates = await prisma.child.findMany({
+    where: { active: true, classGroupId: roomIds ? { in: roomIds } : { not: null } },
+    select: { id: true },
+    orderBy: { name: "asc" },
+  });
   const position = classmates.findIndex((c) => c.id === child.id);
   const prevId = position > 0 ? classmates[position - 1].id : null;
   const nextId = position >= 0 && position < classmates.length - 1 ? classmates[position + 1].id : null;
@@ -265,7 +268,7 @@ export default async function ChildReportPage({
   );
 }
 
-// Same look as the Sunday arrows on Aulas and Escala; disabled at either end of the class.
+// Same look as the Sunday arrows on Aulas and Escala; disabled at either end of the list.
 function ReportNavLink({ id, semester, label, children }: { id: string | null; semester: string; label: string; children: React.ReactNode }) {
   const className = cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0 no-print");
   if (!id) {
