@@ -70,6 +70,8 @@ export function BackHeader({
           (pathname.startsWith("/reports/") && pathname !== "/reports")
         ? "/reports"
         : "/dashboard";
+  // Replace, not push: pushing the parent stacked it on top of the page being left, so the
+  // phone's back gesture afterwards returned to that page (e.g. the last visitor opened).
   const showBack = pathname !== "/dashboard";
   const title = PAGE_TITLES.find(([href]) => pathname.startsWith(href))?.[1];
 
@@ -77,7 +79,7 @@ export function BackHeader({
     <header className="sticky top-0 z-40 grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b bg-background/95 backdrop-blur px-2 py-2">
       <div className="flex items-center min-w-0">
         {showBack ? (
-          <Button variant="ghost" size="icon" onClick={() => router.push(target)} aria-label="Voltar">
+          <Button variant="ghost" size="icon" onClick={() => router.replace(target)} aria-label="Voltar">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         ) : (

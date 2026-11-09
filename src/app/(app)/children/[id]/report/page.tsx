@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { today } from "@/lib/dates";
 import { canAccessChildReport, isSemester, semesterOf, semesterRange } from "@/lib/child-report";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { ExportPdfButton } from "@/components/reports/export-pdf-button";
 import { SemesterSelect } from "./semester-select";
 import { LessonNote } from "./lesson-note";
@@ -65,6 +68,18 @@ export default async function ChildReportPage({
   });
   if (!child) notFound();
   if (!(await canAccessChildReport(session.user, child))) redirect("/children");
+
+  // Prev/next arrows step through the other active children of the same class, A to Z.
+  const classmates = child.classGroupId
+    ? await prisma.child.findMany({
+        where: { classGroupId: child.classGroupId, active: true },
+        select: { id: true },
+        orderBy: { name: "asc" },
+      })
+    : [];
+  const position = classmates.findIndex((c) => c.id === child.id);
+  const prevId = position > 0 ? classmates[position - 1].id : null;
+  const nextId = position >= 0 && position < classmates.length - 1 ? classmates[position + 1].id : null;
 
   const now = today();
   const currentSemester = semesterOf(now);
@@ -165,11 +180,19 @@ export default async function ChildReportPage({
     <div className="p-4 pb-24 space-y-4 print:p-0 print:space-y-2 [print-color-adjust:exact] [-webkit-print-color-adjust:exact]">
       <style>{PRINT_PAGE_CSS}</style>
       <div className="space-y-3 print:space-y-0 print:flex print:items-end print:justify-between print:gap-4">
-        <div>
-          <h1 className="text-xl font-bold wrap-anywhere print:text-base">{child.name}</h1>
-          <p className="text-sm text-muted-foreground print:text-xs">
-            {child.classGroup?.name ?? "Sem turma"} · {semHalf}º semestre {semYear}
-          </p>
+        <div className="flex items-center gap-2">
+          <ReportNavLink id={prevId} semester={semester} label="Criança anterior">
+            <ChevronLeft className="h-4 w-4" />
+          </ReportNavLink>
+          <div className="min-w-0 flex-1 text-center print:text-left">
+            <h1 className="text-xl font-bold wrap-anywhere print:text-base">{child.name}</h1>
+            <p className="text-sm text-muted-foreground print:text-xs">
+              {child.classGroup?.name ?? "Sem turma"} · {semHalf}º semestre {semYear}
+            </p>
+          </div>
+          <ReportNavLink id={nextId} semester={semester} label="Próxima criança">
+            <ChevronRight className="h-4 w-4" />
+          </ReportNavLink>
         </div>
         <SemesterSelect value={semester} options={semesterOptions} />
         <div className="flex items-baseline justify-between gap-2 print:gap-3">
@@ -239,5 +262,22 @@ export default async function ChildReportPage({
 
       <ExportPdfButton />
     </div>
+  );
+}
+
+// Same look as the Sunday arrows on Aulas and Escala; disabled at either end of the class.
+function ReportNavLink({ id, semester, label, children }: { id: string | null; semester: string; label: string; children: React.ReactNode }) {
+  const className = cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0 no-print");
+  if (!id) {
+    return (
+      <span aria-disabled className={cn(className, "pointer-events-none opacity-50")}>
+        {children}
+      </span>
+    );
+  }
+  return (
+    <Link href={`/children/${id}/report?semester=${semester}`} replace aria-label={label} className={className}>
+      {children}
+    </Link>
   );
 }
