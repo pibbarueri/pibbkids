@@ -165,7 +165,7 @@ export function VisitorDetailClient({
 
       {/* Actions stay pinned above the bottom nav, however long the visit list is. */}
       {isManager && !child.promoted && (
-        <div className="fixed inset-x-0 bottom-16 z-30 border-t bg-background/95 backdrop-blur p-3 space-y-2">
+        <div className="fixed inset-x-0 bottom-16 z-30 bg-background p-3 space-y-2">
           <Button className="w-full h-12" onClick={() => setPromoting(true)}>
             <UserCheck className="h-4 w-4" />
             Efetivar criança
