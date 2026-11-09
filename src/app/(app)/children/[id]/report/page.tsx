@@ -20,6 +20,12 @@ const LESSON_TYPE_LABELS: Record<string, string> = {
 // Attendance and lesson plan dates were written both as UTC midnight and as local midnight
 // (see CLAUDE.md, "Datas"). Shifting to midday before reading the date puts both on the
 // same calendar day.
+const TYPE_ORDER = { EBD: 0, CULTO: 1 } as const;
+
+// Printed as one landscape page. A named @page in globals.css forced a page break before the
+// report and some browsers ignored it, so the page rule ships with this page only.
+const PRINT_PAGE_CSS = "@page { size: A4 landscape; margin: 8mm; }";
+
 function sundayKey(date: Date) {
   return new Date(date.getTime() + 12 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
@@ -128,7 +134,8 @@ export default async function ChildReportPage({
       return { key, day, type, plan: planByKey.get(key), present: presentKeys.has(key), note: noteByKey.get(key) ?? null };
     })
     .filter((b) => inSemester(b.day))
-    .sort((a, b) => a.day.localeCompare(b.day) || a.type.localeCompare(b.type));
+    // EBD happens before Culto on the same Sunday.
+    .sort((a, b) => a.day.localeCompare(b.day) || TYPE_ORDER[a.type] - TYPE_ORDER[b.type]);
 
   const total = blocks.length;
   const present = blocks.filter((b) => b.present).length;
@@ -140,7 +147,8 @@ export default async function ChildReportPage({
   const printColumns = total <= 20 ? 5 : total <= 30 ? 6 : total <= 42 ? 7 : 8;
 
   return (
-    <div className="p-4 pb-24 space-y-4 print-cards print:space-y-2">
+    <div className="p-4 pb-24 space-y-4 print:p-0 print:space-y-2 [print-color-adjust:exact] [-webkit-print-color-adjust:exact]">
+      <style>{PRINT_PAGE_CSS}</style>
       <div className="space-y-3 print:space-y-0 print:flex print:items-end print:justify-between print:gap-4">
         <div>
           <h1 className="text-xl font-bold wrap-anywhere print:text-base">{child.name}</h1>
@@ -163,14 +171,14 @@ export default async function ChildReportPage({
       )}
 
       <div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 print:gap-1 report-grid"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 print:gap-1 print:grid-cols-[repeat(var(--print-cols),minmax(0,1fr))]"
         style={{ "--print-cols": printColumns } as React.CSSProperties}
       >
         {blocks.map((b) => (
           <div
             key={b.key}
             className={cn(
-              "p-3 border rounded-lg space-y-2 break-inside-avoid print:p-1.5 print:space-y-0.5 print:rounded-md",
+              "p-3 border rounded-lg space-y-2 break-inside-avoid print:p-1.5 print:space-y-0.5 print:rounded-md [print-color-adjust:exact] [-webkit-print-color-adjust:exact]",
               b.present ? "bg-chart-5/10 border-chart-5/40" : "bg-primary/10 border-primary/40"
             )}
           >
