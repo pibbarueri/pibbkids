@@ -144,7 +144,15 @@ export default async function ChildReportPage({
 
   // On paper the whole semester goes on one landscape page: more lessons, more columns.
   // 52 is the worst case (26 Sundays, EBD and Culto).
-  const printColumns = total <= 20 ? 5 : total <= 30 ? 6 : total <= 42 ? 7 : 8;
+  // Lessons grouped by Sunday: one card per day, holding the EBD and Culto blocks.
+  const days = [...new Set(blocks.map((b) => b.day))].map((day) => ({
+    day,
+    blocks: blocks.filter((b) => b.day === day),
+  }));
+  const perDay = types.length;
+  // Block columns grow with the number of lessons; a day card spans `perDay` of them.
+  const blockColumns = total <= 20 ? 5 : total <= 30 ? 6 : total <= 42 ? 7 : 8;
+  const printColumns = Math.max(1, Math.round(blockColumns / perDay));
 
   return (
     <div className="p-4 pb-24 space-y-4 print:p-0 print:space-y-2 [print-color-adjust:exact] [-webkit-print-color-adjust:exact]">
@@ -171,31 +179,38 @@ export default async function ChildReportPage({
       )}
 
       <div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 print:gap-1 print:grid-cols-[repeat(var(--print-cols),minmax(0,1fr))]"
+        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 print:gap-1 print:grid-cols-[repeat(var(--print-cols),minmax(0,1fr))]"
         style={{ "--print-cols": printColumns } as React.CSSProperties}
       >
-        {blocks.map((b) => (
-          <div
-            key={b.key}
-            className={cn(
-              "p-3 border rounded-lg space-y-2 break-inside-avoid print:p-1.5 print:space-y-0.5 print:rounded-md [print-color-adjust:exact] [-webkit-print-color-adjust:exact]",
-              b.present ? "bg-chart-5/10 border-chart-5/40" : "bg-primary/10 border-primary/40"
-            )}
-          >
-            <div className="flex items-center justify-between gap-2 print:gap-1">
-              <p className="text-sm font-semibold print:text-[7pt]">{formatDay(b.day)}</p>
-              <span
-                className={cn(
-                  "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-white print:px-1 print:py-0 print:text-[6pt]",
-                  b.type === "EBD" ? "bg-chart-5" : "bg-primary"
-                )}
-              >
-                {b.type === "CULTO" ? "Culto" : "EBD"}
-              </span>
+        {days.map((d) => (
+          <div key={d.day} className="border rounded-lg p-2 space-y-2 break-inside-avoid print:p-1 print:space-y-1 print:rounded-md">
+            <p className="text-sm font-semibold px-1 print:text-[7pt] print:px-0.5">{formatDay(d.day)}</p>
+            <div className={cn("grid gap-2 print:gap-1", perDay === 2 ? "grid-cols-2" : "grid-cols-1")}>
+              {d.blocks.map((b) => (
+                <div
+                  key={b.key}
+                  className={cn(
+                    "p-2 border rounded-md space-y-1 min-w-0 print:p-1 print:space-y-0.5 [print-color-adjust:exact] [-webkit-print-color-adjust:exact]",
+                    perDay === 2 && (b.type === "EBD" ? "col-start-1" : "col-start-2"),
+                    b.present ? "bg-chart-5/10 border-chart-5/40" : "bg-primary/10 border-primary/40"
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-1">
+                    <p className="text-xs text-muted-foreground print:text-[6pt]">{b.present ? "Presente" : "Ausente"}</p>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-white print:px-1 print:py-0 print:text-[6pt]",
+                        b.type === "EBD" ? "bg-chart-5" : "bg-primary"
+                      )}
+                    >
+                      {b.type === "CULTO" ? "Culto" : "EBD"}
+                    </span>
+                  </div>
+                  <p className="text-sm wrap-anywhere line-clamp-2 print:text-[7pt] print:leading-tight">{lessonLabel(b.plan)}</p>
+                  <LessonNote childId={child.id} date={b.day} type={b.type} initialNote={b.note} />
+                </div>
+              ))}
             </div>
-            <p className="text-sm wrap-anywhere line-clamp-2 print:text-[7pt] print:leading-tight">{lessonLabel(b.plan)}</p>
-            <p className="text-xs text-muted-foreground print:text-[6pt]">{b.present ? "Presente" : "Ausente"}</p>
-            <LessonNote childId={child.id} date={b.day} type={b.type} initialNote={b.note} />
           </div>
         ))}
       </div>
