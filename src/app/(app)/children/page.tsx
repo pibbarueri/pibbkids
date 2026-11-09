@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canManage } from "@/lib/permissions";
+import { canManage, canViewChildReport } from "@/lib/permissions";
+import { getTeacherRoomIds } from "@/lib/class-journal";
 import { sortClasses } from "@/lib/classes";
 import { ChildrenClient } from "./children-client";
 
@@ -30,12 +31,20 @@ export default async function ChildrenPage() {
         orderBy: { name: "asc" },
       });
 
+  // Classes whose children get the "Relatório" button: null means every class.
+  const reportClassIds = !canViewChildReport(role)
+    ? []
+    : isManager
+      ? null
+      : await getTeacherRoomIds(session.user.id);
+
   return (
     <div className="p-4 pb-24 space-y-4">
       <ChildrenClient
         initialChildren={children}
         classes={classes}
         isManager={isManager}
+        reportClassIds={reportClassIds}
       />
     </div>
   );

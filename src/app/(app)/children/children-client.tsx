@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Frequency } from "@prisma/client";
@@ -24,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Check, Filter, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
+import { AlertCircle, Check, FileText, Filter, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { formatPhone, phoneDigits, whatsappChatLink } from "@/lib/phone";
 import { ageLabel, suggestedClassName } from "@/lib/age";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
@@ -105,10 +106,12 @@ export function ChildrenClient({
   initialChildren,
   classes,
   isManager,
+  reportClassIds,
 }: {
   initialChildren: Child[];
   classes: ClassGroup[];
   isManager: boolean;
+  reportClassIds: string[] | null;
 }) {
   const router = useRouter();
   const [children, setChildren] = useState(initialChildren);
@@ -551,6 +554,15 @@ export function ChildrenClient({
                     <p className="text-blue-700 dark:text-blue-300 whitespace-pre-wrap">{selected.restrictions}</p>
                   </div>
                 </div>
+              )}
+              {selected.classGroupId && (reportClassIds === null || reportClassIds.includes(selected.classGroupId)) && (
+                <Link
+                  href={`/children/${selected.id}/report`}
+                  className={cn(buttonVariants({ variant: "outline" }), "w-full h-11")}
+                >
+                  <FileText className="h-4 w-4" />
+                  Relatório
+                </Link>
               )}
             </div>
           )}
