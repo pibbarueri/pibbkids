@@ -165,7 +165,7 @@ export default async function ChildReportPage({
           </p>
         </div>
         <SemesterSelect value={semester} options={semesterOptions} />
-        <div className="rounded-lg border bg-background p-3 flex items-baseline justify-between gap-2 print:p-0 print:border-0 print:gap-3">
+        <div className="flex items-baseline justify-between gap-2 print:gap-3">
           <p className="text-sm print:text-xs">
             <span className="font-semibold">{present}</span> presença{present === 1 ? "" : "s"} em{" "}
             <span className="font-semibold">{total}</span> aula{total === 1 ? "" : "s"}
@@ -179,19 +179,20 @@ export default async function ChildReportPage({
       )}
 
       <div
-        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 print:gap-1 print:grid-cols-[repeat(var(--print-cols),minmax(0,1fr))]"
+        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-3 gap-y-4 print:gap-x-2 print:gap-y-1.5 print:grid-cols-[repeat(var(--print-cols),minmax(0,1fr))]"
         style={{ "--print-cols": printColumns } as React.CSSProperties}
       >
         {days.map((d) => (
-          <div key={d.day} className="border rounded-lg p-2 space-y-2 break-inside-avoid print:p-1 print:space-y-1 print:rounded-md">
+          <div key={d.day} className="space-y-1.5 break-inside-avoid print:space-y-0.5">
             <p className="text-sm font-semibold px-1 print:text-[7pt] print:px-0.5">{formatDay(d.day)}</p>
-            <div className={cn("grid gap-2 print:gap-1", perDay === 2 ? "grid-cols-2" : "grid-cols-1")}>
+            {/* On screen EBD sits above Culto; on paper they go side by side to fit one page. */}
+            <div className={cn("grid grid-cols-1 gap-2 print:gap-1", perDay === 2 && "print:grid-cols-2")}>
               {d.blocks.map((b) => (
                 <div
                   key={b.key}
                   className={cn(
-                    "p-2 border rounded-md space-y-1 min-w-0 print:p-1 print:space-y-0.5 [print-color-adjust:exact] [-webkit-print-color-adjust:exact]",
-                    perDay === 2 && (b.type === "EBD" ? "col-start-1" : "col-start-2"),
+                    "p-2 border rounded-md space-y-1 min-w-0 print:border-0 print:p-1 print:space-y-0.5 [print-color-adjust:exact] [-webkit-print-color-adjust:exact]",
+                    perDay === 2 && (b.type === "EBD" ? "print:col-start-1" : "print:col-start-2"),
                     b.present ? "bg-chart-5/10 border-chart-5/40" : "bg-primary/10 border-primary/40"
                   )}
                 >
