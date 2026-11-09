@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { sortClasses } from "@/lib/classes";
+import { visitorAgeText } from "@/lib/age";
+import { dayKey } from "@/lib/dates";
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 const MONTH_LABELS = [
@@ -22,6 +25,15 @@ type PresentChild = {
   className: string | null;
 };
 
+type DayVisitor = {
+  id: string;
+  name: string;
+  birthdate: string | null;
+  ageMonths: number | null;
+  type: "EBD" | "CULTO";
+  classGroup: { id: string; name: string } | null;
+};
+
 function toDateKey(d: Date) {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
 }
@@ -33,6 +45,9 @@ export function AttendanceReportClient() {
   const [listOpen, setListOpen] = useState(false);
   const [dayChildren, setDayChildren] = useState<PresentChild[]>([]);
   const [classFilter, setClassFilter] = useState(ALL_CLASSES);
+  const [visitorCounts, setVisitorCounts] = useState<Record<string, number>>({});
+  const [visitorsOpen, setVisitorsOpen] = useState(false);
+  const [dayVisitors, setDayVisitors] = useState<DayVisitor[]>([]);
 
   const today = new Date();
   const viewDate = new Date(Date.UTC(today.getFullYear(), today.getMonth() + monthOffset, 1));
@@ -56,10 +71,30 @@ export function AttendanceReportClient() {
       .then((counts: Record<string, number>) => {
         if (!cancelled) setDayCounts(counts);
       });
+    fetch(`/api/visitors?from=${from}&to=${to}`)
+      .then((r) => r.json())
+      .then((rows: { createdAt: string }[]) => {
+        if (cancelled) return;
+        const counts: Record<string, number> = {};
+        for (const row of rows) {
+          // A visit is a timestamp; its day is the app-timezone day it falls on.
+          const key = dayKey(new Date(row.createdAt));
+          counts[key] = (counts[key] ?? 0) + 1;
+        }
+        setVisitorCounts(counts);
+      });
     return () => {
       cancelled = true;
     };
   }, [year, month, daysInMonth]);
+
+  function openVisitorList(key: string) {
+    setVisitorsOpen(true);
+    setDayVisitors([]);
+    fetch(`/api/visitors?date=${key}`)
+      .then((r) => r.json())
+      .then(setDayVisitors);
+  }
 
   function openDayList(key: string) {
     setListOpen(true);
@@ -103,6 +138,7 @@ export function AttendanceReportClient() {
           if (!d) return <span key={i} />;
           const key = toDateKey(d);
           const count = dayCounts[key] ?? 0;
+          const visitors = visitorCounts[key] ?? 0;
           const isToday = key === todayKey;
           return (
             <button
@@ -112,13 +148,18 @@ export function AttendanceReportClient() {
                 "aspect-square rounded-md text-xs flex items-center justify-center relative transition-transform active:scale-90",
                 isToday && "font-bold border border-primary",
                 key === selectedKey && "bg-primary text-primary-foreground",
-                count > 0 && key !== selectedKey && "bg-muted"
+                (count > 0 || visitors > 0) && key !== selectedKey && "bg-muted"
               )}
             >
               {d.getUTCDate()}
-              {count > 0 && (
-                <span className="absolute bottom-0.5">
-                  <span className={cn("h-1 w-1 rounded-full block", key === selectedKey ? "bg-primary-foreground" : "bg-orange-500")} />
+              {(count > 0 || visitors > 0) && (
+                <span className="absolute bottom-0.5 flex gap-0.5">
+                  {count > 0 && (
+                    <span className={cn("h-1 w-1 rounded-full block", key === selectedKey ? "bg-primary-foreground" : "bg-orange-500")} />
+                  )}
+                  {visitors > 0 && (
+                    <span className={cn("h-1 w-1 rounded-full block", key === selectedKey ? "bg-primary-foreground" : "bg-chart-2")} />
+                  )}
                 </span>
               )}
             </button>
@@ -127,8 +168,8 @@ export function AttendanceReportClient() {
       </div>
 
       {selectedKey && (
-        <div className="mt-3 pt-3 border-t">
-          {(dayCounts[selectedKey] ?? 0) > 0 ? (
+        <div className="mt-3 pt-3 border-t space-y-1">
+          {(dayCounts[selectedKey] ?? 0) > 0 && (
             <button
               onClick={() => openDayList(selectedKey)}
               className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-0.5 hover:bg-muted text-left transition-transform active:scale-[0.98]"
@@ -136,7 +177,19 @@ export function AttendanceReportClient() {
               <span className="text-sm">{dayCounts[selectedKey]} crianças presentes</span>
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
             </button>
-          ) : (
+          )}
+          {(visitorCounts[selectedKey] ?? 0) > 0 && (
+            <button
+              onClick={() => openVisitorList(selectedKey)}
+              className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-0.5 hover:bg-muted text-left transition-transform active:scale-[0.98]"
+            >
+              <span className="text-sm">
+                {visitorCounts[selectedKey]} visitante{visitorCounts[selectedKey] === 1 ? "" : "s"}
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </button>
+          )}
+          {!(dayCounts[selectedKey] ?? 0) && !(visitorCounts[selectedKey] ?? 0) && (
             <p className="text-xs text-muted-foreground">Nenhuma presença registrada nesse dia.</p>
           )}
         </div>
@@ -186,6 +239,29 @@ export function AttendanceReportClient() {
             {visibleChildren.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">Nenhuma presença registrada nesse dia.</p>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={visitorsOpen} onOpenChange={setVisitorsOpen}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Visitantes — {selectedKey && new Date(`${selectedKey}T00:00:00Z`).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {dayVisitors.map((v) => (
+              <Link
+                key={v.id}
+                href={`/reports/visitors/${v.id}`}
+                className="block p-3 border rounded-lg bg-background hover:bg-muted/50 transition-all active:scale-[0.98]"
+              >
+                <p className="font-medium text-sm wrap-anywhere">{v.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {visitorAgeText(v)} · {v.classGroup?.name ?? "Sem turma"} · {v.type === "CULTO" ? "Culto" : "EBD"}
+                </p>
+              </Link>
+            ))}
           </div>
         </DialogContent>
       </Dialog>

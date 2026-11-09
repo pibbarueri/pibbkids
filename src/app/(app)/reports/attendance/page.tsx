@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { canViewAttendanceOverview } from "@/lib/permissions";
 import { sortClasses } from "@/lib/classes";
 import { AttendanceReportTabs } from "./attendance-report-tabs";
+import { dayKey } from "@/lib/dates";
 import { ExportPdfButton } from "@/components/reports/export-pdf-button";
 
 function sundaysInRange(start: Date, end: Date): Date[] {
@@ -29,7 +30,7 @@ export default async function AttendanceReportPage() {
   const end = semester === 1 ? new Date(year, 5, 30) : new Date(year, 11, 31);
   const sundays = sundaysInRange(start, end);
 
-  const [attendance, classes] = await Promise.all([
+  const [attendance, classes, visitors] = await Promise.all([
     prisma.attendance.findMany({
       where: { date: { gte: start, lte: end }, present: true },
       select: { date: true, type: true, child: { select: { classGroupId: true } } },
@@ -38,12 +39,17 @@ export default async function AttendanceReportPage() {
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
+    prisma.visitor.findMany({
+      where: { createdAt: { gte: start, lt: new Date(end.getTime() + 86_400_000) } },
+      select: { createdAt: true, type: true, classGroupId: true },
+    }),
   ]);
 
   return (
     <div className="p-4 print-landscape">
       <AttendanceReportTabs
         attendance={attendance.map((a) => ({ date: a.date.toISOString(), type: a.type, classGroupId: a.child.classGroupId }))}
+        visitors={visitors.map((v) => ({ day: dayKey(v.createdAt), type: v.type, classGroupId: v.classGroupId }))}
         classes={sortClasses(classes)}
         sundays={sundays.map((d) => d.toISOString())}
         semesterLabel={`${semester}º semestre ${year}`}
