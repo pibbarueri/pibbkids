@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { NumberStepper } from "@/components/ui/number-stepper";
 import { MAX_VISITOR_AGE_YEARS, visitorClassName } from "@/lib/age";
 import { cn } from "@/lib/utils";
+import { hasSurname, nameTokens } from "@/lib/visitor-names";
 
 export type VisitorFormValue = {
   name: string;
@@ -13,6 +14,8 @@ export type VisitorFormValue = {
   months: number;
   birthdate: string;
   type: "EBD" | "CULTO";
+  /** Set when the name was picked from the autocomplete: same child as that earlier visitor. */
+  sameAsVisitorId?: string;
 };
 
 type VisitorLike = {
@@ -51,7 +54,7 @@ function previewClassName(v: VisitorFormValue) {
 }
 
 export function isVisitorFormValid(v: VisitorFormValue) {
-  return v.name.trim().length >= 2 && (v.mode === "age" || !!v.birthdate);
+  return hasSurname(v.name) && (v.mode === "age" || !!v.birthdate);
 }
 
 /** Sends only the field for the chosen mode; the API clears the other one. */
@@ -137,9 +140,12 @@ export function VisitorForm({
         <Input
           className="h-12"
           value={value.name}
-          onChange={(e) => onChange({ name: e.target.value })}
-          placeholder="Nome da criança"
+          onChange={(e) => onChange({ name: e.target.value, sameAsVisitorId: undefined })}
+          placeholder="Nome e sobrenome"
         />
+        {nameTokens(value.name).length === 1 && (
+          <p className="text-xs text-muted-foreground">Informe nome e sobrenome.</p>
+        )}
         {searching && suggestions.length > 0 && (
           <div className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-lg divide-y">
             {suggestions.map((s) => (
@@ -150,6 +156,7 @@ export function VisitorForm({
                 onClick={() => {
                   onChange({
                     name: s.name,
+                    sameAsVisitorId: s.id,
                     ...(s.birthdate
                       ? { mode: "birthdate", birthdate: new Date(s.birthdate).toISOString().slice(0, 10) }
                       : s.ageMonths !== null && { mode: "age", ...splitMonths(s.ageMonths) }),

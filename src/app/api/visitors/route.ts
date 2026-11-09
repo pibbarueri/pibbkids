@@ -7,15 +7,19 @@ import { visitorAgeText } from "@/lib/age";
 import { ageMonthsField, classGroupIdForVisitor } from "@/lib/visitors";
 import { dayRangeUTC, dateTimeOnDay, dayKey } from "@/lib/dates";
 import { SundayType } from "@prisma/client";
+import { normalize } from "@/lib/text";
+import { fullerName, hasSurname } from "@/lib/visitor-names";
 
 // Reception logs either a birthdate or just the age, never both.
 const schema = z
   .object({
-    name: z.string().min(2),
+    name: z.string().trim().refine(hasSurname, "Informe nome e sobrenome."),
     birthdate: z.string().min(1).optional(),
     ageMonths: ageMonthsField.optional(),
     date: z.string().min(1).optional(),
     type: z.enum(SundayType),
+    // Reception confirmed this is the same child as an earlier visitor.
+    sameAsVisitorId: z.string().min(1).optional(),
   })
   .refine((d) => (d.birthdate === undefined) !== (d.ageMonths === undefined), {
     message: "Informe a idade ou a data de nascimento.",
@@ -76,16 +80,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ errors: parsed.error.flatten().fieldErrors }, { status: 422 });
   }
 
-  const birthdate = parsed.data.birthdate ? new Date(parsed.data.birthdate) : null;
-  const ageMonths = birthdate ? null : parsed.data.ageMonths!;
+  let name = parsed.data.name;
+  let birthdate = parsed.data.birthdate ? new Date(parsed.data.birthdate) : null;
+  let ageMonths = birthdate ? null : parsed.data.ageMonths!;
+  let classGroupId: string | null | undefined;
+
+  // Same child as an earlier visitor: the fuller of the two names wins and is written back
+  // to every earlier visit under the old name; age and turma are copied from that visitor.
+  if (parsed.data.sameAsVisitorId) {
+    const earlier = await prisma.visitor.findUnique({
+      where: { id: parsed.data.sameAsVisitorId },
+      select: { name: true, birthdate: true, ageMonths: true, classGroupId: true, childId: true },
+    });
+    if (!earlier || earlier.childId) {
+      return NextResponse.json({ error: "Visitante anterior não encontrado." }, { status: 404 });
+    }
+    name = fullerName(name, earlier.name);
+    birthdate = earlier.birthdate;
+    ageMonths = earlier.ageMonths;
+    classGroupId = earlier.classGroupId;
+
+    const oldKey = normalize(earlier.name);
+    const sameName = (
+      await prisma.visitor.findMany({ where: { childId: null }, select: { id: true, name: true } })
+    ).filter((v) => normalize(v.name) === oldKey && v.name !== name);
+    if (sameName.length) {
+      await prisma.visitor.updateMany({ where: { id: { in: sameName.map((v) => v.id) } }, data: { name } });
+    }
+  }
 
   const visitor = await prisma.visitor.create({
     data: {
-      name: parsed.data.name,
+      name,
       birthdate,
       ageMonths,
       type: parsed.data.type,
-      classGroupId: await classGroupIdForVisitor({ birthdate, ageMonths }),
+      classGroupId: classGroupId !== undefined ? classGroupId : await classGroupIdForVisitor({ birthdate, ageMonths }),
       createdById: session.user.id,
       createdAt: dateTimeOnDay(parsed.data.date ?? dayKey()),
     },

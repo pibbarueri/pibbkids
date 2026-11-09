@@ -6,10 +6,11 @@ import { auth } from "@/lib/auth";
 import { canEditVisitor } from "@/lib/permissions";
 import { dayKey } from "@/lib/dates";
 import { ageMonthsField, classGroupIdForVisitor } from "@/lib/visitors";
+import { hasSurname } from "@/lib/visitor-names";
 
 const patchSchema = z
   .object({
-    name: z.string().min(2).optional(),
+    name: z.string().trim().refine(hasSurname, "Informe nome e sobrenome.").optional(),
     birthdate: z.string().min(1).optional(),
     ageMonths: ageMonthsField.optional(),
     type: z.enum(SundayType).optional(),
