@@ -136,7 +136,7 @@ export default async function ChildReportPage({
   const [semYear, semHalf] = semester.split("-");
 
   return (
-    <div className="p-4 pb-24 space-y-4 print-landscape">
+    <div className="p-4 pb-24 space-y-4 print-portrait">
       <div className="space-y-3">
         <div>
           <h1 className="text-xl font-bold wrap-anywhere">{child.name}</h1>

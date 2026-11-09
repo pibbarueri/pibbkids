@@ -142,6 +142,17 @@
  * and only content assigned that name is affected. Everything else in the
  * app keeps whatever the browser's print default is.
  */
+/* Card-style reports (one block per row, like the child report) read better in portrait at
+   full size. Backgrounds carry meaning there (present/absent), so print them. */
+@page report-portrait {
+  size: portrait;
+  margin: 12mm;
+}
+
+.print-portrait {
+  page: report-portrait;
+}
+
 @page report-landscape {
   size: landscape;
   margin: 12mm;
@@ -156,6 +167,16 @@
   nav,
   .no-print {
     display: none !important;
+  }
+
+  /* The app shell pads the bottom for the (hidden) nav bar and stretches to the screen
+     height; on paper that only adds a trailing blank page. */
+  main {
+    padding-bottom: 0 !important;
+  }
+
+  .min-h-screen {
+    min-height: 0 !important;
   }
 
   /* Scroll containers exist so the table fits a phone screen — on paper
@@ -180,5 +201,15 @@
      of this, so the user can tune further from there. */
   .print-landscape {
     zoom: 45%;
+  }
+
+  .print-portrait {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    padding: 0 !important;
+  }
+
+  .print-portrait .break-inside-avoid {
+    break-inside: avoid;
   }
 }
