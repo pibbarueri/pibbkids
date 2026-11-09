@@ -98,13 +98,14 @@ export default async function ChildReportPage({
   const [plans, attendance, notes] = await Promise.all([
     child.classGroupId
       ? prisma.sundayPlan.findMany({
-          where: { classGroupId: child.classGroupId, date: range, type: { in: [...types] }, lessonType: { not: "NO_CLASS" } },
+          where: { classGroupId: child.classGroupId, date: range, type: { in: [...types] } },
           select: {
             date: true,
             type: true,
             lessonType: true,
             lessonNumber: true,
             specialTitle: true,
+            observations: true,
             journal: { select: { title: true } },
           },
         })
@@ -131,14 +132,19 @@ export default async function ChildReportPage({
   const blocks = [...new Set([...planByKey.keys(), ...presentKeys])]
     .map((key) => {
       const [day, type] = key.split("|") as [string, "EBD" | "CULTO"];
-      return { key, day, type, plan: planByKey.get(key), present: presentKeys.has(key), note: noteByKey.get(key) ?? null };
+      const plan = planByKey.get(key);
+      // "Sem aula" days show as a grey block with the plan's note (e.g. "Acampamento") and
+      // don't count toward attendance either way.
+      const noClass = plan?.lessonType === "NO_CLASS";
+      return { key, day, type, plan, noClass, present: !noClass && presentKeys.has(key), note: noteByKey.get(key) ?? null };
     })
     .filter((b) => inSemester(b.day))
     // EBD happens before Culto on the same Sunday.
     .sort((a, b) => a.day.localeCompare(b.day) || TYPE_ORDER[a.type] - TYPE_ORDER[b.type]);
 
-  const total = blocks.length;
-  const present = blocks.filter((b) => b.present).length;
+  const counted = blocks.filter((b) => !b.noClass);
+  const total = counted.length;
+  const present = counted.filter((b) => b.present).length;
   const percent = total ? Math.round((present / total) * 100) : 0;
   const [semYear, semHalf] = semester.split("-");
 
@@ -151,7 +157,8 @@ export default async function ChildReportPage({
   }));
   const perDay = types.length;
   // Block columns grow with the number of lessons; a day card spans `perDay` of them.
-  const blockColumns = total <= 20 ? 5 : total <= 30 ? 6 : total <= 42 ? 7 : 8;
+  const blockCount = blocks.length;
+  const blockColumns = blockCount <= 20 ? 5 : blockCount <= 30 ? 6 : blockCount <= 42 ? 7 : 8;
   const printColumns = Math.max(1, Math.round(blockColumns / perDay));
 
   return (
@@ -174,7 +181,7 @@ export default async function ChildReportPage({
         </div>
       </div>
 
-      {total === 0 && (
+      {blocks.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">Nenhuma aula registrada nesse semestre.</p>
       )}
 
@@ -193,11 +200,15 @@ export default async function ChildReportPage({
                   className={cn(
                     "p-2 border rounded-md space-y-1 min-w-0 print:border-0 print:p-1 print:space-y-0.5 [print-color-adjust:exact] [-webkit-print-color-adjust:exact]",
                     perDay === 2 && (b.type === "EBD" ? "print:col-start-1" : "print:col-start-2"),
-                    b.present ? "bg-chart-5/10 border-chart-5/40" : "bg-primary/10 border-primary/40"
+                    b.noClass
+                      ? "bg-muted border-border"
+                      : b.present
+                        ? "bg-chart-5/10 border-chart-5/40"
+                        : "bg-primary/10 border-primary/40"
                   )}
                 >
                   <div className="flex items-center justify-between gap-1">
-                    <p className="text-xs text-muted-foreground print:text-[6pt]">{b.present ? "Presente" : "Ausente"}</p>
+                    <p className="text-xs text-muted-foreground print:text-[6pt]">{b.noClass ? "Sem aula" : b.present ? "Presente" : "Ausente"}</p>
                     <span
                       className={cn(
                         "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-white print:px-1 print:py-0 print:text-[6pt]",
@@ -207,8 +218,18 @@ export default async function ChildReportPage({
                       {b.type === "CULTO" ? "Culto" : "EBD"}
                     </span>
                   </div>
-                  <p className="text-sm wrap-anywhere line-clamp-2 print:text-[7pt] print:leading-tight">{lessonLabel(b.plan)}</p>
-                  <LessonNote childId={child.id} date={b.day} type={b.type} initialNote={b.note} />
+                  {b.noClass ? (
+                    b.plan?.observations && (
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap wrap-anywhere line-clamp-3 print:text-[7pt] print:leading-tight">
+                        {b.plan.observations}
+                      </p>
+                    )
+                  ) : (
+                    <>
+                      <p className="text-sm wrap-anywhere line-clamp-2 print:text-[7pt] print:leading-tight">{lessonLabel(b.plan)}</p>
+                      <LessonNote childId={child.id} date={b.day} type={b.type} initialNote={b.note} />
+                    </>
+                  )}
                 </div>
               ))}
             </div>
