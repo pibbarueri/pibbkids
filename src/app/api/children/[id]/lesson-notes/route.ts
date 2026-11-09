@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { SundayType } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canAccessChildReport, LESSON_NOTE_MAX_LENGTH } from "@/lib/child-report";
+import { canAccessChildReport } from "@/lib/child-report";
+import { LESSON_NOTE_MAX_LENGTH } from "@/lib/lesson-notes";
 
 // Saves the teacher's note for one child in one lesson. An empty note deletes it.
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

@@ -5,7 +5,7 @@ import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { LESSON_NOTE_MAX_LENGTH } from "@/lib/child-report";
+import { LESSON_NOTE_MAX_LENGTH } from "@/lib/lesson-notes";
 
 export function LessonNote({
   childId,
