@@ -32,7 +32,6 @@ type Plan = {
   lessonType: string;
   lessonNumber: number | null;
   specialTitle: string | null;
-  observations: string | null;
   journal: { title: string } | null;
 };
 
@@ -100,7 +99,6 @@ export default async function ChildReportPage({
             lessonType: true,
             lessonNumber: true,
             specialTitle: true,
-            observations: true,
             journal: { select: { title: true } },
           },
         })
@@ -183,12 +181,6 @@ export default async function ChildReportPage({
               </span>
             </div>
             <p className="text-xs text-muted-foreground">{b.present ? "Presente" : "Ausente"}</p>
-            {b.plan?.observations && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Descrição da aula</p>
-                <p className="text-sm whitespace-pre-wrap wrap-anywhere">{b.plan.observations}</p>
-              </div>
-            )}
             <LessonNote childId={child.id} date={b.day} type={b.type} initialNote={b.note} />
           </div>
         ))}
