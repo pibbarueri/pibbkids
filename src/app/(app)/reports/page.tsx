@@ -18,7 +18,7 @@ const REPORTS: Report[] = [
   {
     href: "/reports/visitors",
     label: "Visitantes",
-    description: "Crianças visitantes por domingo",
+    description: "Todas as crianças que já visitaram a igreja",
     icon: Users,
     canAccess: () => true,
   },
