@@ -15,7 +15,7 @@ export function LessonNote({
   childId: string;
   date: string;
   type: "EBD" | "CULTO";
-  initialNote: string | null;
+  initialNote: { text: string; author: string } | null;
 }) {
   const [note, setNote] = useState(initialNote);
   const [editing, setEditing] = useState(false);
@@ -61,7 +61,7 @@ export function LessonNote({
         <p className="text-xs font-medium text-muted-foreground">Notas do professor</p>
         <button
           type="button"
-          onClick={() => { setDraft(note ?? ""); setEditing(true); }}
+          onClick={() => { setDraft(note?.text ?? ""); setEditing(true); }}
           aria-label="Editar notas do professor"
           className="no-print h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted transition-transform active:scale-90"
         >
@@ -69,7 +69,10 @@ export function LessonNote({
         </button>
       </div>
       {note ? (
-        <p className="text-sm whitespace-pre-wrap wrap-anywhere">{note}</p>
+        <>
+          <p className="text-sm whitespace-pre-wrap wrap-anywhere">{note.text}</p>
+          <p className="text-xs text-muted-foreground mt-1">Professor: {note.author}</p>
+        </>
       ) : (
         <p className="text-xs text-muted-foreground italic">Sem notas.</p>
       )}

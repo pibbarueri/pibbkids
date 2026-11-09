@@ -37,6 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     where: key,
     update: { note: text, authorId: session.user.id },
     create: { ...key.childId_date_type, note: text, authorId: session.user.id },
+    select: { note: true, author: { select: { name: true } } },
   });
-  return NextResponse.json({ note: saved.note });
+  return NextResponse.json({ note: { text: saved.note, author: saved.author.name } });
 }
