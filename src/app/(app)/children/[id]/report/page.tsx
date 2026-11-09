@@ -111,7 +111,7 @@ export default async function ChildReportPage({
     }),
     prisma.childLessonNote.findMany({
       where: { childId: child.id, date: range },
-      select: { date: true, type: true, note: true },
+      select: { date: true, type: true, note: true, author: { select: { name: true } } },
     }),
   ]);
 
@@ -121,7 +121,7 @@ export default async function ChildReportPage({
 
   const planByKey = new Map(plans.map((p) => [`${sundayKey(p.date)}|${p.type}`, p]));
   const presentKeys = new Set(attendance.map((a) => `${sundayKey(a.date)}|${a.type}`));
-  const noteByKey = new Map(notes.map((n) => [`${sundayKey(n.date)}|${n.type}`, n.note]));
+  const noteByKey = new Map(notes.map((n) => [`${sundayKey(n.date)}|${n.type}`, { text: n.note, author: n.author.name }]));
 
   // Every lesson that happened, plus any Sunday the child was marked present without a plan.
   const blocks = [...new Set([...planByKey.keys(), ...presentKeys])]
