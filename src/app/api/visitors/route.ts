@@ -109,6 +109,22 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const day = parsed.data.date ?? dayKey();
+
+  // The confirmed child may already be logged for this same Sunday and horário (reception
+  // logged her twice under different spellings). That's one visit: keep the existing record
+  // instead of adding a second one. Its name was already updated above.
+  if (parsed.data.sameAsVisitorId) {
+    const { start, end } = dayRangeUTC(day);
+    const existing = await prisma.visitor.findFirst({
+      where: { childId: null, name, type: parsed.data.type, createdAt: { gte: start, lt: end } },
+      include: { classGroup: { select: { id: true, name: true } } },
+    });
+    if (existing) {
+      return NextResponse.json({ ...existing, ageText: visitorAgeText(existing) }, { status: 200 });
+    }
+  }
+
   const visitor = await prisma.visitor.create({
     data: {
       name,
@@ -117,7 +133,7 @@ export async function POST(req: NextRequest) {
       type: parsed.data.type,
       classGroupId: classGroupId !== undefined ? classGroupId : await classGroupIdForVisitor({ birthdate, ageMonths }),
       createdById: session.user.id,
-      createdAt: dateTimeOnDay(parsed.data.date ?? dayKey()),
+      createdAt: dateTimeOnDay(day),
     },
     include: { classGroup: { select: { id: true, name: true } } },
   });
