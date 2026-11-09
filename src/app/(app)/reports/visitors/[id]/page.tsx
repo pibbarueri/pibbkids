@@ -54,6 +54,7 @@ export default async function VisitorDetailPage({ params }: { params: Promise<{ 
           id: latest.id,
           name: latest.name,
           birthdate: latest.birthdate?.toISOString() ?? null,
+          ageMonths: latest.ageMonths,
           ageText: visitorAgeText(latest),
           classGroupId: latest.classGroupId,
           className: latest.classGroup?.name ?? null,

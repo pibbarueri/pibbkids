@@ -2,11 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, UserCheck } from "lucide-react";
+import { Pencil, RefreshCw, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { VisitorEditDialog } from "@/components/visitor-edit-dialog";
+import {
+  VisitorForm,
+  isVisitorFormValid,
+  visitorFormFrom,
+  visitorPayload,
+  type VisitorFormValue,
+} from "@/components/visitor-form";
 import { VisitorPromoteDialog } from "@/components/visitor-promote-dialog";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +20,7 @@ type Child = {
   id: string;
   name: string;
   birthdate: string | null;
+  ageMonths: number | null;
   ageText: string;
   classGroupId: string | null;
   className: string | null;
@@ -50,7 +57,29 @@ export function VisitorDetailClient({
   const [merging, setMerging] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [mergeSaving, setMergeSaving] = useState(false);
-  const [editing, setEditing] = useState<Visit | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<VisitorFormValue | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+
+  function openEdit() {
+    setForm(visitorFormFrom({ name: child.name, birthdate: child.birthdate, ageMonths: child.ageMonths, type: visits[visits.length - 1].type }));
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    if (!form || !isVisitorFormValid(form)) return;
+    setEditSaving(true);
+    const res = await fetch(`/api/visitors/${child.id}/person`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(visitorPayload(form, { includeSchedule: false })),
+    });
+    setEditSaving(false);
+    if (res.ok) {
+      setEditing(false);
+      router.refresh();
+    }
+  }
 
   async function merge() {
     setMergeSaving(true);
@@ -71,46 +100,56 @@ export function VisitorDetailClient({
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold wrap-anywhere">{child.name}</h1>
+          <div className="flex items-center gap-1">
+            <h1 className="text-xl font-bold wrap-anywhere">{child.name}</h1>
+            {isManager && !child.promoted && (
+              <button
+                type="button"
+                onClick={openEdit}
+                aria-label="Editar visitante"
+                className="h-8 w-8 shrink-0 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted transition-transform active:scale-90"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">
             {child.ageText} · {child.className ?? "Sem turma"} · {visits.length} visita{visits.length === 1 ? "" : "s"}
             {child.promoted && " · efetivada"}
           </p>
         </div>
         {isManager && !child.promoted && (
-          <div className="flex gap-2 shrink-0">
-            <Button className="h-10" onClick={() => setPromoting(true)}>
-              <UserCheck className="h-4 w-4" />
-              Efetivar criança
-            </Button>
-            <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setMerging(true)} aria-label="Juntar com outro visitante">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setMerging(true)} aria-label="Juntar com outro visitante">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
         )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+      <div className="space-y-2">
         {visits.map((v) => (
-          <button
+          <div
             key={v.id}
-            type="button"
-            disabled={!v.canEdit}
-            onClick={() => setEditing(v)}
-            className="p-3 rounded-lg border border-muted-foreground/30 bg-muted-foreground/15 text-left space-y-1.5 transition-transform enabled:active:scale-[0.98] disabled:cursor-default"
+            className="flex items-center justify-between gap-2 p-3 rounded-lg border border-muted-foreground/30 bg-muted-foreground/15"
           >
+            <p className="text-sm font-semibold">{formatDay(v.day)}</p>
             <span
               className={cn(
-                "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium text-white",
+                "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-white",
                 v.type === "EBD" ? "bg-chart-5" : "bg-primary"
               )}
             >
               {v.type === "CULTO" ? "Culto" : "EBD"}
             </span>
-            <p className="text-sm font-semibold">{formatDay(v.day)}</p>
-          </button>
+          </div>
         ))}
       </div>
+
+      {isManager && !child.promoted && (
+        <Button className="w-full h-12" onClick={() => setPromoting(true)}>
+          <UserCheck className="h-4 w-4" />
+          Efetivar criança
+        </Button>
+      )}
 
       {promoting && (
         <VisitorPromoteDialog
@@ -159,7 +198,22 @@ export function VisitorDetailClient({
         </DialogContent>
       </Dialog>
 
-      <VisitorEditDialog visitor={editing} onClose={() => setEditing(null)} onChanged={() => router.refresh()} />
+      <Dialog open={editing} onOpenChange={setEditing}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar visitante</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Vale para todas as visitas desta criança.</p>
+          {form && (
+            <div className="space-y-3">
+              <VisitorForm value={form} onChange={(patch) => setForm((f) => (f ? { ...f, ...patch } : f))} />
+              <Button className="w-full h-12" disabled={!isVisitorFormValid(form) || editSaving} onClick={saveEdit}>
+                Salvar
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
