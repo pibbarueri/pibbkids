@@ -2,6 +2,8 @@
 
 type ClassGroup = { id: string; name: string };
 type AttendanceRow = { date: string; type: string; classGroupId: string | null };
+// `day` is the visit's calendar day (YYYY-MM-DD, app timezone).
+type VisitorRow = { day: string; type: string; classGroupId: string | null };
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
@@ -9,10 +11,12 @@ function formatDate(iso: string) {
 
 export function OverviewClient({
   attendance,
+  visitors = [],
   classes,
   sundays,
 }: {
   attendance: AttendanceRow[];
+  visitors?: VisitorRow[];
   classes: ClassGroup[];
   sundays: string[];
 }) {
@@ -21,6 +25,21 @@ export function OverviewClient({
     return attendance.filter(
       (a) => a.date.startsWith(key) && a.classGroupId === classGroupId && a.type === tipo
     ).length;
+  }
+
+  function visitorsFor(sunday: string, classGroupId: string, tipo: string) {
+    const key = sunday.slice(0, 10);
+    return visitors.filter((v) => v.day === key && v.classGroupId === classGroupId && v.type === tipo).length;
+  }
+
+  function cell(sunday: string, classGroupId: string, tipo: string, label: string) {
+    const v = visitorsFor(sunday, classGroupId, tipo);
+    return (
+      <p className="text-xs">
+        {label}: {countFor(sunday, classGroupId, tipo)}
+        {v > 0 && <span className="text-chart-2 font-medium"> · Visitantes: {v}</span>}
+      </p>
+    );
   }
 
   return (
@@ -42,8 +61,8 @@ export function OverviewClient({
               </td>
               {classes.map((cls) => (
                 <td key={cls.id} className="p-2 border-r align-top">
-                  <p className="text-xs">EBD: {countFor(sunday, cls.id, "EBD")}</p>
-                  <p className="text-xs">Culto: {countFor(sunday, cls.id, "CULTO")}</p>
+                  {cell(sunday, cls.id, "EBD", "EBD")}
+                  {cell(sunday, cls.id, "CULTO", "Culto")}
                 </td>
               ))}
             </tr>

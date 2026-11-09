@@ -10,14 +10,17 @@ import { ReportFilterSheet } from "@/components/reports/report-filter-sheet";
 
 type ClassGroup = { id: string; name: string };
 type AttendanceRow = { date: string; type: string; classGroupId: string | null };
+type VisitorRow = { day: string; type: string; classGroupId: string | null };
 
 export function AttendanceReportTabs({
   attendance,
+  visitors,
   classes,
   sundays,
   semesterLabel,
 }: {
   attendance: AttendanceRow[];
+  visitors: VisitorRow[];
   classes: ClassGroup[];
   sundays: string[];
   semesterLabel: string;
@@ -54,7 +57,7 @@ export function AttendanceReportTabs({
               <DateRangeFilter min={dateRange.min} max={dateRange.max} onChange={setDateRange} />
             </ReportFilterSheet>
           </div>
-          <OverviewClient attendance={attendance} classes={visibleClasses} sundays={visibleSundays} />
+          <OverviewClient attendance={attendance} visitors={visitors} classes={visibleClasses} sundays={visibleSundays} />
         </div>
       )}
     </div>
