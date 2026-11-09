@@ -201,7 +201,7 @@ export default async function ChildReportPage({
                     "p-2 border rounded-md space-y-1 min-w-0 print:border-0 print:p-1 print:space-y-0.5 [print-color-adjust:exact] [-webkit-print-color-adjust:exact]",
                     perDay === 2 && (b.type === "EBD" ? "print:col-start-1" : "print:col-start-2"),
                     b.noClass
-                      ? "bg-muted border-border"
+                      ? "bg-muted-foreground/15 border-muted-foreground/30"
                       : b.present
                         ? "bg-chart-5/10 border-chart-5/40"
                         : "bg-primary/10 border-primary/40"
@@ -212,7 +212,7 @@ export default async function ChildReportPage({
                     <span
                       className={cn(
                         "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-white print:px-1 print:py-0 print:text-[6pt]",
-                        b.type === "EBD" ? "bg-chart-5" : "bg-primary"
+                        b.noClass ? "bg-muted-foreground" : b.type === "EBD" ? "bg-chart-5" : "bg-primary"
                       )}
                     >
                       {b.type === "CULTO" ? "Culto" : "EBD"}
@@ -220,7 +220,7 @@ export default async function ChildReportPage({
                   </div>
                   {b.noClass ? (
                     b.plan?.observations && (
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap wrap-anywhere line-clamp-3 print:text-[7pt] print:leading-tight">
+                      <p className="text-sm whitespace-pre-wrap wrap-anywhere line-clamp-3 print:text-[7pt] print:leading-tight">
                         {b.plan.observations}
                       </p>
                     )
