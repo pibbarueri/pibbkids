@@ -39,6 +39,7 @@ model User {
   materialsCreated                Material[]           @relation("MaterialCreator")
   materialsUpdated                Material[]           @relation("MaterialUpdater")
   visitorsLogged                  Visitor[]
+  childLessonNotes                ChildLessonNote[]
   notifications                   Notification[]
 
   @@map("users")
@@ -149,6 +150,7 @@ model Child {
   active       Boolean      @default(true)
   createdAt    DateTime     @default(now()) @map("created_at")
   attendance   Attendance[]
+  lessonNotes  ChildLessonNote[]
   visitor      Visitor?
 
   @@map("children")
@@ -321,6 +323,23 @@ model Attendance {
 
   @@unique([childId, date, type])
   @@map("attendance")
+}
+
+// A teacher's note about one child in one lesson (a Sunday + EBD/Culto), shown and edited
+// on the child's report. One per child per lesson; editing overwrites it.
+model ChildLessonNote {
+  id        String     @id @default(cuid())
+  childId   String     @map("child_id")
+  child     Child      @relation(fields: [childId], references: [id])
+  date      DateTime   @db.Date
+  type      SundayType
+  note      String
+  authorId  String     @map("author_id")
+  author    User       @relation(fields: [authorId], references: [id])
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@unique([childId, date, type])
+  @@map("child_lesson_notes")
 }
 
 // ─── Materials & Purchases ──────────────────────────────────────────────────────
