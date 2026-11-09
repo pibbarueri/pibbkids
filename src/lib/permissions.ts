@@ -67,6 +67,12 @@ export function canEditVisitor(role: Role, visitorDay: string, today: string) {
   return role === Role.RECEPTIONIST && visitorDay === today;
 }
 
+// Per-child attendance report (lessons + Diário de Sala notes). Management sees every child;
+// a teacher only children of a room they've taught, the same rule as the Diário de Sala.
+export function canViewChildReport(role: Role) {
+  return canManage(role) || role === Role.TEACHER;
+}
+
 export function canViewLessons(role: Role) {
   return ([Role.ADMIN, Role.COORDINATOR, Role.TEACHER, Role.ASSISTANT, Role.RECEPTIONIST] as Role[]).includes(role);
 }
