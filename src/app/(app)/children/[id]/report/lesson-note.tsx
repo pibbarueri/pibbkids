@@ -5,6 +5,7 @@ import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { LESSON_NOTE_MAX_LENGTH } from "@/lib/child-report";
 
 export function LessonNote({
   childId,
@@ -42,7 +43,16 @@ export function LessonNote({
     return (
       <div className="space-y-2 no-print">
         <p className="text-xs font-medium text-muted-foreground">Notas do professor</p>
-        <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={1000} rows={3} autoFocus />
+        <Textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          maxLength={LESSON_NOTE_MAX_LENGTH}
+          rows={3}
+          autoFocus
+        />
+        <p className="text-right text-xs text-muted-foreground">
+          {draft.length}/{LESSON_NOTE_MAX_LENGTH}
+        </p>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditing(false)} disabled={saving}>
             Cancelar
@@ -57,8 +67,8 @@ export function LessonNote({
 
   return (
     <div className={note ? "" : "no-print"}>
-      <div className="flex items-center gap-1">
-        <p className="text-xs font-medium text-muted-foreground">Notas do professor</p>
+      <div className="flex items-center gap-1 print:hidden">
+        <p className="text-xs font-medium text-muted-foreground print:text-[6pt]">Notas do professor</p>
         <button
           type="button"
           onClick={() => { setDraft(note?.text ?? ""); setEditing(true); }}
@@ -70,8 +80,8 @@ export function LessonNote({
       </div>
       {note ? (
         <>
-          <p className="text-sm whitespace-pre-wrap wrap-anywhere">{note.text}</p>
-          <p className="text-xs text-muted-foreground mt-1">Professor: {note.author}</p>
+          <p className="text-sm whitespace-pre-wrap wrap-anywhere print:text-[6.5pt] print:leading-tight">{note.text}</p>
+          <p className="text-xs text-muted-foreground mt-1 print:mt-0 print:text-[6pt]">Professor: {note.author}</p>
         </>
       ) : (
         <p className="text-xs text-muted-foreground italic">Sem notas.</p>

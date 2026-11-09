@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SundayType } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canAccessChildReport } from "@/lib/child-report";
+import { canAccessChildReport, LESSON_NOTE_MAX_LENGTH } from "@/lib/child-report";
 
 // Saves the teacher's note for one child in one lesson. An empty note deletes it.
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -21,7 +21,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     typeof date !== "string" ||
     !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
     !Object.values(SundayType).includes(type) ||
-    typeof note !== "string"
+    typeof note !== "string" ||
+    note.trim().length > LESSON_NOTE_MAX_LENGTH
   ) {
     return NextResponse.json({ error: "Dados inválidos." }, { status: 422 });
   }

@@ -135,22 +135,26 @@ export default async function ChildReportPage({
   const percent = total ? Math.round((present / total) * 100) : 0;
   const [semYear, semHalf] = semester.split("-");
 
+  // On paper the whole semester goes on one landscape page: more lessons, more columns.
+  // 52 is the worst case (26 Sundays, EBD and Culto).
+  const printColumns = total <= 20 ? 5 : total <= 30 ? 6 : total <= 42 ? 7 : 8;
+
   return (
-    <div className="p-4 pb-24 space-y-4 print-portrait">
-      <div className="space-y-3">
+    <div className="p-4 pb-24 space-y-4 print-cards print:space-y-2">
+      <div className="space-y-3 print:space-y-0 print:flex print:items-end print:justify-between print:gap-4">
         <div>
-          <h1 className="text-xl font-bold wrap-anywhere">{child.name}</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl font-bold wrap-anywhere print:text-base">{child.name}</h1>
+          <p className="text-sm text-muted-foreground print:text-xs">
             {child.classGroup?.name ?? "Sem turma"} · {semHalf}º semestre {semYear}
           </p>
         </div>
         <SemesterSelect value={semester} options={semesterOptions} />
-        <div className="rounded-lg border bg-background p-3 flex items-baseline justify-between gap-2">
-          <p className="text-sm">
+        <div className="rounded-lg border bg-background p-3 flex items-baseline justify-between gap-2 print:p-0 print:border-0 print:gap-3">
+          <p className="text-sm print:text-xs">
             <span className="font-semibold">{present}</span> presença{present === 1 ? "" : "s"} em{" "}
             <span className="font-semibold">{total}</span> aula{total === 1 ? "" : "s"}
           </p>
-          <p className="text-lg font-bold">{percent}%</p>
+          <p className="text-lg font-bold print:text-base">{percent}%</p>
         </div>
       </div>
 
@@ -158,29 +162,31 @@ export default async function ChildReportPage({
         <p className="text-sm text-muted-foreground text-center py-8">Nenhuma aula registrada nesse semestre.</p>
       )}
 
-      <div className="space-y-2">
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 print:gap-1 report-grid"
+        style={{ "--print-cols": printColumns } as React.CSSProperties}
+      >
         {blocks.map((b) => (
           <div
             key={b.key}
             className={cn(
-              "p-3 border rounded-lg space-y-2 break-inside-avoid",
+              "p-3 border rounded-lg space-y-2 break-inside-avoid print:p-1.5 print:space-y-0.5 print:rounded-md",
               b.present ? "bg-chart-5/10 border-chart-5/40" : "bg-primary/10 border-primary/40"
             )}
           >
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-sm min-w-0 wrap-anywhere">
-                <span className="font-semibold">{formatDay(b.day)}</span> · {lessonLabel(b.plan)}
-              </p>
+            <div className="flex items-center justify-between gap-2 print:gap-1">
+              <p className="text-sm font-semibold print:text-[7pt]">{formatDay(b.day)}</p>
               <span
                 className={cn(
-                  "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-white",
+                  "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-white print:px-1 print:py-0 print:text-[6pt]",
                   b.type === "EBD" ? "bg-chart-5" : "bg-primary"
                 )}
               >
                 {b.type === "CULTO" ? "Culto" : "EBD"}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">{b.present ? "Presente" : "Ausente"}</p>
+            <p className="text-sm wrap-anywhere line-clamp-2 print:text-[7pt] print:leading-tight">{lessonLabel(b.plan)}</p>
+            <p className="text-xs text-muted-foreground print:text-[6pt]">{b.present ? "Presente" : "Ausente"}</p>
             <LessonNote childId={child.id} date={b.day} type={b.type} initialNote={b.note} />
           </div>
         ))}
