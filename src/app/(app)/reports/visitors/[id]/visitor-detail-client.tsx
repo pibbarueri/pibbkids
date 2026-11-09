@@ -116,7 +116,7 @@ export function VisitorDetailClient({
   }
 
   return (
-    <div className="space-y-4">
+    <div className={cn("space-y-4", isManager && !child.promoted && (linkCandidates.length > 0 ? "pb-36" : "pb-20"))}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-1">
@@ -163,17 +163,20 @@ export function VisitorDetailClient({
         ))}
       </div>
 
+      {/* Actions stay pinned above the bottom nav, however long the visit list is. */}
       {isManager && !child.promoted && (
-        <Button className="w-full h-12" onClick={() => setPromoting(true)}>
-          <UserCheck className="h-4 w-4" />
-          Efetivar criança
-        </Button>
-      )}
-      {isManager && !child.promoted && linkCandidates.length > 0 && (
-        <Button variant="outline" className="w-full h-12" onClick={() => setLinking(true)}>
-          <Link2 className="h-4 w-4" />
-          Já cadastrada? Vincular
-        </Button>
+        <div className="fixed inset-x-0 bottom-16 z-30 border-t bg-background/95 backdrop-blur p-3 space-y-2">
+          <Button className="w-full h-12" onClick={() => setPromoting(true)}>
+            <UserCheck className="h-4 w-4" />
+            Efetivar criança
+          </Button>
+          {linkCandidates.length > 0 && (
+            <Button variant="outline" className="w-full h-12" onClick={() => setLinking(true)}>
+              <Link2 className="h-4 w-4" />
+              Já cadastrada? Vincular
+            </Button>
+          )}
+        </div>
       )}
 
       <Dialog open={linking} onOpenChange={setLinking}>

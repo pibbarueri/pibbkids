@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canEditVisitor, canManage } from "@/lib/permissions";
-import { visitorAgeText } from "@/lib/age";
+import { ageRoughlyMatches, visitorAgeText } from "@/lib/age";
 import { dayKey } from "@/lib/dates";
 import { mayBeSameChild } from "@/lib/visitor-names";
 import { personKey, visitsOfPerson } from "@/lib/visitor-people";
@@ -54,8 +54,8 @@ export default async function VisitorDetailPage({ params }: { params: Promise<{ 
   // filled in the registration form later under a fuller name.
   const linkCandidates =
     isManager && !promoted
-      ? (await prisma.child.findMany({ select: { id: true, name: true, classGroup: { select: { name: true } } } }))
-          .filter((c) => mayBeSameChild(c.name, latest.name))
+      ? (await prisma.child.findMany({ select: { id: true, name: true, birthdate: true, classGroup: { select: { name: true } } } }))
+          .filter((c) => mayBeSameChild(c.name, latest.name) && ageRoughlyMatches(latest, c.birthdate))
           .map((c) => ({ id: c.id, name: c.name, className: c.classGroup?.name ?? null }))
       : [];
 

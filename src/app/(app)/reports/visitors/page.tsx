@@ -38,7 +38,7 @@ export default async function VisitorsReportPage() {
 
   return (
     <div className="p-4 pb-24">
-      <VisitorsListClient items={[...children.values()]} />
+      <VisitorsListClient items={[...children.values()].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))} />
     </div>
   );
 }
