@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { visitsOfPerson } from "@/lib/visitor-people";
 import { auth } from "@/lib/auth";
 import { canManage } from "@/lib/permissions";
 
@@ -34,8 +35,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Approving a pending registration that matches an unlinked visitor check-in: link
   // instead of leaving two separate records for the same kid.
   if (body.linkVisitorId !== undefined) {
+    // Every visit of that visitor, not only the one suggested.
+    const visits = (await visitsOfPerson(body.linkVisitorId)) ?? [];
+    const ids = visits.filter((v) => !v.childId).map((v) => v.id);
     await prisma.visitor.updateMany({
-      where: { id: body.linkVisitorId, childId: null },
+      where: { id: { in: ids.length ? ids : [body.linkVisitorId] }, childId: null },
       data: { childId: child.id },
     });
   }

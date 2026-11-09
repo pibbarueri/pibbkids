@@ -64,3 +64,15 @@ export function visitorClassName(v: VisitorAge): string | null {
   const months = visitorAgeMonths(v);
   return months === null ? null : suggestedClassNameForAge(Math.floor(months / 12));
 }
+
+/**
+ * Whether a visit's age and a registered child's birthdate describe the same kid, give or
+ * take a year. Visitors without a known birthdate used to get one estimated from the age
+ * ("today minus X years and Y months"), so exact birthdates rarely match. No age on the
+ * visit means nothing to contradict.
+ */
+export function ageRoughlyMatches(visit: VisitorAge & { createdAt: Date }, childBirthdate: Date): boolean {
+  const visitAge = visit.birthdate ? ageInMonths(new Date(visit.birthdate), visit.createdAt) : visit.ageMonths;
+  if (visitAge === null) return true;
+  return Math.abs(visitAge - ageInMonths(childBirthdate, visit.createdAt)) <= 12;
+}

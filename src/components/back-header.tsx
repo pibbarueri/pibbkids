@@ -57,15 +57,19 @@ export function BackHeader({
   const router = useRouter();
   const pathname = usePathname();
 
-  // The overviews are now reached from Relatórios, so back returns there rather than to the
-  // screen they used to hang off. Same for the report pages under /reports.
-  const target =
-    pathname === "/curriculum/overview" ||
-    pathname === "/schedule/overview" ||
-    pathname === "/attendance/overview" ||
-    (pathname.startsWith("/reports/") && pathname !== "/reports")
-      ? "/reports"
-      : "/dashboard";
+  // Detail pages go back to their list: a visiting child to the visitors report, a child's
+  // report to Crianças. The overviews are reached from Relatórios, so back returns there
+  // rather than to the screen they used to hang off. Same for the report pages under /reports.
+  const target = pathname.startsWith("/reports/visitors/")
+    ? "/reports/visitors"
+    : /^\/children\/[^/]+\/report$/.test(pathname)
+      ? "/children"
+      : pathname === "/curriculum/overview" ||
+          pathname === "/schedule/overview" ||
+          pathname === "/attendance/overview" ||
+          (pathname.startsWith("/reports/") && pathname !== "/reports")
+        ? "/reports"
+        : "/dashboard";
   const showBack = pathname !== "/dashboard";
   const title = PAGE_TITLES.find(([href]) => pathname.startsWith(href))?.[1];
 

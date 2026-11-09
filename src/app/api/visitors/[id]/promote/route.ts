@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { canManage } from "@/lib/permissions";
 import { Frequency } from "@prisma/client";
+import { visitsOfPerson } from "@/lib/visitor-people";
 
 // Same shape as /api/register/child — "efetivar" a visitor produces a real Child record,
 // same data quality as a normal approved registration.
@@ -43,7 +44,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const created = await tx.child.create({
       data: { ...rest, birthdate: new Date(birthdate) },
     });
-    await tx.visitor.update({ where: { id }, data: { childId: created.id } });
+    // Every visit of this child points at the new record, not just the one opened.
+    const visits = (await visitsOfPerson(id)) ?? [];
+    const ids = visits.filter((v) => !v.childId).map((v) => v.id);
+    await tx.visitor.updateMany({ where: { id: { in: ids.length ? ids : [id] } }, data: { childId: created.id } });
     return created;
   });
 
