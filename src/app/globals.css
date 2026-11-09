@@ -142,18 +142,6 @@
  * and only content assigned that name is affected. Everything else in the
  * app keeps whatever the browser's print default is.
  */
-/* Card-grid reports (the child report) print as one landscape page at full scale, with the
-   grid's column count set per page through --print-cols. Backgrounds carry meaning there
-   (present/absent), so they print too. */
-@page report-cards {
-  size: landscape;
-  margin: 8mm;
-}
-
-.print-cards {
-  page: report-cards;
-}
-
 @page report-landscape {
   size: landscape;
   margin: 12mm;
@@ -202,19 +190,5 @@
      of this, so the user can tune further from there. */
   .print-landscape {
     zoom: 45%;
-  }
-
-  .print-cards {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-    padding: 0 !important;
-  }
-
-  .print-cards .report-grid {
-    grid-template-columns: repeat(var(--print-cols, 6), minmax(0, 1fr)) !important;
-  }
-
-  .print-cards .break-inside-avoid {
-    break-inside: avoid;
   }
 }
