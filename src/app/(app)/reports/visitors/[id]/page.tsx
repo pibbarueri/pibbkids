@@ -19,8 +19,11 @@ export default async function VisitorDetailPage({ params }: { params: Promise<{ 
   if (!visits?.length) notFound();
 
   const latest = visits[visits.length - 1];
-  const key = personKey(latest.name);
+  const key = personKey(latest);
   const promoted = visits.some((v) => v.childId);
+  const registered = latest.childId
+    ? await prisma.child.findUnique({ where: { id: latest.childId }, select: { name: true } })
+    : null;
   const today = dayKey();
 
   // "Juntar" candidates: other not-yet-promoted children, likely matches first.
@@ -33,7 +36,7 @@ export default async function VisitorDetailPage({ params }: { params: Promise<{ 
     });
     const seen = new Set<string>([key]);
     for (const v of others) {
-      const k = personKey(v.name);
+      const k = personKey(v);
       if (seen.has(k)) continue;
       seen.add(k);
       candidates.push({
@@ -47,12 +50,21 @@ export default async function VisitorDetailPage({ params }: { params: Promise<{ 
     candidates = candidates.sort((a, b) => Number(b.likely) - Number(a.likely) || a.name.localeCompare(b.name, "pt-BR"));
   }
 
+  // "Vincular": registered children whose name may be this visitor's, for when the family
+  // filled in the registration form later under a fuller name.
+  const linkCandidates =
+    isManager && !promoted
+      ? (await prisma.child.findMany({ select: { id: true, name: true, classGroup: { select: { name: true } } } }))
+          .filter((c) => mayBeSameChild(c.name, latest.name))
+          .map((c) => ({ id: c.id, name: c.name, className: c.classGroup?.name ?? null }))
+      : [];
+
   return (
     <div className="p-4 pb-24">
       <VisitorDetailClient
         child={{
           id: latest.id,
-          name: latest.name,
+          name: registered?.name ?? latest.name,
           birthdate: latest.birthdate?.toISOString() ?? null,
           ageMonths: latest.ageMonths,
           ageText: visitorAgeText(latest),
@@ -71,6 +83,7 @@ export default async function VisitorDetailPage({ params }: { params: Promise<{ 
         }))}
         isManager={isManager}
         candidates={candidates}
+        linkCandidates={linkCandidates}
       />
     </div>
   );

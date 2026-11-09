@@ -10,14 +10,14 @@ export default async function VisitorsReportPage() {
   if (!session) redirect("/login");
 
   const visits = await prisma.visitor.findMany({
-    include: { classGroup: { select: { name: true } } },
+    include: { classGroup: { select: { name: true } }, child: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
   });
 
   // One entry per child (see lib/visitor-people.ts), described by the latest visit.
   const children = new Map<string, VisitingChild>();
   for (const v of visits) {
-    const key = personKey(v.name);
+    const key = personKey(v);
     const existing = children.get(key);
     if (existing) {
       existing.visits += 1;
@@ -26,7 +26,8 @@ export default async function VisitorsReportPage() {
     }
     children.set(key, {
       id: v.id,
-      name: v.name,
+      // Linked to a registered child: show the registered name.
+      name: v.child?.name ?? v.name,
       ageText: visitorAgeText(v),
       className: v.classGroup?.name ?? null,
       lastVisit: v.createdAt.toISOString(),

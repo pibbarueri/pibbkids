@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, RefreshCw, UserCheck } from "lucide-react";
+import { Link2, Pencil, RefreshCw, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -35,6 +35,7 @@ type Visit = {
   day: string;
   canEdit: boolean;
 };
+type LinkCandidate = { id: string; name: string; className: string | null };
 type Candidate = { id: string; name: string; ageText: string; className: string | null; likely: boolean };
 
 function formatDay(key: string) {
@@ -46,17 +47,21 @@ export function VisitorDetailClient({
   visits,
   isManager,
   candidates,
+  linkCandidates,
 }: {
   child: Child;
   visits: Visit[];
   isManager: boolean;
   candidates: Candidate[];
+  linkCandidates: LinkCandidate[];
 }) {
   const router = useRouter();
   const [promoting, setPromoting] = useState(false);
   const [merging, setMerging] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [mergeSaving, setMergeSaving] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const [linkSaving, setLinkSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<VisitorFormValue | null>(null);
   const [editSaving, setEditSaving] = useState(false);
@@ -77,6 +82,20 @@ export function VisitorDetailClient({
     setEditSaving(false);
     if (res.ok) {
       setEditing(false);
+      router.refresh();
+    }
+  }
+
+  async function link(childId: string) {
+    setLinkSaving(true);
+    const res = await fetch(`/api/visitors/${child.id}/link`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ childId }),
+    });
+    setLinkSaving(false);
+    if (res.ok) {
+      setLinking(false);
       router.refresh();
     }
   }
@@ -150,6 +169,36 @@ export function VisitorDetailClient({
           Efetivar criança
         </Button>
       )}
+      {isManager && !child.promoted && linkCandidates.length > 0 && (
+        <Button variant="outline" className="w-full h-12" onClick={() => setLinking(true)}>
+          <Link2 className="h-4 w-4" />
+          Já cadastrada? Vincular
+        </Button>
+      )}
+
+      <Dialog open={linking} onOpenChange={setLinking}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Vincular a criança cadastrada</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Crianças cadastradas com nome parecido. Ao vincular, todas as visitas de {child.name} passam a contar como efetivadas.
+          </p>
+          <div className="space-y-2">
+            {linkCandidates.map((c) => (
+              <div key={c.id} className="flex items-center gap-2 p-3 border rounded-lg">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium wrap-anywhere">{c.name}</p>
+                  <p className="text-xs text-muted-foreground">{c.className ?? "Sem turma"}</p>
+                </div>
+                <Button size="sm" disabled={linkSaving} onClick={() => link(c.id)}>
+                  Vincular
+                </Button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {promoting && (
         <VisitorPromoteDialog

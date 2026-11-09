@@ -34,10 +34,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Visitante já efetivado não pode ser juntado." }, { status: 409 });
   }
 
-  const keys = new Set(chosen.map((v) => personKey(v.name)));
+  const keys = new Set(chosen.map((v) => personKey(v)));
   const name = chosen.map((v) => v.name).reduce((a, b) => fullerName(a, b));
-  const visits = (await prisma.visitor.findMany({ where: { childId: null }, select: { id: true, name: true } })).filter(
-    (v) => keys.has(personKey(v.name))
+  const visits = (await prisma.visitor.findMany({ where: { childId: null }, select: { id: true, name: true, childId: true } })).filter(
+    (v) => keys.has(personKey(v))
   );
 
   await prisma.visitor.updateMany({ where: { id: { in: visits.map((v) => v.id) } }, data: { name } });
