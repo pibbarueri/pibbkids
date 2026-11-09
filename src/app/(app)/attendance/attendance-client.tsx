@@ -296,6 +296,39 @@ export function AttendanceClient({
       (classFilter === "all" || c.classGroupId === classFilter)
   );
 
+  const filteredVisitors = canLogVisitor
+    ? visitorsForTab.filter(
+        (v) =>
+          v.name.toLowerCase().includes(search.trim().toLowerCase()) &&
+          (classFilter === "all" || v.classGroup?.id === classFilter)
+      )
+    : [];
+
+  // Visitors sit right after the last child of the class they were placed in that day, so the
+  // list reads class by class. Classes with only visitors, then visitors with no class, go last.
+  type Row = { kind: "child"; child: Child } | { kind: "visitor"; visitor: Visitor };
+  const visitorsByClass = new Map<string | null, Visitor[]>();
+  for (const v of filteredVisitors) {
+    const key = v.classGroup?.id ?? null;
+    visitorsByClass.set(key, [...(visitorsByClass.get(key) ?? []), v]);
+  }
+  const rows: Row[] = [];
+  filtered.forEach((child, i) => {
+    rows.push({ kind: "child", child });
+    const key = child.classGroupId;
+    if (filtered[i + 1]?.classGroupId === key) return;
+    for (const visitor of visitorsByClass.get(key) ?? []) rows.push({ kind: "visitor", visitor });
+    visitorsByClass.delete(key);
+  });
+  const leftoverClassIds = sortClasses(
+    [...visitorsByClass.keys()]
+      .filter((id): id is string => id !== null)
+      .map((id) => visitorsByClass.get(id)![0].classGroup!)
+  ).map((c) => c.id);
+  for (const key of [...leftoverClassIds, null]) {
+    for (const visitor of visitorsByClass.get(key) ?? []) rows.push({ kind: "visitor", visitor });
+  }
+
   async function toggle(childId: string, current: boolean) {
     if (!editable) return;
     const present = !current;
@@ -408,7 +441,28 @@ export function AttendanceClient({
       </div>
 
       <div className="space-y-2">
-        {filtered.map((child) => {
+        {rows.map((row) => {
+          if (row.kind === "visitor") {
+            const v = row.visitor;
+            return (
+              <button
+                key={`visitor-${v.id}`}
+                type="button"
+                disabled={!v.canEdit}
+                onClick={() => setEditingVisitor(v)}
+                className="flex w-full items-center gap-2 p-3 border rounded-lg bg-muted/40 text-left transition-transform enabled:active:scale-[0.98] disabled:cursor-default"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{v.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    Visitante · {v.classGroup?.name ?? "Sem turma"} · {visitorAgeText(v)}
+                    {v.childId && " · efetivado"}
+                  </p>
+                </div>
+              </button>
+            );
+          }
+          const child = row.child;
           const present = isPresent(child.id);
           return (
             <div key={child.id} className="flex items-center gap-2 p-3 border rounded-lg bg-background">
@@ -432,33 +486,10 @@ export function AttendanceClient({
         })}
       </div>
 
-      {filtered.length === 0 && (
+      {rows.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">
           {eligibleForTab.length === 0 ? "Nenhuma criança nesse horário." : "Nenhuma criança encontrada."}
         </p>
-      )}
-
-      {canLogVisitor && visitorsForTab.length > 0 && (
-        <div className="space-y-2 pt-2">
-          <p className="text-xs font-medium text-muted-foreground">Visitantes ({visitorsForTab.length})</p>
-          {visitorsForTab.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              disabled={!v.canEdit}
-              onClick={() => setEditingVisitor(v)}
-              className="flex w-full items-center gap-2 p-3 border rounded-lg bg-muted/40 text-left transition-transform enabled:active:scale-[0.98] disabled:cursor-default"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-sm truncate">{v.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {v.classGroup?.name ?? "Sem turma"} · {visitorAgeText(v)}
-                  {v.childId && " · efetivado"}
-                </p>
-              </div>
-            </button>
-          ))}
-        </div>
       )}
 
       <VisitorEditDialog
