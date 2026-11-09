@@ -29,6 +29,3 @@ export function semesterOf(date: Date) {
 export function isSemester(value: string | undefined): value is string {
   return !!value && /^\d{4}-[12]$/.test(value);
 }
-
-// A note has to fit inside one block of the one-page printout (up to 52 blocks).
-export const LESSON_NOTE_MAX_LENGTH = 140;
