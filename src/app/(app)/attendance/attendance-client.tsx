@@ -40,6 +40,8 @@ type Visitor = {
   childId: string | null;
   canEdit: boolean;
 };
+type SimilarVisitor = { id: string; name: string; ageText: string; className: string | null };
+
 function VisitorFab({
   canLogVisitor,
   date,
@@ -55,19 +57,36 @@ function VisitorFab({
   const [form, setForm] = useState<VisitorFormValue>(emptyVisitorForm(type));
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ name: string; ageText: string; className: string } | null>(null);
+  // Earlier visitors that may be this same child, asked about before saving.
+  const [matches, setMatches] = useState<SimilarVisitor[] | null>(null);
 
   function reset() {
     setForm(emptyVisitorForm(type));
     setResult(null);
+    setMatches(null);
   }
 
   async function save() {
     if (!isVisitorFormValid(form)) return;
+    if (form.sameAsVisitorId) return create(form.sameAsVisitorId);
+    setSaving(true);
+    const found: SimilarVisitor[] = await fetch(`/api/visitors/similar?name=${encodeURIComponent(form.name.trim())}`)
+      .then((r) => (r.ok ? r.json() : []))
+      .catch(() => []);
+    setSaving(false);
+    if (found.length) {
+      setMatches(found);
+      return;
+    }
+    return create();
+  }
+
+  async function create(sameAsVisitorId?: string) {
     setSaving(true);
     const res = await fetch("/api/visitors", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...visitorPayload(form, { includeSchedule: false }), date, type }),
+      body: JSON.stringify({ ...visitorPayload(form, { includeSchedule: false }), date, type, sameAsVisitorId }),
     });
     if (res.ok) {
       const created = await res.json();
@@ -116,6 +135,28 @@ function VisitorFab({
             >
               Ok
             </Button>
+          </>
+        ) : matches ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Visitante já cadastrado?</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              {matches.map((m) => (
+                <div key={m.id} className="space-y-2 rounded-lg border p-3">
+                  <p className="text-sm wrap-anywhere">
+                    Já existe um visitante com o nome <span className="font-semibold">{m.name}</span> ({m.ageText}
+                    {m.className && ` · ${m.className}`}). São a mesma criança?
+                  </p>
+                  <Button className="w-full h-11" disabled={saving} onClick={() => create(m.id)}>
+                    Sim, é a mesma criança
+                  </Button>
+                </div>
+              ))}
+              <Button variant="outline" className="w-full h-11" disabled={saving} onClick={() => create()}>
+                {matches.length === 1 ? "Não, é outra criança" : "Nenhuma delas, é outra criança"}
+              </Button>
+            </div>
           </>
         ) : (
           <>
